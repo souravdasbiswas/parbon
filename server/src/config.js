@@ -1,0 +1,58 @@
+import { existsSync } from 'node:fs';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
+
+const here = path.dirname(fileURLToPath(import.meta.url));
+export const SERVER_ROOT = path.resolve(here, '..');
+export const PROJECT_ROOT = path.resolve(SERVER_ROOT, '..');
+
+// Load a root-level .env if present (Node's built-in loader — no dotenv dependency).
+// Variables already set by the host (e.g. Hostinger hPanel) always take precedence.
+const envFile = path.join(PROJECT_ROOT, '.env');
+if (existsSync(envFile) && typeof process.loadEnvFile === 'function') {
+  const preset = { ...process.env };
+  process.loadEnvFile(envFile);
+  Object.assign(process.env, preset);
+}
+
+const env = process.env;
+const bool = (value, fallback = false) =>
+  value === undefined || value === '' ? fallback : ['1', 'true', 'yes', 'on'].includes(String(value).toLowerCase());
+const list = (value) =>
+  (value || '')
+    .split(',')
+    .map((v) => v.trim())
+    .filter(Boolean);
+
+const nodeEnv = env.NODE_ENV || 'development';
+
+export const config = Object.freeze({
+  nodeEnv,
+  isProduction: nodeEnv === 'production',
+  port: Number(env.PORT) || 5000,
+  siteUrl: (env.SITE_URL || 'http://localhost:5173').replace(/\/+$/, ''),
+  corsOrigins: list(env.CORS_ORIGINS),
+  trustProxy: bool(env.TRUST_PROXY, true),
+  paths: {
+    data: env.DATA_DIR ? path.resolve(env.DATA_DIR) : path.join(SERVER_ROOT, 'data'),
+    storage: env.STORAGE_DIR ? path.resolve(env.STORAGE_DIR) : path.join(SERVER_ROOT, 'storage'),
+    media: env.MEDIA_DIR ? path.resolve(env.MEDIA_DIR) : path.join(SERVER_ROOT, 'media'),
+    clientDist: path.join(PROJECT_ROOT, 'client', 'dist'),
+  },
+  mail: {
+    host: env.SMTP_HOST || '',
+    port: Number(env.SMTP_PORT) || 465,
+    secure: bool(env.SMTP_SECURE, true),
+    user: env.SMTP_USER || '',
+    pass: env.SMTP_PASS || '',
+    from: env.MAIL_FROM || 'Parbon Sanskritik Samity <no-reply@localhost>',
+    to: env.MAIL_TO || '',
+  },
+  admin: {
+    username: env.ADMIN_USERNAME || '',
+    // scrypt hash produced by `npm run admin:hash` — the plain password is never stored.
+    passwordHash: env.ADMIN_PASSWORD_HASH || '',
+    sessionSecret: env.SESSION_SECRET || '',
+    sessionHours: Number(env.SESSION_HOURS) || 8,
+  },
+});

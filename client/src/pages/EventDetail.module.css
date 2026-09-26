@@ -1,0 +1,93 @@
+.facts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-4) var(--space-7);
+  margin: var(--space-3) 0 0;
+}
+
+.facts dt {
+  font-size: var(--text-xs);
+  font-weight: 600;
+  letter-spacing: var(--tracking-caps);
+  text-transform: uppercase;
+  color: var(--color-terracotta);
+}
+
+.facts dd {
+  display: grid;
+  margin: 0.2rem 0 0;
+  font-family: var(--font-display);
+  font-size: var(--text-xl);
+  font-weight: 600;
+}
+
+.bn {
+  font-family: var(--font-bengali-display);
+  font-size: var(--text-base);
+  font-weight: 400;
+  color: var(--color-muted);
+}
+
+.whereLink {
+  color: inherit;
+  text-decoration: underline;
+  text-decoration-color: var(--color-gold-soft);
+  text-underline-offset: 0.2em;
+}
+
+.whereLink:hover {
+  color: var(--color-vermilion);
+}
+
+.whereMeta {
+  font-family: var(--font-body);
+  font-size: var(--text-sm);
+  font-weight: 400;
+  color: var(--color-muted);
+}
+
+.prose {
+  display: grid;
+  gap: var(--space-6);
+}
+
+.para {
+  display: grid;
+  gap: var(--space-3);
+  font-size: var(--text-lg);
+  color: var(--color-charcoal);
+}
+
+.paraBn {
+  padding-left: var(--space-4);
+  border-left: 2px solid var(--color-gold-soft);
+  font-size: var(--text-base);
+  color: var(--color-muted);
+}
+
+.cta {
+  display: grid;
+  justify-items: center;
+  gap: var(--space-2);
+  text-align: center;
+}
+
+.ctaBn {
+  font-family: var(--font-bengali-display);
+  font-size: var(--text-2xl);
+  color: var(--color-vermilion);
+}
+
+.ctaEn {
+  font-family: var(--font-display);
+  font-style: italic;
+  font-size: var(--text-xl);
+}
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: var(--space-3);
+  margin-top: var(--space-4);
+}

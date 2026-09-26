@@ -1,0 +1,661 @@
+/* ───────── Hero ───────── */
+.hero {
+  position: relative;
+  overflow: hidden;
+  isolation: isolate;
+  padding-top: clamp(2.5rem, 1.5rem + 4vw, 5rem);
+  padding-bottom: clamp(3rem, 2rem + 3vw, 4.5rem);
+  background:
+    radial-gradient(ellipse 55% 70% at 78% 40%, rgb(216 191 138 / 0.28), transparent 70%),
+    radial-gradient(ellipse 40% 50% at 5% 95%, rgb(176 88 47 / 0.08), transparent 70%),
+    var(--color-ivory);
+}
+
+.heroAlpana {
+  position: absolute;
+  z-index: -1;
+  width: min(860px, 130vw);
+  right: -8%;
+  top: 46%;
+  translate: 20% -50%;
+  color: var(--color-gold);
+  opacity: 0.22;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .heroAlpana,
+  .pujaAlpana {
+    animation: spin 300s linear infinite;
+  }
+}
+
+@keyframes spin {
+  to {
+    rotate: 360deg;
+  }
+}
+
+.heroGrid {
+  display: grid;
+  gap: clamp(2rem, 1rem + 4vw, 4rem);
+  align-items: center;
+}
+
+@media (min-width: 960px) {
+  .heroGrid {
+    grid-template-columns: 1.15fr 0.85fr;
+  }
+}
+
+.heroText {
+  display: grid;
+  gap: var(--space-5);
+  justify-items: start;
+}
+
+@media (max-width: 959px) {
+  .heroText {
+    order: 2;
+  }
+}
+
+.eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.35rem 1rem;
+  border: 1px solid var(--color-gold-soft);
+  border-radius: var(--radius-pill);
+  background: rgb(255 253 249 / 0.7);
+  font-size: var(--text-sm);
+  color: var(--color-terracotta);
+}
+
+.eyebrow span:last-child {
+  font-size: var(--text-xs);
+  font-weight: 600;
+  letter-spacing: var(--tracking-caps);
+  text-transform: uppercase;
+}
+
+.heroTitle {
+  display: grid;
+  gap: 0.1em;
+  font-weight: 400;
+}
+
+.heroTitleBn {
+  font-family: var(--font-bengali-display);
+  font-size: clamp(2.6rem, 1.6rem + 4.6vw, 5.25rem);
+  line-height: 1.22;
+  color: var(--color-vermilion);
+}
+
+.heroTitleEn {
+  font-family: var(--font-display);
+  font-style: italic;
+  font-weight: 500;
+  font-size: clamp(1.6rem, 1.2rem + 1.8vw, 2.6rem);
+  color: var(--color-charcoal);
+}
+
+.heroIntro {
+  max-width: 54ch;
+  font-size: var(--text-lg);
+  color: var(--color-charcoal);
+}
+
+.heroActions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-3);
+  margin-top: var(--space-2);
+}
+
+.heroArt {
+  display: grid;
+  place-items: center;
+}
+
+.arch {
+  position: relative;
+  width: min(420px, 78vw);
+  padding: 13% 9% 7%;
+}
+
+@media (min-width: 960px) {
+  .arch {
+    width: min(440px, 100%);
+  }
+}
+
+.archOutline {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+  /* Shadow on the frame only — a filter on .arch would isolate the logo's multiply blend. */
+  filter: drop-shadow(0 30px 40px rgb(46 31 24 / 0.16));
+}
+
+.heroLogo {
+  position: relative;
+  display: block;
+  mix-blend-mode: multiply;
+}
+
+.heroLogo img {
+  width: 100%;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .heroLogo {
+    animation: rise 1.1s var(--ease-out) both;
+  }
+  .heroText > * {
+    animation: rise 0.9s var(--ease-out) both;
+  }
+  .heroText > :nth-child(2) {
+    animation-delay: 0.08s;
+  }
+  .heroText > :nth-child(3) {
+    animation-delay: 0.16s;
+  }
+  .heroText > :nth-child(4) {
+    animation-delay: 0.24s;
+  }
+}
+
+@keyframes rise {
+  from {
+    opacity: 0;
+    transform: translateY(14px);
+  }
+}
+
+.countdownWrap {
+  margin-top: clamp(2.5rem, 1.5rem + 3vw, 4rem);
+  /* Reserved for the API-driven countdown card (prevents layout shift). */
+  min-height: 22.5rem;
+}
+
+@media (min-width: 700px) {
+  .countdownWrap {
+    min-height: 11rem;
+  }
+}
+
+.countdownCard {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-5);
+  padding: var(--space-5) clamp(1.25rem, 0.8rem + 2vw, 2.5rem);
+  border: 1px solid var(--color-line);
+  border-radius: var(--radius-lg);
+  background: rgb(255 253 249 / 0.85);
+  box-shadow: var(--shadow-md);
+  backdrop-filter: blur(6px);
+}
+
+.countdownLink {
+  display: grid;
+  gap: 0.1rem;
+  text-align: right;
+  text-decoration: none;
+  font-weight: 600;
+}
+
+.countdownActions {
+  display: grid;
+  justify-items: end;
+  gap: var(--space-3);
+}
+
+.pronamiPill {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  min-height: 44px;
+  padding: 0.45rem 1.1rem;
+  border: 1px solid var(--color-gold);
+  border-radius: var(--radius-pill);
+  background: linear-gradient(180deg, #fffaf0, var(--color-gold-pale));
+  color: var(--color-brown);
+  font-weight: 600;
+  transition:
+    box-shadow var(--duration) ease,
+    transform var(--duration-fast) ease;
+}
+
+.pronamiPill:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 8px 20px -12px rgb(176 138 69 / 0.9);
+}
+
+.pronamiPill svg {
+  color: var(--color-vermilion);
+}
+
+.pronamiPill span[lang='bn'] {
+  font-family: var(--font-bengali-display);
+  font-weight: 400;
+  font-size: 1.1rem;
+  color: var(--color-vermilion);
+}
+
+.pronamiPillEn {
+  font-size: var(--text-sm);
+}
+
+/* "New" notice pill above the hero eyebrow */
+.noticeSlot {
+  min-height: 2.6rem;
+}
+
+.noticePill {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.6rem;
+  max-width: 100%;
+  padding: 0.3rem 0.9rem 0.3rem 0.35rem;
+  border: 1px solid var(--color-line);
+  border-radius: var(--radius-pill);
+  background: var(--color-paper);
+  box-shadow: var(--shadow-sm);
+  color: var(--color-ink);
+  font-size: var(--text-sm);
+  text-decoration: none;
+  transition:
+    border-color var(--duration) ease,
+    box-shadow var(--duration) ease;
+}
+
+.noticePill:hover {
+  color: var(--color-ink);
+  border-color: var(--color-gold-soft);
+  box-shadow: var(--shadow-md);
+}
+
+.noticePill svg {
+  flex: none;
+  color: var(--color-vermilion);
+}
+
+.noticeTag {
+  flex: none;
+  padding: 0.15rem 0.6rem;
+  border-radius: var(--radius-pill);
+  background: var(--color-vermilion);
+  color: #fff;
+  font-size: var(--text-xs);
+  font-weight: 700;
+}
+
+.noticeTag span {
+  font-weight: 400;
+}
+
+.noticeText {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-weight: 600;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .noticeTag {
+    animation: glowTag 2.8s ease-in-out 1s 3;
+  }
+}
+
+@keyframes glowTag {
+  50% {
+    box-shadow: 0 0 0 5px rgb(168 32 26 / 0.18);
+  }
+}
+
+.countdownLink span:first-child {
+  font-family: var(--font-bengali-display);
+  font-weight: 400;
+  font-size: var(--text-lg);
+}
+
+@media (max-width: 700px) {
+  .countdownLink {
+    text-align: left;
+  }
+  .countdownActions {
+    justify-items: start;
+  }
+}
+
+/* ───────── Story ───────── */
+.story {
+  background: var(--color-paper);
+}
+
+.storyGrid {
+  display: grid;
+  gap: var(--space-5);
+}
+
+@media (min-width: 900px) {
+  .storyGrid {
+    grid-template-columns: 0.8fr 1.2fr;
+    gap: var(--space-8);
+    align-items: start;
+  }
+  .storyGrid > header {
+    position: sticky;
+    top: calc(var(--header-h) + 2rem);
+  }
+}
+
+.storyBody {
+  display: grid;
+  gap: var(--space-6);
+  justify-items: start;
+}
+
+.storyPara {
+  display: grid;
+  gap: var(--space-3);
+}
+
+.storyEn {
+  font-size: var(--text-lg);
+  color: var(--color-charcoal);
+}
+
+.storyEn::first-letter {
+  font-family: var(--font-display);
+}
+
+.storyBn {
+  padding-left: var(--space-4);
+  border-left: 2px solid var(--color-gold-soft);
+  color: var(--color-muted);
+}
+
+/* ───────── Durga Puja feature ───────── */
+.puja {
+  position: relative;
+  overflow: hidden;
+  isolation: isolate;
+  padding-block: var(--section-y);
+  background:
+    radial-gradient(ellipse 60% 60% at 50% 0%, rgb(168 32 26 / 0.45), transparent 70%),
+    radial-gradient(ellipse 50% 50% at 50% 110%, rgb(176 138 69 / 0.18), transparent 70%),
+    var(--color-brown);
+  color: #efe4d6;
+}
+
+.pujaAlpana {
+  position: absolute;
+  z-index: -1;
+  width: min(1100px, 160vw);
+  left: 50%;
+  top: 50%;
+  translate: -50% -50%;
+  color: var(--color-gold-soft);
+  opacity: 0.07;
+}
+
+.pujaIntro {
+  max-width: 60ch;
+  margin-inline: auto;
+  text-align: center;
+  font-size: var(--text-lg);
+  color: #efe4d6;
+}
+
+.pujaIntroBn {
+  max-width: 60ch;
+  margin: var(--space-3) auto 0;
+  text-align: center;
+  color: #cdbba6;
+}
+
+.days {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 170px), 1fr));
+  gap: var(--space-4);
+  margin: var(--space-7) 0 0;
+}
+
+.day {
+  display: grid;
+  justify-items: center;
+  gap: 0.15rem;
+  padding: 2.25rem 1rem 1.5rem;
+  text-align: center;
+  border: 1px solid rgb(216 191 138 / 0.35);
+  border-radius: 999px 999px var(--radius-md) var(--radius-md);
+  background: linear-gradient(180deg, rgb(255 255 255 / 0.06), rgb(255 255 255 / 0.01));
+  transition:
+    border-color var(--duration) ease,
+    transform var(--duration) var(--ease-out);
+}
+
+.day:hover {
+  border-color: var(--color-gold-soft);
+  transform: translateY(-4px);
+}
+
+.dayBn {
+  font-family: var(--font-bengali-display);
+  font-size: 1.6rem;
+  line-height: 1.3;
+  color: #f3d9a4;
+}
+
+.dayEn {
+  font-family: var(--font-display);
+  font-style: italic;
+  font-size: 1.1rem;
+  color: #fbf1e2;
+}
+
+.dayDate {
+  margin-top: var(--space-3);
+  padding-top: var(--space-3);
+  border-top: 1px solid rgb(216 191 138 / 0.25);
+  font-size: var(--text-xs);
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: #d5c6b4;
+}
+
+.dayDateBn {
+  font-size: var(--text-sm);
+  color: #b9a58e;
+}
+
+.pujaActions {
+  display: grid;
+  justify-items: center;
+  gap: var(--space-5);
+  margin-top: var(--space-7);
+}
+
+.pujaVenue {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 0.35rem 0.6rem;
+  text-align: center;
+  color: #efe4d6;
+}
+
+.pujaVenue svg {
+  flex: none;
+  color: var(--color-gold-soft);
+}
+
+.pujaVenueBn {
+  font-family: var(--font-bengali-display);
+  font-size: var(--text-lg);
+  color: #f3d9a4;
+}
+
+.pujaVenue a {
+  font-weight: 600;
+  color: var(--color-gold-soft);
+  text-underline-offset: 0.25em;
+}
+
+.pujaVenue a:hover {
+  color: #fff;
+}
+
+/* Pronami panel inside the dark Puja band */
+.pronami {
+  width: min(100%, 860px);
+  margin: var(--space-8) auto 0;
+  padding: clamp(1.5rem, 1rem + 2vw, 2.5rem);
+  border: 1px solid rgb(216 191 138 / 0.4);
+  border-radius: 160px 160px var(--radius-lg) var(--radius-lg) / 60px 60px var(--radius-lg) var(--radius-lg);
+  background: linear-gradient(180deg, rgb(255 255 255 / 0.06), rgb(255 255 255 / 0.015));
+  box-shadow: inset 0 0 0 6px rgb(46 31 24 / 0.6), inset 0 0 0 7px rgb(216 191 138 / 0.18);
+  scroll-margin-top: calc(var(--header-h) + 1rem);
+}
+
+/* Announcements */
+.news {
+  background: var(--color-paper);
+}
+
+.newsGrid {
+  display: grid;
+  gap: var(--space-6);
+  align-items: start;
+}
+
+@media (min-width: 900px) {
+  .newsGrid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+.newsSingle {
+  width: min(100%, 600px);
+  margin-inline: auto;
+}
+
+@media (min-width: 900px) {
+  .newsSingle {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* ───────── Quote ───────── */
+.quote {
+  background: var(--color-ivory-deep);
+  padding-bottom: var(--section-y);
+}
+
+.quoteInner {
+  padding-top: calc(var(--section-y) - 22px);
+  text-align: center;
+}
+
+.quoteBn {
+  font-family: var(--font-bengali-display);
+  font-size: clamp(1.5rem, 1.1rem + 1.8vw, 2.4rem);
+  line-height: 1.6;
+  color: var(--color-vermilion);
+  white-space: pre-line;
+}
+
+.quoteEn {
+  margin-top: var(--space-4);
+  font-family: var(--font-display);
+  font-style: italic;
+  font-size: var(--text-xl);
+  color: var(--color-charcoal);
+}
+
+.quoteSource {
+  margin-top: var(--space-4);
+  font-size: var(--text-sm);
+  letter-spacing: 0.08em;
+  color: var(--color-muted);
+}
+
+/* ───────── Events ───────── */
+.eventGrid {
+  display: grid;
+  gap: var(--space-5);
+}
+
+@media (min-width: 900px) {
+  .eventGrid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  .eventGrid > :first-child {
+    grid-column: 1 / -1;
+  }
+}
+
+.center {
+  display: flex;
+  justify-content: center;
+  margin-top: var(--space-7);
+}
+
+/* ───────── CTA ───────── */
+.cta {
+  background:
+    radial-gradient(ellipse 60% 80% at 50% 100%, rgb(216 191 138 / 0.25), transparent 70%),
+    var(--color-paper);
+}
+
+.ctaInner {
+  display: grid;
+  justify-items: center;
+  gap: var(--space-5);
+  text-align: center;
+}
+
+.ctaDivider {
+  width: 200px;
+  height: auto;
+}
+
+.ctaTitle {
+  display: grid;
+  gap: 0.2em;
+  font-weight: 400;
+}
+
+.ctaTitle span:first-child {
+  font-family: var(--font-bengali-display);
+  font-size: var(--text-3xl);
+  line-height: 1.35;
+  color: var(--color-vermilion);
+}
+
+.ctaTitleEn {
+  font-family: var(--font-display);
+  font-style: italic;
+  font-size: var(--text-xl);
+  color: var(--color-charcoal);
+}
+
+.ctaBody {
+  max-width: 58ch;
+  font-size: var(--text-lg);
+  color: var(--color-muted);
+}
+
+.ctaActions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: var(--space-3);
+}

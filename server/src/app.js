@@ -1,0 +1,120 @@
+import { existsSync } from 'node:fs';
+import path from 'node:path';
+import compression from 'compression';
+import express from 'express';
+import helmet from 'helmet';
+import { config } from './config.js';
+import { cors } from './middleware/cors.js';
+import { errorHandler } from './middleware/errorHandler.js';
+import { apiRouter } from './routes/api.js';
+import { seoRouter } from './routes/seo.js';
+import { announcementService } from './services/announcementService.js';
+import { contentService } from './services/contentService.js';
+import { renderWithMeta, summarise } from './services/htmlMeta.js';
+
+const STATIC_ROUTES = new Set(['/', '/about', '/durga-puja', '/events', '/gallery', '/get-involved', '/contact', '/announcements']);
+
+async function isKnownClientRoute(pathname) {
+  const clean = pathname.replace(/\/+$/, '') || '/';
+  if (STATIC_ROUTES.has(clean)) return true;
+  if (clean === '/admin' || clean.startsWith('/admin/')) return true;
+  const match = clean.match(/^\/events\/([a-z0-9-]+)$/);
+  if (match) return Boolean(await contentService.getEvent(match[1]));
+  const ann = clean.match(/^\/announcements\/([a-z0-9-]+)$/);
+  if (ann) return Boolean(await announcementService.getPublishedBySlug(ann[1]));
+  return false;
+}
+
+export function createApp() {
+  const app = express();
+
+  app.disable('x-powered-by');
+  if (config.trustProxy) app.set('trust proxy', 1);
+
+  app.use(
+    helmet({
+      contentSecurityPolicy: {
+        useDefaults: true,
+        directives: {
+          'default-src': ["'self'"],
+          'script-src': ["'self'"],
+          'style-src': ["'self'", "'unsafe-inline'"],
+          'img-src': ["'self'", 'data:', 'blob:'],
+          'font-src': ["'self'", 'data:'],
+          'connect-src': ["'self'"],
+          'frame-src': ['https://www.google.com', 'https://maps.google.com'],
+          'object-src': ["'none'"],
+          'upgrade-insecure-requests': config.isProduction ? [] : null,
+        },
+      },
+      crossOriginEmbedderPolicy: false,
+    }),
+  );
+  app.use(compression());
+  app.use(cors(config.corsOrigins));
+
+  app.use('/api', apiRouter);
+  app.use(seoRouter);
+
+  // Photos for the gallery / committee, uploadable without rebuilding the frontend.
+  app.use('/media', express.static(config.paths.media, { maxAge: '30d', index: false, fallthrough: false }));
+
+  const dist = config.paths.clientDist;
+  const indexHtml = path.join(dist, 'index.html');
+
+  if (existsSync(indexHtml)) {
+    app.use(
+      '/assets',
+      express.static(path.join(dist, 'assets'), { immutable: true, maxAge: '1y', index: false, fallthrough: false }),
+    );
+    app.use(
+      express.static(dist, {
+        index: false,
+        maxAge: '7d',
+        setHeaders(res, filePath) {
+          if (filePath.endsWith('.html')) res.setHeader('Cache-Control', 'no-cache');
+        },
+      }),
+    );
+
+    // SPA fallback: every non-API GET renders the React app. Unknown routes still
+    // render the app's friendly 404 page, but with a real 404 status for crawlers.
+    app.get('/{*splat}', async (req, res, next) => {
+      try {
+        if (!req.accepts('html')) return next();
+        const known = await isKnownClientRoute(req.path);
+        if (req.path.startsWith('/admin')) res.setHeader('X-Robots-Tag', 'noindex, nofollow');
+        res.status(known ? 200 : 404).setHeader('Cache-Control', 'no-cache');
+
+        // Shared announcement links get a rich preview (poster, title, text) in WhatsApp etc.
+        const ann = req.path.match(/^\/announcements\/([a-z0-9-]+)\/?$/);
+        const item = ann && (await announcementService.getPublishedBySlug(ann[1]));
+        if (item) {
+          const html = await renderWithMeta(indexHtml, {
+            title: item.title.en,
+            description: summarise(item.body?.en || item.body?.bn),
+            image: item.image?.src,
+            url: `/announcements/${item.slug}`,
+          });
+          return res.type('html').send(html);
+        }
+        res.sendFile(indexHtml);
+      } catch (err) {
+        next(err);
+      }
+    });
+  } else {
+    app.get('/', (_req, res) => {
+      res
+        .type('text')
+        .send('Parbon API is running. Build the client (npm run build) or use the Vite dev server (npm run dev).');
+    });
+  }
+
+  app.use((req, res) => {
+    res.status(404).json({ error: { code: 'NOT_FOUND', message: `No route for ${req.method} ${req.path}` } });
+  });
+  app.use(errorHandler);
+
+  return app;
+}

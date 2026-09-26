@@ -1,0 +1,111 @@
+.button {
+  --btn-bg: var(--color-vermilion);
+  --btn-fg: #fff;
+  --btn-border: var(--color-vermilion);
+
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.6rem;
+  min-height: 48px;
+  padding: 0.7rem 1.5rem;
+  border: 1px solid var(--btn-border);
+  border-radius: var(--radius-pill);
+  background: var(--btn-bg);
+  color: var(--btn-fg);
+  font-family: var(--font-body);
+  font-weight: 600;
+  font-size: var(--text-sm);
+  letter-spacing: 0.02em;
+  text-decoration: none;
+  line-height: 1.2;
+  transition:
+    background-color var(--duration-fast) ease,
+    color var(--duration-fast) ease,
+    border-color var(--duration-fast) ease,
+    transform var(--duration-fast) ease,
+    box-shadow var(--duration) ease;
+}
+
+.button:hover {
+  color: var(--btn-fg);
+  transform: translateY(-1px);
+}
+
+.button:active {
+  transform: none;
+}
+
+.button:disabled,
+.button[aria-disabled='true'] {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.primary:hover {
+  --btn-bg: var(--color-vermilion-deep);
+  --btn-border: var(--color-vermilion-deep);
+  box-shadow: 0 10px 24px -12px rgb(127 22 17 / 0.6);
+}
+
+.secondary {
+  --btn-bg: transparent;
+  --btn-fg: var(--color-ink);
+  --btn-border: var(--color-charcoal);
+}
+.secondary:hover {
+  --btn-bg: var(--color-ink);
+  --btn-fg: var(--color-ivory);
+  --btn-border: var(--color-ink);
+}
+
+.gold {
+  --btn-bg: var(--color-gold-soft);
+  --btn-fg: var(--color-brown);
+  --btn-border: var(--color-gold-soft);
+}
+.gold:hover {
+  --btn-bg: #e8d3a3;
+  --btn-border: #e8d3a3;
+}
+
+.ghostLight {
+  --btn-bg: transparent;
+  --btn-fg: #f6ecdf;
+  --btn-border: rgb(246 236 223 / 0.45);
+}
+.ghostLight:hover {
+  --btn-bg: rgb(246 236 223 / 0.1);
+  --btn-border: #f6ecdf;
+}
+
+.link {
+  --btn-bg: transparent;
+  --btn-border: transparent;
+  --btn-fg: var(--color-vermilion);
+  padding-inline: 0;
+  min-height: 40px;
+}
+.link:hover {
+  --btn-fg: var(--color-vermilion-deep);
+  transform: none;
+}
+
+.sm {
+  min-height: 40px;
+  padding: 0.5rem 1.1rem;
+}
+
+.lg {
+  min-height: 54px;
+  padding: 0.85rem 1.9rem;
+  font-size: var(--text-base);
+}
+
+.arrow {
+  transition: transform var(--duration-fast) ease;
+}
+.button:hover .arrow {
+  transform: translateX(3px);
+}

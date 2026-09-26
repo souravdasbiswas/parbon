@@ -1,0 +1,178 @@
+@layer reset, base, utilities;
+
+@layer reset {
+  *,
+  *::before,
+  *::after {
+    box-sizing: border-box;
+  }
+  * {
+    margin: 0;
+  }
+  /* Restore the UA centring that the margin reset above removes from modal dialogs. */
+  dialog:modal {
+    margin: auto;
+  }
+  html {
+    -webkit-text-size-adjust: 100%;
+    text-size-adjust: 100%;
+    scroll-padding-top: calc(var(--header-h) + 1rem);
+  }
+  img,
+  svg,
+  video,
+  picture {
+    display: block;
+    max-width: 100%;
+  }
+  img {
+    height: auto;
+  }
+  input,
+  button,
+  textarea,
+  select {
+    font: inherit;
+    color: inherit;
+  }
+  button {
+    cursor: pointer;
+  }
+  p,
+  h1,
+  h2,
+  h3,
+  h4,
+  li {
+    overflow-wrap: break-word;
+  }
+  ul[role='list'],
+  ol[role='list'] {
+    list-style: none;
+    padding: 0;
+  }
+}
+
+@layer base {
+  body {
+    min-height: 100dvh;
+    background: var(--color-bg);
+    color: var(--color-text);
+    font-family: var(--font-body);
+    font-size: var(--text-base);
+    line-height: var(--leading-body);
+    font-optical-sizing: auto;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  h1,
+  h2,
+  h3,
+  h4 {
+    font-family: var(--font-display);
+    font-weight: 600;
+    line-height: var(--leading-tight);
+    color: var(--color-ink);
+    text-wrap: balance;
+  }
+
+  p {
+    text-wrap: pretty;
+  }
+
+  /* Bengali script: more generous leading for matras & conjuncts. */
+  :lang(bn) {
+    line-height: var(--leading-bn);
+  }
+  h1:lang(bn),
+  h2:lang(bn),
+  h3:lang(bn),
+  h4:lang(bn),
+  .bn-display {
+    font-family: var(--font-bengali-display);
+    font-weight: 400;
+    line-height: 1.4;
+  }
+
+  a {
+    color: var(--color-vermilion);
+    text-decoration-thickness: 1px;
+    text-underline-offset: 0.2em;
+    transition: color var(--duration-fast) ease;
+  }
+  a:hover {
+    color: var(--color-vermilion-deep);
+  }
+
+  :focus-visible {
+    outline: 3px solid var(--color-focus);
+    outline-offset: 3px;
+    border-radius: 4px;
+  }
+
+  ::selection {
+    background: var(--color-vermilion);
+    color: #fff;
+  }
+}
+
+@layer utilities {
+  .container {
+    width: min(100% - 2 * var(--gutter), var(--container));
+    margin-inline: auto;
+  }
+  .container-narrow {
+    width: min(100% - 2 * var(--gutter), var(--container-narrow));
+    margin-inline: auto;
+  }
+  .section {
+    padding-block: var(--section-y);
+  }
+  .section--tint {
+    background: var(--color-ivory-deep);
+  }
+  .section--paper {
+    background: var(--color-paper);
+  }
+  .visually-hidden {
+    position: absolute !important;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+    white-space: nowrap;
+    border: 0;
+  }
+  .lead {
+    font-size: var(--text-lg);
+    color: var(--color-charcoal);
+  }
+  .muted {
+    color: var(--color-text-soft);
+  }
+  .prose > * + * {
+    margin-top: var(--space-4);
+  }
+
+  /* Scroll-reveal is progressive enhancement: content is only hidden once JS has marked <html class="js">. */
+  .js .reveal {
+    opacity: 0;
+    transform: translateY(18px);
+    transition:
+      opacity var(--duration-slow) var(--ease-out),
+      transform var(--duration-slow) var(--ease-out);
+  }
+  .js .reveal.is-visible {
+    opacity: 1;
+    transform: none;
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .js .reveal {
+      opacity: 1;
+      transform: none;
+    }
+  }
+}

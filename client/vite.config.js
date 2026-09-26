@@ -1,0 +1,20 @@
+import { defineConfig } from 'vite';
+import react from '@vitejs/plugin-react';
+
+export default defineConfig({
+  plugins: [react()],
+  server: {
+    port: 5173,
+    proxy: {
+      '/api': 'http://localhost:5000',
+      '/media': 'http://localhost:5000',
+      '/sitemap.xml': 'http://localhost:5000',
+      '/robots.txt': 'http://localhost:5000',
+    },
+  },
+  build: {
+    target: 'es2022',
+    cssCodeSplit: true,
+    sourcemap: false,
+  },
+});

@@ -1,0 +1,107 @@
+{
+  "sponsorship": {
+    "intro": {
+      "en": "Partner with Parbon to bring Durga Puja and Bengali culture to our community. Every partnership is acknowledged with gratitude.",
+      "bn": "পার্বণের পাশে থেকে আমাদের পুজো আর সংস্কৃতিকে আরও সুন্দর করে তুলুন। প্রতিটি সহযোগিতা আমরা কৃতজ্ঞচিত্তে স্মরণ করি।"
+    },
+    "tiers": [
+      {
+        "id": "well-wisher",
+        "name": { "en": "Well-wisher", "bn": "শুভানুধ্যায়ী" },
+        "benefits": [
+          { "en": "Name in the Puja souvenir (smaranika)", "bn": "পুজোর স্মরণিকায় নাম" },
+          { "en": "Thank-you mention on our social channels", "bn": "সোশ্যাল মিডিয়ায় কৃতজ্ঞতা" }
+        ]
+      },
+      {
+        "id": "associate",
+        "name": { "en": "Associate Partner", "bn": "সহযোগী" },
+        "featured": true,
+        "benefits": [
+          { "en": "Everything in Well-wisher", "bn": "শুভানুধ্যায়ীর সব সুবিধা" },
+          { "en": "Logo on pandal banners", "bn": "মণ্ডপের ব্যানারে লোগো" },
+          { "en": "Half-page advertisement in the souvenir", "bn": "স্মরণিকায় অর্ধপৃষ্ঠা বিজ্ঞাপন" }
+        ]
+      },
+      {
+        "id": "patron",
+        "name": { "en": "Patron", "bn": "পৃষ্ঠপোষক" },
+        "benefits": [
+          { "en": "Everything in Associate Partner", "bn": "সহযোগীর সব সুবিধা" },
+          { "en": "Prominent branding at the pandal & cultural stage", "bn": "মণ্ডপ ও মঞ্চে বিশেষ উপস্থিতি" },
+          { "en": "Full-page advertisement in the souvenir", "bn": "স্মরণিকায় পূর্ণপৃষ্ঠা বিজ্ঞাপন" },
+          { "en": "Felicitation during the cultural evening", "bn": "সাংস্কৃতিক সন্ধ্যায় সংবর্ধনা" }
+        ]
+      }
+    ],
+    "note": {
+      "en": "Contribution amounts are shared on request — write to us and our committee will get in touch.",
+      "bn": "অনুদানের পরিমাণ জানতে আমাদের লিখুন — কমিটির পক্ষ থেকে যোগাযোগ করা হবে।"
+    }
+  },
+  "donation": {
+    "intro": {
+      "en": "No contribution is too small. Donations go directly towards the Puja, bhog and cultural programmes.",
+      "bn": "ছোট-বড় সব দানই মূল্যবান। আপনার অনুদান সরাসরি পুজো, ভোগ আর সাংস্কৃতিক অনুষ্ঠানে ব্যবহৃত হয়।"
+    },
+    "methods": [
+      {
+        "id": "upi",
+        "type": "upi",
+        "label": { "en": "UPI", "bn": "ইউপিআই" },
+        "upiId": "8577855186@slc",
+        "payeeName": "Parbon Sanskritik Samity",
+        "upiLink": "upi://pay?pa=8577855186@slc&pn=Parbon%20Sanskritik%20Samity&cu=INR",
+        "qr": "/media/donations/upi-qr.svg",
+        "note": {
+          "en": "Scan with any UPI app — GPay, PhonePe, Paytm or your bank's app.",
+          "bn": "যেকোনো ইউপিআই অ্যাপ দিয়ে স্ক্যান করুন — জিপে, ফোনপে, পেটিএম বা আপনার ব্যাঙ্কের অ্যাপ।"
+        }
+      }
+    ],
+    "pronami": {
+      "title": { "en": "Offer your pronami", "bn": "মায়ের পুজোয় আপনার প্রণামী" },
+      "text": {
+        "en": "Our first Pujo is being made possible by our community, friends and well-wishers. Every offering — big or small — goes towards the Puja, bhog and celebrations.",
+        "bn": "আমাদের প্রথম পুজো সম্ভব হচ্ছে সবার ভালোবাসায়। ছোট-বড় প্রতিটি প্রণামী যায় পুজো, ভোগ আর উৎসবের আয়োজনে।"
+      },
+      "thanks": { "en": "Thank you for being part of Ma's homecoming.", "bn": "মায়ের আগমনীতে পাশে থাকার জন্য ধন্যবাদ।" }
+    },
+    "fallback": {
+      "en": "Donation details will be shared personally by our treasurer. Please send us a note.",
+      "bn": "অনুদানের বিস্তারিত আমাদের কোষাধ্যক্ষ ব্যক্তিগতভাবে জানাবেন। অনুগ্রহ করে আমাদের লিখুন।"
+    }
+  },
+  "volunteerRoles": [
+    {
+      "id": "decor",
+      "name": { "en": "Pandal & Décor", "bn": "মণ্ডপসজ্জা" },
+      "text": { "en": "Help dress the pandal — lights, flowers, fabric and finishing touches.", "bn": "আলো, ফুল, কাপড়ে মণ্ডপ সাজানো।" }
+    },
+    {
+      "id": "bhog",
+      "name": { "en": "Bhog & Kitchen", "bn": "ভোগঘর" },
+      "text": { "en": "Cook, serve and share prasad with everyone who visits.", "bn": "ভোগ রান্না, পরিবেশন আর প্রসাদ বিতরণ।" }
+    },
+    {
+      "id": "alpana",
+      "name": { "en": "Alpana & Art", "bn": "আলপনা ও শিল্প" },
+      "text": { "en": "Draw alpana, design posters and craft the look of the festival.", "bn": "আলপনা আঁকা, পোস্টার আর উৎসবের নকশা।" }
+    },
+    {
+      "id": "culture",
+      "name": { "en": "Cultural Programme", "bn": "সাংস্কৃতিক অনুষ্ঠান" },
+      "text": { "en": "Sing, dance, recite, act — or help run the stage.", "bn": "গান, নাচ, আবৃত্তি, নাটক — বা মঞ্চ পরিচালনা।" }
+    },
+    {
+      "id": "reception",
+      "name": { "en": "Reception & Guest Care", "bn": "অতিথি আপ্যায়ন" },
+      "text": { "en": "Welcome visitors, guide families and help the elderly.", "bn": "অতিথিদের স্বাগত জানানো, প্রবীণদের সাহায্য।" }
+    },
+    {
+      "id": "media",
+      "name": { "en": "Photography & Social Media", "bn": "ছবি ও সোশ্যাল মিডিয়া" },
+      "text": { "en": "Capture memories and share our story with the world.", "bn": "স্মৃতি ধরে রাখা, আমাদের গল্প সবার কাছে পৌঁছে দেওয়া।" }
+    }
+  ]
+}

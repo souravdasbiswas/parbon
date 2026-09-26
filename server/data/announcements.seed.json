@@ -1,0 +1,36 @@
+{
+  "announcements": [
+    {
+      "id": "8a2f4c3e-6d1b-4b7a-9e2f-2026durgapuja",
+      "slug": "durga-puja-2026-invitation",
+      "status": "published",
+      "pinned": true,
+      "showDonation": true,
+      "publishedAt": "2026-09-26T21:17:00.000Z",
+      "createdAt": "2026-09-26T21:17:00.000Z",
+      "updatedAt": "2026-09-26T21:17:00.000Z",
+      "author": "admin",
+      "title": {
+        "en": "Durga Puja 2026 — you're invited",
+        "bn": "দুর্গোৎসব ২০২৬ — সাদর আমন্ত্রণ"
+      },
+      "body": {
+        "en": "Parbon Sanskritik Samity invites you all to come together and be a part of Durga Puja 2026. ❤️\n\nWe are taking this Pujo forward with the support of our community, friends and well-wishers, and we request your support as we come together to make this celebration truly special.\n\nFor those who would like to contribute, the details are shared in the poster.\n\nDurga Maa ki Joi 🙏",
+        "bn": ""
+      },
+      "image": {
+        "src": "/media/announcements/durga-puja-2026-invitation.jpg",
+        "alt": "Parbon Sanskritik Samity Durga Puja 2026 invitation poster: Ma Durga's face half-veiled by a white sari, with the Parbon logo, the invitation text and a UPI QR code for donations.",
+        "width": 577,
+        "height": 817
+      },
+      "location": {
+        "name": "Nirusa Banquets & Caterers — on the terrace",
+        "address": "Beside Sancta Maria International School, Dubey Colony Road, Serilingampally, Hyderabad 500019",
+        "mapUrl": "https://maps.app.goo.gl/inPAK6K37qnHPnZA7"
+      },
+      "contact": null,
+      "link": { "label": "Puja timings", "url": "/durga-puja" }
+    }
+  ]
+}

@@ -1,0 +1,14 @@
+{
+  "name": "Parbon Sanskritik Samity",
+  "short_name": "Parbon",
+  "description": "A Bengali cultural community — celebrating Durga Puja and Bengali culture together.",
+  "lang": "en",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#fbf6ee",
+  "theme_color": "#a8201a",
+  "icons": [
+    { "src": "/brand/icon-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "/brand/icon-512.png", "sizes": "512x512", "type": "image/png" }
+  ]
+}

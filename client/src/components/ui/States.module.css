@@ -1,0 +1,78 @@
+.loading {
+  display: grid;
+  gap: 0.75rem;
+  padding: var(--space-5);
+}
+
+.skeleton {
+  display: block;
+  height: 1rem;
+  border-radius: var(--radius-sm);
+  background: linear-gradient(90deg, var(--color-ivory-deep), var(--color-sand), var(--color-ivory-deep));
+  background-size: 200% 100%;
+  animation: shimmer 1.4s ease-in-out infinite;
+}
+
+@keyframes shimmer {
+  to {
+    background-position: -200% 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .skeleton {
+    animation: none;
+  }
+}
+
+.error {
+  display: grid;
+  justify-items: center;
+  gap: var(--space-3);
+  padding: var(--space-6);
+  border: 1px dashed var(--color-terracotta);
+  border-radius: var(--radius-lg);
+  background: var(--color-paper);
+  text-align: center;
+}
+
+.bn {
+  font-family: var(--font-bengali-display);
+  font-size: var(--text-lg);
+  color: var(--color-vermilion);
+}
+
+.empty {
+  display: grid;
+  justify-items: center;
+  gap: var(--space-3);
+  padding: clamp(2rem, 1.5rem + 3vw, 4rem) var(--space-5);
+  border: 1px solid var(--color-line);
+  border-radius: var(--radius-lg);
+  background: var(--color-paper);
+  text-align: center;
+}
+
+.emptyArt {
+  width: 120px;
+  color: var(--color-gold);
+  opacity: 0.7;
+}
+
+.emptyTitle {
+  display: grid;
+  gap: 0.2rem;
+  font-family: var(--font-display);
+  font-size: var(--text-xl);
+  font-style: italic;
+}
+
+.emptyTitle .bn {
+  font-style: normal;
+  font-size: var(--text-2xl);
+}
+
+.emptyText {
+  max-width: 52ch;
+  color: var(--color-muted);
+}

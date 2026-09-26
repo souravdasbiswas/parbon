@@ -1,0 +1,27 @@
+{
+  "name": { "en": "Parbon Sanskritik Samity", "bn": "পার্বণ সাংস্কৃতিক সমিতি" },
+  "shortName": { "en": "Parbon", "bn": "পার্বণ" },
+  "tagline": { "en": "Culture brings us together.", "bn": "সংস্কৃতির টানে, একসাথে।" },
+  "description": {
+    "en": "Parbon Sanskritik Samity is a Bengali cultural community that brings people together to celebrate our music, literature, art, food, festivals and traditions — beginning with Durga Puja.",
+    "bn": "পার্বণ সাংস্কৃতিক সমিতি — বাংলার গান, সাহিত্য, শিল্প, রান্না, উৎসব আর ঐতিহ্যকে ভালোবেসে একসাথে পথচলা। আমাদের যাত্রা শুরু মায়ের আরাধনা দিয়ে।"
+  },
+  "contact": {
+    "email": "",
+    "phone": "",
+    "whatsapp": "",
+    "address": { "en": "", "bn": "" },
+    "mapEmbedUrl": "",
+    "responseTime": { "en": "We usually reply within two working days.", "bn": "সাধারণত দুই কর্মদিবসের মধ্যে উত্তর দিই।" }
+  },
+  "social": [
+    { "platform": "facebook", "label": "Facebook", "url": "" },
+    { "platform": "instagram", "label": "Instagram", "url": "" },
+    { "platform": "youtube", "label": "YouTube", "url": "" }
+  ],
+  "featuredEvent": {
+    "slug": "durga-puja-2026",
+    "countdownTo": "2026-10-16T07:00:00+05:30",
+    "label": { "en": "Maa arrives in", "bn": "মা আসছেন" }
+  }
+}

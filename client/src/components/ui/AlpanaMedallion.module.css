@@ -1,0 +1,71 @@
+.medallion {
+  position: relative;
+  isolation: isolate;
+  width: min(460px, 100%);
+  aspect-ratio: 1;
+}
+
+@media (max-width: 959px) {
+  .medallion {
+    width: min(340px, 82vw);
+  }
+}
+
+/* Warm glow, like a pradip. */
+.halo {
+  position: absolute;
+  inset: -8%;
+  z-index: -2;
+  border-radius: 50%;
+  background: radial-gradient(
+    circle closest-side,
+    rgb(239 226 196 / 0.9) 0%,
+    rgb(216 191 138 / 0.4) 50%,
+    rgb(196 43 31 / 0.08) 76%,
+    transparent 100%
+  );
+}
+
+.alpana {
+  position: absolute;
+  z-index: -1;
+  top: -24%;
+  left: -24%;
+  width: 148%;
+  max-width: none;
+  height: 148%;
+  color: var(--color-gold);
+  opacity: 0.5;
+}
+
+.ringDots {
+  position: absolute;
+  inset: 1%;
+  border-radius: 50%;
+  border: 3px dotted rgb(168 32 26 / 0.45);
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .alpana {
+    animation: spin 90s linear infinite;
+  }
+  .ringDots {
+    animation: spin 140s linear infinite reverse;
+  }
+  .halo {
+    animation: breathe 7s ease-in-out infinite;
+  }
+}
+
+@keyframes spin {
+  to {
+    rotate: 360deg;
+  }
+}
+
+@keyframes breathe {
+  50% {
+    opacity: 0.75;
+    scale: 1.04;
+  }
+}

@@ -1,0 +1,35 @@
+.skip {
+  position: absolute;
+  left: var(--space-4);
+  top: -100px;
+  z-index: 100;
+  padding: 0.75rem 1.25rem;
+  border-radius: var(--radius-pill);
+  background: var(--color-ink);
+  color: #fff;
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.skip:focus {
+  top: var(--space-3);
+  color: #fff;
+}
+
+.main {
+  display: block;
+  min-height: 60vh;
+}
+
+.main:focus {
+  outline: none;
+}
+
+.main h1:focus {
+  outline: none;
+}
+
+/* Keeps the footer below the fold while a lazy page loads, avoiding layout shift. */
+.fallback {
+  min-height: 100vh;
+}

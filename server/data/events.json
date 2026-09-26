@@ -1,0 +1,167 @@
+{
+  "events": [
+    {
+      "slug": "durga-puja-2026",
+      "status": "upcoming",
+      "featured": true,
+      "category": { "en": "Festival", "bn": "উৎসব" },
+      "title": { "en": "Durga Puja 2026", "bn": "শারদীয়া দুর্গোৎসব ২০২৬" },
+      "tagline": { "en": "Our first Sharadiya Durgotsav", "bn": "আমাদের প্রথম শারদোৎসব" },
+      "startDate": "2026-10-16",
+      "endDate": "2026-10-21",
+      "venue": {
+        "name": { "en": "Nirusa Banquets & Caterers", "bn": "নিরুসা ব্যাঙ্কোয়েটস অ্যান্ড ক্যাটারার্স" },
+        "spot": { "en": "On the terrace", "bn": "ছাদের মণ্ডপে" },
+        "area": { "en": "Serilingampally, Hyderabad", "bn": "সেরিলিঙ্গামপল্লি, হায়দরাবাদ" },
+        "address": {
+          "en": "Beside Sancta Maria International School, Dubey Colony Road, Serilingampally, Hyderabad, Telangana 500019",
+          "bn": "সাঙ্কটা মারিয়া ইন্টারন্যাশনাল স্কুলের পাশে, দুবে কলোনি রোড, সেরিলিঙ্গামপল্লি, হায়দরাবাদ, তেলেঙ্গানা ৫০০০১৯"
+        },
+        "mapUrl": "https://maps.app.goo.gl/inPAK6K37qnHPnZA7",
+        "mapEmbedUrl": "https://maps.google.com/maps?q=17.4829241,78.3202445&z=17&output=embed",
+        "geo": { "lat": 17.4829241, "lng": 78.3202445 }
+      },
+      "summary": {
+        "en": "Five days of devotion, dhak, bhog and togetherness — Parbon's first Durga Puja, from Maha Shashthi to Bijoya Dashami.",
+        "bn": "ষষ্ঠী থেকে বিজয়া দশমী — ঢাকের বোল, ধুনুচির ধোঁয়া, ভোগের স্বাদ আর প্রাণের মিলন। পার্বণের প্রথম দুর্গাপুজো।"
+      },
+      "description": [
+        {
+          "en": "Every autumn, as the kash phool sways and the sky turns a clear Sharat blue, Bengal waits for its daughter to come home. This year, Parbon Sanskritik Samity welcomes Ma Durga for the very first time.",
+          "bn": "শরতের নীল আকাশ, কাশফুলের দোলা — প্রতি বছর বাংলা অপেক্ষা করে ঘরের মেয়ের ঘরে ফেরার। এ বছর পার্বণ সাংস্কৃতিক সমিতি প্রথমবার মাকে বরণ করে নিচ্ছে।"
+        },
+        {
+          "en": "Our Puja follows the traditional rituals — from Bodhon on Shashthi to Sandhi Puja on Ashtami and Sindoor Khela on Dashami — alongside community bhog, cultural evenings, and plenty of adda.",
+          "bn": "ষষ্ঠীর বোধন থেকে অষ্টমীর সন্ধিপুজো, দশমীর সিঁদুর খেলা — প্রথা মেনে পুজো, সঙ্গে ভোগ, সাংস্কৃতিক সন্ধ্যা আর প্রাণখোলা আড্ডা।"
+        },
+        {
+          "en": "Everyone is welcome — families, friends, neighbours and anyone who loves Bengali culture.",
+          "bn": "সবার জন্য দরজা খোলা — পরিবার, বন্ধু, প্রতিবেশী, আর যাঁরা বাংলার সংস্কৃতিকে ভালোবাসেন।"
+        }
+      ],
+      "highlights": [
+        {
+          "icon": "dhak",
+          "title": { "en": "Dhak & Dhunuchi", "bn": "ঢাক ও ধুনুচি" },
+          "text": { "en": "The heartbeat of Puja — the dhaki's rhythm and the evening dhunuchi naach.", "bn": "ঢাকির বোল আর সন্ধ্যার ধুনুচি নাচ — পুজোর প্রাণ।" }
+        },
+        {
+          "icon": "lotus",
+          "title": { "en": "Pushpanjali", "bn": "পুষ্পাঞ্জলি" },
+          "text": { "en": "Offer anjali to Ma together on Saptami, Ashtami and Navami mornings.", "bn": "সপ্তমী, অষ্টমী, নবমীর সকালে একসাথে মায়ের পায়ে অঞ্জলি।" }
+        },
+        {
+          "icon": "bhog",
+          "title": { "en": "Bhog", "bn": "ভোগ" },
+          "text": { "en": "Khichuri, labra, payesh — prasad shared by all, cooked with devotion.", "bn": "খিচুড়ি, লাবড়া, পায়েস — ভক্তিভরে রান্না, সবাই মিলে প্রসাদ।" }
+        },
+        {
+          "icon": "shankha",
+          "title": { "en": "Sandhi Puja", "bn": "সন্ধিপুজো" },
+          "text": { "en": "108 lamps and 108 lotuses at the sacred meeting of Ashtami and Navami.", "bn": "অষ্টমী-নবমীর সন্ধিক্ষণে ১০৮ প্রদীপ আর ১০৮ পদ্মে মায়ের আরাধনা।" }
+        },
+        {
+          "icon": "music",
+          "title": { "en": "Cultural Evenings", "bn": "সাংস্কৃতিক সন্ধ্যা" },
+          "text": { "en": "Rabindrasangeet, dance, recitation and performances by our own members.", "bn": "রবীন্দ্রসঙ্গীত, নাচ, আবৃত্তি — আমাদের সদস্যদের পরিবেশনায়।" }
+        },
+        {
+          "icon": "sindoor",
+          "title": { "en": "Sindoor Khela", "bn": "সিঁদুর খেলা" },
+          "text": { "en": "A bittersweet farewell on Dashami — Ma is bid goodbye with a promise: ‘Asche bochor abar hobe.’", "bn": "দশমীর মন-কেমন বিদায় — ‘আসছে বছর আবার হবে।’" }
+        }
+      ],
+      "schedule": [
+        {
+          "date": "2026-10-10",
+          "day": { "en": "Mahalaya", "bn": "মহালয়া" },
+          "note": { "en": "Devi Paksha begins — the countdown to Puja.", "bn": "দেবীপক্ষের সূচনা — পুজোর দিন গোনা শুরু।" },
+          "items": []
+        },
+        {
+          "date": "2026-10-16",
+          "main": true,
+          "day": { "en": "Maha Shashthi", "bn": "মহাষষ্ঠী" },
+          "items": [
+            { "time": "7:00 AM", "title": { "en": "Bodhon", "bn": "বোধন" } },
+            { "time": "8:00 AM", "title": { "en": "Shashthi Puja", "bn": "ষষ্ঠী পুজো" } },
+            { "time": "7:00 PM", "title": { "en": "Amantran & Adhibas", "bn": "আমন্ত্রণ ও অধিবাস" } }
+          ]
+        },
+        {
+          "date": "2026-10-17",
+          "main": true,
+          "day": { "en": "Maha Saptami", "bn": "মহাসপ্তমী" },
+          "items": [
+            { "time": "6:30 AM", "title": { "en": "Nabapatrika Snan", "bn": "নবপত্রিকা স্নান" } },
+            { "time": "9:30 AM", "title": { "en": "Maha Saptami Puja", "bn": "মহাসপ্তমী পুজো" } },
+            { "time": "11:00 AM", "title": { "en": "Saptami Anjali", "bn": "সপ্তমীর অঞ্জলি" } },
+            { "time": "6:30 PM", "title": { "en": "Sandhya Arati", "bn": "সন্ধ্যারতি" } }
+          ]
+        },
+        {
+          "date": "2026-10-18",
+          "day": { "en": "Ashtami Bihita", "bn": "অষ্টমী বিহিত" },
+          "items": [
+            { "time": "5:00 AM", "title": { "en": "Puja begins", "bn": "পুজো আরম্ভ" } },
+            { "time": "10:00 AM", "title": { "en": "Anjali", "bn": "অঞ্জলি" } },
+            { "time": "6:30 PM", "title": { "en": "Sandhya Arati", "bn": "সন্ধ্যারতি" } }
+          ]
+        },
+        {
+          "date": "2026-10-19",
+          "main": true,
+          "day": { "en": "Maha Ashtami & Sandhi Puja", "bn": "মহাষ্টমী ও সন্ধিপুজো" },
+          "items": [
+            { "time": "5:00 AM", "title": { "en": "Puja begins", "bn": "পুজো আরম্ভ" } },
+            { "time": "7:26 – 8:14 AM", "title": { "en": "Sandhi Puja", "bn": "সন্ধিপুজো" } },
+            { "time": "7:50 AM", "title": { "en": "Sandhi Puja Anjali", "bn": "সন্ধিপুজোর অঞ্জলি" } },
+            { "time": "10:00 AM", "title": { "en": "Ashtami Anjali", "bn": "অষ্টমীর অঞ্জলি" } },
+            { "time": "6:30 PM", "title": { "en": "Sandhya Arati", "bn": "সন্ধ্যারতি" } }
+          ]
+        },
+        {
+          "date": "2026-10-20",
+          "main": true,
+          "day": { "en": "Maha Navami", "bn": "মহানবমী" },
+          "items": [
+            { "time": "6:00 AM", "title": { "en": "Puja begins", "bn": "পুজো আরম্ভ" } },
+            { "time": "8:00 AM", "title": { "en": "Anjali", "bn": "অঞ্জলি" } },
+            { "time": "8:45 AM", "title": { "en": "Boli", "bn": "বলি" } },
+            { "time": "9:00 AM", "title": { "en": "Homa", "bn": "হোম" } },
+            { "time": "6:30 PM", "title": { "en": "Sandhya Arati", "bn": "সন্ধ্যারতি" } }
+          ]
+        },
+        {
+          "date": "2026-10-21",
+          "main": true,
+          "day": { "en": "Bijoya Dashami", "bn": "বিজয়া দশমী" },
+          "items": [
+            { "time": "7:00 AM", "title": { "en": "Puja begins", "bn": "পুজো আরম্ভ" } },
+            { "time": "9:30 AM", "title": { "en": "Aparajita Puja", "bn": "অপরাজিতা পুজো" } },
+            { "time": "10:30 AM", "title": { "en": "Boron", "bn": "বরণ" } }
+          ]
+        }
+      ],
+      "scheduleNote": {
+        "en": "Timings follow the panjika. Any last-minute changes will be announced here.",
+        "bn": "সময় পঞ্জিকা অনুযায়ী। কোনো পরিবর্তন হলে এখানেই জানানো হবে।"
+      }
+    },
+    {
+      "slug": "bijoya-sammilani-2026",
+      "status": "planned",
+      "category": { "en": "Gathering", "bn": "মিলনমেলা" },
+      "title": { "en": "Bijoya Sammilani", "bn": "বিজয়া সম্মিলনী" },
+      "tagline": { "en": "Sweets, greetings and adda after Puja", "bn": "মিষ্টিমুখ, প্রণাম আর আড্ডা" },
+      "startDate": null,
+      "endDate": null,
+      "dateLabel": { "en": "After Durga Puja · Date to be announced", "bn": "পুজোর পরে · তারিখ শীঘ্রই" },
+      "venue": null,
+      "summary": {
+        "en": "The warm Bengali tradition of meeting after Dashami — touching elders' feet, embracing friends and sharing mishti.",
+        "bn": "দশমীর পরে গুরুজনদের প্রণাম, বন্ধুদের কোলাকুলি আর মিষ্টিমুখ — বাঙালির চিরকালের বিজয়া।"
+      }
+    }
+  ]
+}

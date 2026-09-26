@@ -1,0 +1,178 @@
+.panel {
+  display: grid;
+  gap: var(--space-5);
+}
+
+.placeholder {
+  min-height: 220px;
+}
+
+.intro {
+  display: grid;
+  gap: var(--space-2);
+}
+
+.title {
+  display: grid;
+  gap: 0.1rem;
+  font-weight: 400;
+}
+
+.titleBn {
+  font-family: var(--font-bengali-display);
+  font-size: var(--text-xl);
+  line-height: 1.35;
+  color: var(--color-vermilion);
+}
+
+.titleEn {
+  font-family: var(--font-display);
+  font-style: italic;
+  font-size: 1.25rem;
+  color: var(--color-charcoal);
+}
+
+.text {
+  color: var(--color-muted);
+}
+
+.pay {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-5);
+}
+
+.qr {
+  flex: none;
+  display: grid;
+  justify-items: center;
+  gap: 0.35rem;
+  margin: 0;
+  padding: 0.6rem;
+  border-radius: var(--radius-md);
+  background: #fffdf9;
+  border: 1px solid var(--color-gold-soft);
+  box-shadow: 0 0 0 5px rgb(216 191 138 / 0.18);
+}
+
+.qr img {
+  width: 150px;
+  height: 150px;
+}
+
+.qr figcaption {
+  font-size: 0.7rem;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--color-muted);
+}
+
+.details {
+  display: grid;
+  gap: 0.55rem;
+  min-width: 0;
+  flex: 1 1 220px;
+}
+
+.label {
+  font-size: var(--text-xs);
+  font-weight: 600;
+  letter-spacing: var(--tracking-caps);
+  text-transform: uppercase;
+  color: var(--color-terracotta);
+}
+
+.label span {
+  letter-spacing: 0;
+  text-transform: none;
+}
+
+.upiRow {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.upiId {
+  padding: 0.4rem 0.7rem;
+  border-radius: var(--radius-sm);
+  background: var(--color-ivory-deep);
+  border: 1px dashed var(--color-gold);
+  font-family: ui-monospace, 'Cascadia Mono', Consolas, monospace;
+  font-size: 1.02rem;
+  font-weight: 600;
+  color: var(--color-ink);
+  overflow-wrap: anywhere;
+}
+
+.copy {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  min-height: 40px;
+  padding: 0.4rem 0.85rem;
+  border: 1px solid var(--color-line);
+  border-radius: var(--radius-pill);
+  background: var(--color-paper);
+  font-size: var(--text-sm);
+  font-weight: 600;
+  color: var(--color-ink);
+}
+
+.copy:hover {
+  border-color: var(--color-gold);
+}
+
+.appLink {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  justify-self: start;
+  font-weight: 600;
+  text-underline-offset: 0.25em;
+}
+
+.note {
+  font-size: var(--text-sm);
+  color: var(--color-muted);
+}
+
+.thanks {
+  font-family: var(--font-bengali-display);
+  color: var(--color-vermilion);
+}
+
+/* On the dark Durga Puja band */
+.dark .titleBn,
+.dark .thanks {
+  color: #f3d9a4;
+}
+.dark .titleEn {
+  color: #fbf1e2;
+}
+.dark .text,
+.dark .note {
+  color: #d5c6b4;
+}
+.dark .label {
+  color: var(--color-gold-soft);
+}
+.dark .upiId {
+  background: rgb(255 255 255 / 0.06);
+  border-color: rgb(216 191 138 / 0.6);
+  color: #fbf1e2;
+}
+.dark .copy {
+  background: transparent;
+  border-color: rgb(216 191 138 / 0.5);
+  color: #fbf1e2;
+}
+.dark .appLink {
+  color: var(--color-gold-soft);
+}
+.dark .appLink:hover {
+  color: #fff;
+}

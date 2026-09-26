@@ -1,0 +1,329 @@
+.card {
+  display: grid;
+  overflow: hidden;
+  border: 1px solid var(--color-line);
+  border-radius: var(--radius-lg);
+  background: var(--color-paper);
+  box-shadow: var(--shadow-md);
+}
+
+/* ── Chat header (the "group" bar) ── */
+.chatHeader {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.7rem 1rem;
+  background: linear-gradient(135deg, var(--color-vermilion-deep), var(--color-vermilion));
+  color: #fff;
+}
+
+.avatar {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  overflow: hidden;
+  border-radius: 50%;
+  background: #fff;
+  box-shadow: 0 0 0 2px rgb(243 217 164 / 0.7);
+}
+
+.avatar img {
+  width: 34px;
+  height: auto;
+}
+
+.who {
+  display: grid;
+  min-width: 0;
+  line-height: 1.25;
+}
+
+.name {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-weight: 700;
+  font-size: var(--text-sm);
+}
+
+.verified {
+  display: grid;
+  place-items: center;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: var(--color-gold-soft);
+  color: var(--color-vermilion-deep);
+}
+
+.sub {
+  font-size: var(--text-xs);
+  color: rgb(255 255 255 / 0.85);
+}
+
+.pinned {
+  margin-left: auto;
+  color: #f3d9a4;
+}
+
+/* ── Chat area with an alpana-doodle "wallpaper" ── */
+.chat {
+  display: grid;
+  gap: 0.75rem;
+  padding: 1rem clamp(0.75rem, 0.5rem + 1vw, 1.25rem) 1.25rem;
+  background-color: var(--color-ivory-deep);
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='96' height='96' viewBox='0 0 96 96' fill='none' stroke='%23b08a45' stroke-opacity='0.16' stroke-width='1.2'%3E%3Cpath d='M24 14c5 5 5 11 0 16-5-5-5-11 0-16z'/%3E%3Cpath d='M24 30c-6-1-9-5-10-9 5 0 8 3 10 9zM24 30c6-1 9-5 10-9-5 0-8 3-10 9z'/%3E%3Ccircle cx='72' cy='24' r='6'/%3E%3Ccircle cx='72' cy='24' r='1.5' fill='%23b08a45' fill-opacity='0.16'/%3E%3Cpath d='M66 72c0-6 12-6 12 0s-12 6-12 0z'/%3E%3Cpath d='M18 66l6 6 6-6-6-6z'/%3E%3Ccircle cx='48' cy='48' r='1.6' fill='%23b08a45' fill-opacity='0.2'/%3E%3C/svg%3E");
+}
+
+.dateChip {
+  justify-self: center;
+  padding: 0.2rem 0.75rem;
+  border-radius: var(--radius-pill);
+  background: rgb(255 253 249 / 0.92);
+  box-shadow: var(--shadow-sm);
+  font-size: var(--text-xs);
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  color: var(--color-muted);
+}
+
+/* Message bubble with a tail on the top-left */
+.bubble {
+  position: relative;
+  justify-self: start;
+  width: min(100%, 520px);
+  padding: 4px;
+  border-radius: 4px 14px 14px 14px;
+  background: var(--color-paper);
+  box-shadow: 0 1px 1.5px rgb(46 31 24 / 0.18);
+}
+
+.bubble::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -8px;
+  width: 10px;
+  height: 14px;
+  background: var(--color-paper);
+  clip-path: polygon(100% 0, 0 0, 100% 100%);
+}
+
+.media {
+  display: block;
+  overflow: hidden;
+  border-radius: 10px;
+  background: var(--color-sand);
+}
+
+.media img {
+  width: 100%;
+  height: auto;
+  transition: transform var(--duration-slow) var(--ease-out);
+}
+
+.media:hover img {
+  transform: scale(1.02);
+}
+
+.compact .media img {
+  max-height: 440px;
+  object-fit: cover;
+  object-position: top;
+}
+
+.content {
+  display: grid;
+  gap: 0.6rem;
+  padding: 0.6rem 0.6rem 0.2rem;
+}
+
+.title {
+  display: grid;
+  gap: 0.1rem;
+  font-family: var(--font-body);
+  font-size: 1.05rem;
+  font-weight: 700;
+  line-height: 1.35;
+}
+
+.titleLink {
+  color: var(--color-ink);
+  text-decoration: none;
+}
+
+.titleLink:hover {
+  color: var(--color-vermilion);
+  text-decoration: underline;
+}
+
+.titleBn {
+  font-family: var(--font-bengali-display);
+  font-weight: 400;
+  font-size: 1.05rem;
+  color: var(--color-vermilion);
+}
+
+.text {
+  display: grid;
+  gap: 0.7rem;
+  font-size: 0.98rem;
+  line-height: 1.55;
+  color: var(--color-charcoal);
+  white-space: pre-line;
+}
+
+.textBn {
+  padding-top: 0.6rem;
+  border-top: 1px dashed var(--color-line);
+}
+
+.compact .text {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 10;
+  line-clamp: 10;
+  overflow: hidden;
+}
+
+.compact .text p + p {
+  margin-top: 0.7rem;
+}
+
+.inlineLink {
+  overflow-wrap: anywhere;
+}
+
+/* Location / contact "attachments", like link previews in a chat */
+.attachment {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 0.6rem;
+  padding: 0.6rem 0.75rem;
+  border-left: 3px solid var(--color-gold);
+  border-radius: 6px;
+  background: var(--color-ivory);
+  font-size: var(--text-sm);
+}
+
+.attachment svg {
+  margin-top: 0.1rem;
+  color: var(--color-vermilion);
+}
+
+.attTitle {
+  font-weight: 700;
+  color: var(--color-ink);
+}
+
+.attText {
+  color: var(--color-muted);
+}
+
+.attLink,
+.attLinks a {
+  font-weight: 600;
+}
+
+.attLinks {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem 0.9rem;
+}
+
+.meta {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0.2rem;
+  margin-top: -0.2rem;
+  font-size: 0.72rem;
+  color: var(--color-muted);
+}
+
+.ticks {
+  display: inline-flex;
+  color: var(--color-gold);
+}
+
+.ticks svg + svg {
+  margin-left: -8px;
+}
+
+/* Quick-reply buttons under the bubble */
+.replies {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  width: min(100%, 520px);
+}
+
+.reply {
+  flex: 1 1 auto;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.35rem;
+  min-height: 42px;
+  padding: 0.5rem 1rem;
+  border: 0;
+  border-radius: 12px;
+  background: var(--color-paper);
+  box-shadow: 0 1px 1.5px rgb(46 31 24 / 0.18);
+  font-size: var(--text-sm);
+  font-weight: 600;
+  color: var(--color-vermilion);
+  text-decoration: none;
+}
+
+.reply:hover {
+  background: #fff;
+  color: var(--color-vermilion-deep);
+}
+
+.replyPrimary {
+  background: var(--color-vermilion);
+  color: #fff;
+}
+
+.replyPrimary:hover {
+  background: var(--color-vermilion-deep);
+  color: #fff;
+}
+
+.replyPrimary span {
+  font-family: var(--font-bengali-display);
+  font-weight: 400;
+  font-size: 1rem;
+}
+
+/* Share row */
+.share {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem 0.5rem;
+  padding: 0.6rem 0.9rem;
+  border-top: 1px solid var(--color-line);
+}
+
+.shareBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  min-height: 40px;
+  padding: 0.35rem 0.7rem;
+  border: 0;
+  border-radius: var(--radius-pill);
+  background: transparent;
+  font-size: var(--text-sm);
+  font-weight: 600;
+  color: var(--color-charcoal);
+  text-decoration: none;
+}
+
+.shareBtn:hover {
+  background: var(--color-ivory-deep);
+  color: var(--color-vermilion);
+}

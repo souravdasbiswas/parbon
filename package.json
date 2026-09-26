@@ -1,0 +1,27 @@
+{
+  "name": "parbon-sanskritik-samity",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Official website of Parbon Sanskritik Samity — a Bengali cultural community. React client + Node.js/Express server.",
+  "type": "module",
+  "main": "server.js",
+  "workspaces": [
+    "client",
+    "server"
+  ],
+  "engines": {
+    "node": ">=22.12.0"
+  },
+  "scripts": {
+    "dev": "concurrently -k -n server,client -c red,yellow \"npm run dev -w server\" \"npm run dev -w client\"",
+    "build": "npm run build -w client",
+    "start": "node server.js",
+    "test": "npm test -w server",
+    "lint": "npm run lint -w client",
+    "images": "node scripts/optimize-images.mjs",
+    "admin:hash": "node scripts/admin-hash.mjs"
+  },
+  "devDependencies": {
+    "concurrently": "^9.2.1"
+  }
+}

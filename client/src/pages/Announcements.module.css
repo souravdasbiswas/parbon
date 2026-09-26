@@ -1,0 +1,10 @@
+.feed {
+  display: grid;
+  gap: var(--space-6);
+  width: min(100% - 2 * var(--gutter), 640px);
+  margin-inline: auto;
+}
+
+.back {
+  margin-bottom: var(--space-4);
+}

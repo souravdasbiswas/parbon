@@ -1,0 +1,66 @@
+.dialog {
+  width: min(560px, calc(100vw - 2rem));
+  max-height: calc(100dvh - 2rem);
+  padding: 0;
+  border: 0;
+  border-radius: var(--radius-lg);
+  background: var(--color-paper);
+  color: var(--color-ink);
+  box-shadow: var(--shadow-lg);
+  overflow: auto;
+}
+
+.dialog::backdrop {
+  background: rgb(46 31 24 / 0.55);
+  backdrop-filter: blur(3px);
+}
+
+.inner {
+  position: relative;
+  padding: clamp(1.5rem, 1rem + 2vw, 2.25rem);
+  border-top: 5px solid var(--color-vermilion);
+  background:
+    radial-gradient(ellipse 80% 50% at 50% 0%, rgb(216 191 138 / 0.25), transparent 70%),
+    var(--color-paper);
+}
+
+.eyebrow {
+  margin-bottom: var(--space-3);
+  font-size: var(--text-xs);
+  font-weight: 600;
+  letter-spacing: var(--tracking-caps);
+  text-transform: uppercase;
+  color: var(--color-terracotta);
+}
+
+.eyebrow span {
+  font-size: var(--text-sm);
+  letter-spacing: 0;
+}
+
+.close {
+  position: absolute;
+  top: 0.75rem;
+  right: 0.75rem;
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  border: 1px solid var(--color-line);
+  border-radius: 50%;
+  background: var(--color-paper);
+  color: var(--color-ink);
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .dialog[open] {
+    animation: pop var(--duration) var(--ease-out);
+  }
+}
+
+@keyframes pop {
+  from {
+    opacity: 0;
+    transform: translateY(10px) scale(0.98);
+  }
+}

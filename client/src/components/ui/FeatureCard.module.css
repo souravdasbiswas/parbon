@@ -1,0 +1,84 @@
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, var(--min, 240px)), 1fr));
+  gap: clamp(1rem, 0.6rem + 1.5vw, 1.75rem);
+}
+
+.card {
+  position: relative;
+  display: grid;
+  align-content: start;
+  gap: var(--space-3);
+  padding: var(--space-6) var(--space-5);
+  border-radius: var(--radius-lg);
+  background: var(--color-paper);
+  border: 1px solid var(--color-line);
+  transition:
+    transform var(--duration) var(--ease-out),
+    box-shadow var(--duration) var(--ease-out);
+}
+
+.card:hover {
+  transform: translateY(-3px);
+  box-shadow: var(--shadow-md);
+}
+
+.icon {
+  display: grid;
+  place-items: center;
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  color: var(--color-vermilion);
+  background: radial-gradient(circle at 30% 30%, #fff, var(--color-gold-pale));
+  border: 1px solid var(--color-gold-soft);
+}
+
+.title {
+  display: grid;
+  gap: 0.05rem;
+  font-weight: 400;
+}
+
+.bn {
+  font-family: var(--font-bengali-display);
+  font-size: 1.45rem;
+  line-height: 1.35;
+  color: var(--color-vermilion);
+}
+
+.en {
+  font-family: var(--font-display);
+  font-size: 1.2rem;
+  font-weight: 600;
+  color: var(--color-ink);
+}
+
+.text {
+  color: var(--color-muted);
+  font-size: var(--text-sm);
+}
+
+/* On dark (brown) surfaces */
+.dark {
+  background: rgb(255 255 255 / 0.04);
+  border-color: rgb(216 191 138 / 0.25);
+}
+.dark:hover {
+  box-shadow: none;
+  background: rgb(255 255 255 / 0.07);
+}
+.dark .icon {
+  color: #f3d9a4;
+  background: transparent;
+  border-color: rgb(216 191 138 / 0.5);
+}
+.dark .bn {
+  color: #f3d9a4;
+}
+.dark .en {
+  color: #fbf1e2;
+}
+.dark .text {
+  color: #d5c6b4;
+}
