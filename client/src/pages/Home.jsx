@@ -87,7 +87,7 @@ export default function Home() {
                 loading="eager"
                 fetchPriority="high"
                 className={styles.heroLogo}
-                alt="Parbon Sanskritik Samity logo — Ma Durga within a temple arch, with a dhaki playing the dhak"
+                alt="Parbon Sanskritik Samity logo — a temple gateway flanked by two dhakis playing the dhak"
               />
             </div>
           </div>
