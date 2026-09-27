@@ -43,7 +43,7 @@ Open http://localhost:5173.
 | `npm start`      | Starts the production server (`server.js`): API + built frontend     |
 | `npm test`       | Runs the API/server tests (`node:test`, no extra dependencies)       |
 | `npm run lint`   | Lints the React code with ESLint                                     |
-| `npm run images` | Regenerates optimized logo files from `images/logo.png` (see §10)    |
+| `npm run images` | Regenerates optimized logo files from `images/logo.jpeg` (see §10)   |
 
 To try the production build locally:
 
@@ -61,7 +61,7 @@ Parbon/
 ├── server.js                  # Production entry point (Hostinger "entry file")
 ├── package.json               # npm workspaces + top-level scripts
 ├── .env.example               # Environment variable template
-├── images/logo.png            # Original logo (source artwork, never modified)
+├── images/logo.jpeg           # Original logo (source artwork, never modified)
 ├── scripts/optimize-images.mjs
 │
 ├── client/                    # React frontend (Vite)
@@ -393,7 +393,7 @@ To update: `git pull && npm ci && npm run build && pm2 restart parbon`.
   - *Source Sans 3* + *Noto Sans Bengali*: body text. The font stack lets Bengali glyphs fall through to Noto Sans Bengali automatically, and `unicode-range` subsets mean only the scripts a page uses get downloaded.
   - `:lang(bn)` gets more generous line-height for matras and conjuncts.
 - **Motifs** (original SVG in `components/motifs/`): a procedurally drawn **alpana**; the **lal-paar border** (the red border of a Bengali sari) as section dividers; a **temple/pandal arch** framing the logo, day cards and sponsorship tiers; a **lotus divider** echoing the logo; and line icons for dhak, shankha, pradip, bhog, sindoor and lotus.
-- **Logo:** the official artwork (`images/logo.png`) is never altered. `npm run images` trims empty white margins and generates AVIF/WebP/PNG sizes, favicons and the social card. The logo sits on a white field, so on ivory surfaces it uses `mix-blend-mode: multiply`, and on dark surfaces it sits on a white arched card.
+- **Logo:** the official artwork (`images/logo.jpeg`) is never redrawn. `npm run images` neutralises its cream paper tone to white, trims empty margins and generates AVIF/WebP/PNG sizes, favicons and the social card. The logo sits on a white field, so on ivory surfaces it uses `mix-blend-mode: multiply`, and on dark surfaces it sits on a white arched card.
   To regenerate after replacing the logo: `npm i --no-save sharp && npm run images`. (sharp isn't a dependency, which keeps hosting installs lean.)
 
 ---
@@ -404,7 +404,7 @@ To update: `git pull && npm ci && npm run build && pm2 restart parbon`.
 
 **SEO:** per-page `<title>`, description, canonical and Open Graph/Twitter tags (React 19 metadata), Organization JSON-LD, a dynamic `sitemap.xml` and `robots.txt`, real **404 status codes** for unknown URLs, and descriptive alt text. Lighthouse SEO scores 100.
 
-**Performance:** route-level code splitting, a self-hosted font subset, AVIF/WebP logo (1.27 MB PNG → about 17–46 KB), gzip compression, immutable 1-year caching for hashed assets, short caching with `stale-while-revalidate` for API content, a de-duplicated in-memory API cache on the client, and space reserved for API-driven content to avoid layout shift.
+**Performance:** route-level code splitting, a self-hosted font subset, AVIF/WebP logo (190 KB JPEG → about 18–45 KB), gzip compression, immutable 1-year caching for hashed assets, short caching with `stale-while-revalidate` for API content, a de-duplicated in-memory API cache on the client, and space reserved for API-driven content to avoid layout shift.
 
 **Security:** Helmet with a strict Content-Security-Policy (`script-src 'self'`), no `x-powered-by`, input validation and normalisation, request size limits, rate limiting, a honeypot, output rendered safely by React (no `dangerouslySetInnerHTML`), secrets only in environment variables, and `.env` git-ignored. The admin area uses an scrypt-hashed password, a signed `HttpOnly` + `SameSite=Strict` + `Secure` session cookie, origin checks against CSRF, a sign-in rate limit (10 per 15 minutes), content-sniffed image uploads with random file names, and `noindex` on all admin pages.
 

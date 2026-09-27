@@ -75,7 +75,7 @@ export default function AnnouncementCard({ announcement: a, compact = false, hea
     <article className={`${styles.card} ${compact ? styles.compact : ''}`}>
       <header className={styles.chatHeader}>
         <span className={styles.avatar} aria-hidden="true">
-          <img src="/brand/logo-160.png" alt="" width="40" height="54" />
+          <img src="/brand/logo-160.png" alt="" width="40" height="47" />
         </span>
         <span className={styles.who}>
           <span className={styles.name}>
