@@ -1,6 +1,38 @@
 {
   "announcements": [
     {
+      "id": "3c7e1a52-9b4d-4f0e-8a61-2026gettogether",
+      "slug": "lets-get-together",
+      "status": "published",
+      "pinned": true,
+      "showDonation": false,
+      "publishedAt": "2026-09-27T03:55:00.000Z",
+      "createdAt": "2026-09-27T03:55:00.000Z",
+      "updatedAt": "2026-09-27T03:55:00.000Z",
+      "author": "admin",
+      "title": {
+        "en": "Let's get together — meet & greet before Pujo",
+        "bn": "চা, শিঙাড়া, মিষ্টি আর আড্ডা"
+      },
+      "body": {
+        "en": "Let’s get together! ❤️\n\nAs we take this Pujo forward, we’d love to bring together everyone who would like to be a part of it — Bengalis of Nallagandla, our friends from ACS, and everyone else who wants to join us.\n\nLet’s meet over cha, shingara, misti & adda, share ideas and get to know each other as we come together to make this Pujo a truly collective celebration.\n\nEveryone is welcome!\n\n📅 Friday, 2nd October 2026 | 5–7 PM\n📍 NIRUSA Banquet, Lingampally\nBeside Santa Maria School, 5th Floor above Ratnadeep Supermarket",
+        "bn": ""
+      },
+      "image": {
+        "src": "/media/announcements/lets-get-together.jpg",
+        "alt": "Parbon Sanskritik Samity flyer: \"Let's get together! Cha, shingara, mishti & a little adda before Pujo begins\" — an informal meet & greet on 2nd October, 5 PM to 7 PM, at NIRUSA Banquet, Lingampally, with a clay cup of tea, shingaras and mishti.",
+        "width": 1024,
+        "height": 1536
+      },
+      "location": {
+        "name": "NIRUSA Banquet, Lingampally",
+        "address": "Beside Santa Maria School, 5th Floor above Ratnadeep Supermarket",
+        "mapUrl": "https://maps.app.goo.gl/inPAK6K37qnHPnZA7"
+      },
+      "contact": null,
+      "link": { "label": "Get involved", "url": "/get-involved" }
+    },
+    {
       "id": "8a2f4c3e-6d1b-4b7a-9e2f-2026durgapuja",
       "slug": "durga-puja-2026-invitation",
       "status": "published",

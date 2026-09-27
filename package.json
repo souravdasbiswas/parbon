@@ -19,6 +19,7 @@
     "test": "npm test -w server",
     "lint": "npm run lint -w client",
     "images": "node scripts/optimize-images.mjs",
+    "images:updates": "node scripts/prepare-update-images.mjs",
     "admin:hash": "node scripts/admin-hash.mjs"
   },
   "devDependencies": {

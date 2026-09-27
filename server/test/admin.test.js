@@ -58,11 +58,15 @@ const sample = {
 };
 
 describe('public announcements', () => {
-  it('seeds the store and lists the Durga Puja invitation', async () => {
+  it('seeds the store and lists the pinned announcements, newest first', async () => {
     const { data } = await (await api('/announcements', { auth: false })).json();
-    assert.ok(data.length >= 1);
-    assert.equal(data[0].slug, 'durga-puja-2026-invitation');
-    assert.match(data[0].body.en, /Durga Maa ki Joi 🙏/);
+    assert.ok(data.length >= 2);
+    assert.deepEqual(
+      data.slice(0, 2).map((a) => a.slug),
+      ['lets-get-together', 'durga-puja-2026-invitation'],
+    );
+    assert.match(data[0].body.en, /Friday, 2nd October 2026 \| 5–7 PM/);
+    assert.match(data[1].body.en, /Durga Maa ki Joi 🙏/);
     assert.ok(existsSync(path.join(tmp, 'storage', 'announcements.json')));
   });
 
