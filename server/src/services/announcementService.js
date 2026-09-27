@@ -1,14 +1,15 @@
 import { randomUUID } from 'node:crypto';
-import { copyFile, mkdir, readFile, rename, writeFile } from 'node:fs/promises';
+import { mkdir, readFile, rename, writeFile } from 'node:fs/promises';
 import { existsSync } from 'node:fs';
 import path from 'node:path';
 import { config } from '../config.js';
 
 /**
  * Announcements are created by admins at runtime, so they live in STORAGE_DIR
- * (never overwritten by a code redeploy). On first run the store is seeded from
- * server/data/announcements.seed.json. Swap this module for a database later —
- * the routes only use the exported functions.
+ * (never overwritten by a code redeploy). Entries in server/data/announcements.seed.json
+ * are merged into the store once each (tracked in `seeded`), so new seed entries reach an
+ * existing site after a deploy, and an entry an admin deletes stays deleted.
+ * Swap this module for a database later — the routes only use the exported functions.
  */
 const storeFile = () => path.join(config.paths.storage, 'announcements.json');
 const seedFile = () => path.join(config.paths.data, 'announcements.seed.json');
@@ -21,21 +22,47 @@ const exclusive = (fn) => {
   return run;
 };
 
-async function load() {
+let seeded = [];
+
+async function readStore() {
   const file = storeFile();
-  if (!existsSync(file)) {
-    await mkdir(config.paths.storage, { recursive: true });
-    if (existsSync(seedFile())) await copyFile(seedFile(), file);
-    else await writeFile(file, JSON.stringify({ announcements: [] }, null, 2), 'utf8');
+  if (!existsSync(file)) return null;
+  return JSON.parse(await readFile(file, 'utf8'));
+}
+
+async function syncSeed() {
+  await mkdir(config.paths.storage, { recursive: true });
+  const store = await readStore();
+  const announcements = store?.announcements || [];
+  // Stores written before `seeded` existed were copied from the seed, so their entries count as seeded.
+  seeded = store?.seeded || announcements.map((a) => a.id);
+  const seed = existsSync(seedFile()) ? JSON.parse(await readFile(seedFile(), 'utf8')).announcements || [] : [];
+  const fresh = seed.filter((a) => a.id && !seeded.includes(a.id));
+  if (!store || !store.seeded || fresh.length) {
+    seeded = [...seeded, ...fresh.map((a) => a.id)];
+    await save([...announcements, ...fresh]);
   }
-  const { announcements = [] } = JSON.parse(await readFile(file, 'utf8'));
+}
+
+let ready;
+const init = () => {
+  ready ??= syncSeed().catch((error) => {
+    ready = undefined;
+    throw error;
+  });
+  return ready;
+};
+
+async function load() {
+  await init();
+  const { announcements = [] } = (await readStore()) || {};
   return announcements;
 }
 
 async function save(announcements) {
   const file = storeFile();
   const tmp = `${file}.${process.pid}.tmp`;
-  await writeFile(tmp, JSON.stringify({ announcements }, null, 2), 'utf8');
+  await writeFile(tmp, JSON.stringify({ announcements, seeded }, null, 2), 'utf8');
   await rename(tmp, file); // atomic replace
 }
 

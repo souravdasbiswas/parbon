@@ -44,6 +44,7 @@ Open http://localhost:5173.
 | `npm test`       | Runs the API/server tests (`node:test`, no extra dependencies)       |
 | `npm run lint`   | Lints the React code with ESLint                                     |
 | `npm run images` | Regenerates optimized logo files from `images/logo.jpeg` (see §10)   |
+| `npm run images:updates` | Prepares announcement posters from `images/updates/` (see §5) |
 
 To try the production build locally:
 
@@ -62,7 +63,9 @@ Parbon/
 ├── package.json               # npm workspaces + top-level scripts
 ├── .env.example               # Environment variable template
 ├── images/logo.jpeg           # Original logo (source artwork, never modified)
+├── images/updates/<year>/     # Original announcement posters: YYYY-MM-DD-<slug>.jpg
 ├── scripts/optimize-images.mjs
+├── scripts/prepare-update-images.mjs
 │
 ├── client/                    # React frontend (Vite)
 │   ├── index.html
@@ -177,7 +180,17 @@ Committee members sign in at **`/admin`** (the link isn't shown publicly). From 
 - an optional button (e.g. "Puja timings" → `/durga-puja`)
 - an optional **"Offer pronami"** button
 
-A live preview shows exactly how the WhatsApp-style card will look. Published announcements appear on `/announcements`, the home page (the "New" pill in the hero and the latest cards), and the sitemap. Shared links show the poster and text in WhatsApp and Facebook previews.
+A live preview shows exactly how the WhatsApp-style card will look. Published announcements appear on `/announcements`, the home page (the "New update" notice at the top of the hero and the latest cards), and the sitemap. Shared links show the poster and text in WhatsApp and Facebook previews.
+
+**Announcements from the repo (posters in `images/updates/`)**
+
+Announcements can also ship with the code, which keeps the original posters under version control:
+
+1. Save the original poster as `images/updates/<year>/<YYYY-MM-DD>-<slug>.jpg` (publish date + a short lowercase slug), e.g. `images/updates/2026/2026-09-27-lets-get-together.jpeg`.
+2. Run `npm i --no-save sharp && npm run images:updates`. It writes `server/media/announcements/<slug>.jpg` (+ `.webp`), max 1600px wide with metadata stripped, and prints the `image` block with its width and height. Posters that were already prepared are left untouched (`-- --force` regenerates them).
+3. Add an entry to `server/data/announcements.seed.json` with a new unique `id`, the `slug`, the text, and that `image` block (copy an existing entry as a template).
+
+On the next start (or deploy), new seed entries are merged into the live store once. Announcements added in the admin are kept, and a seed entry deleted in the admin stays deleted. If `MEDIA_DIR` points outside the app folder, copy the new poster there too.
 
 **Pronami (donations)**
 
@@ -337,7 +350,7 @@ Parbon needs Node.js hosting. On Hostinger that means **Business Web Hosting**, 
 **Updating content on Hostinger:** edit the files in `server/data/` and upload photos to `server/media/` with **File Manager**. The changes are live immediately. If you deploy from Git, commit content changes to the repo too, or a redeploy will overwrite files you edited on the server.
 
 **Persisted data:** these are created at runtime:
-- `server/storage/announcements.json` — admin-created announcements, seeded on first run from `server/data/announcements.seed.json`
+- `server/storage/announcements.json` — admin-created announcements; entries from `server/data/announcements.seed.json` are merged in once each (tracked in its `seeded` list)
 - `server/storage/inquiries.ndjson` — contact form messages
 - `server/media/announcements/` — uploaded announcement images
 

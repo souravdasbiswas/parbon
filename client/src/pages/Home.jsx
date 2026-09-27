@@ -43,19 +43,31 @@ export default function Home() {
       <section className={styles.hero} aria-labelledby="page-title">
         <Alpana className={styles.heroAlpana} strokeWidth={0.8} />
         <div className={`container ${styles.heroGrid}`}>
-          <div className={styles.heroText}>
-            {/* Reserved slot so the pill (loaded from the API) never shifts the hero. */}
-            <div className={styles.noticeSlot}>
-              {latest && (
-                <Link to={`/announcements/${latest.slug}`} className={styles.noticePill}>
-                  <span className={styles.noticeTag}>
-                    <span lang="bn">{announcementsCopy.home.pill.bn}</span> · {announcementsCopy.home.pill.en}
+          {/* Reserved slot so the notice (loaded from the API) never shifts the hero. First on mobile. */}
+          <div className={styles.noticeSlot}>
+            {latest && (
+              <div className={styles.notice}>
+                <Link to={`/announcements/${latest.slug}`} className={styles.noticeMain}>
+                  <span className={styles.noticeIcon} aria-hidden="true">
+                    <Icon name="megaphone" size={20} />
                   </span>
-                  <span className={styles.noticeText}>{t(latest.title)}</span>
-                  <Icon name="arrow" size={16} />
+                  <span className={styles.noticeBody}>
+                    <span className={styles.noticeTag}>
+                      <span lang="bn">{announcementsCopy.home.pill.bn}</span> · {announcementsCopy.home.pill.en}
+                    </span>
+                    <span className={styles.noticeText}>{t(latest.title)}</span>
+                    <span className={styles.noticeCta}>
+                      {t(announcementsCopy.home.read)} <Icon name="arrow" size={15} />
+                    </span>
+                  </span>
                 </Link>
-              )}
-            </div>
+                <Link to="/announcements" className={styles.noticeAll}>
+                  {t(announcementsCopy.home.all)}
+                </Link>
+              </div>
+            )}
+          </div>
+          <div className={styles.heroText}>
             <p className={styles.eyebrow}>
               <span lang="bn">{home.hero.eyebrow.bn}</span>
               <span aria-hidden="true">·</span>
