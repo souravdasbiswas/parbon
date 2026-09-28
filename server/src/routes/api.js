@@ -1,5 +1,6 @@
 import express, { Router } from 'express';
 import { rateLimit } from 'express-rate-limit';
+import { config } from '../config.js';
 import { HttpError } from '../middleware/errorHandler.js';
 import { announcementService } from '../services/announcementService.js';
 import { contentService } from '../services/contentService.js';
@@ -17,7 +18,8 @@ const cacheable = (_req, res, next) => {
 
 apiRouter.get('/health', (_req, res) => {
   res.setHeader('Cache-Control', 'no-store');
-  res.json({ status: 'ok', uptime: Math.round(process.uptime()) });
+  // `storage` shows where announcements and form responses are kept: "mysql" or "file".
+  res.json({ status: 'ok', uptime: Math.round(process.uptime()), storage: config.db.enabled ? 'mysql' : 'file' });
 });
 
 apiRouter.get('/site', cacheable, async (_req, res) => {

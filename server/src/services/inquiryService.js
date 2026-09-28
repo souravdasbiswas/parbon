@@ -2,6 +2,7 @@ import { appendFile, mkdir } from 'node:fs/promises';
 import path from 'node:path';
 import { randomUUID } from 'node:crypto';
 import { config } from '../config.js';
+import { databaseReady } from '../db/index.js';
 import { sendMail } from './mailService.js';
 
 export const INQUIRY_TYPES = Object.freeze({
@@ -14,8 +15,8 @@ export const INQUIRY_TYPES = Object.freeze({
 
 /**
  * Persists an enquiry and (optionally) emails the committee.
- * Storage is an append-only NDJSON file so it works on any shared host;
- * replace `persist` with a database insert when one is introduced.
+ * With a database configured the enquiry goes to the `inquiries` table (survives redeploys);
+ * otherwise, or if the database is unreachable, it's appended to STORAGE_DIR/inquiries.ndjson.
  */
 export async function submitInquiry(input, meta = {}) {
   const record = {
@@ -38,6 +39,34 @@ export async function submitInquiry(input, meta = {}) {
 }
 
 async function persist(record) {
+  if (config.db.enabled) {
+    try {
+      const db = await databaseReady();
+      await db.query(
+        'INSERT INTO inquiries (id, created_at, type, name, email, phone, message, ip, user_agent, source) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
+        [
+          record.id,
+          record.createdAt,
+          record.type,
+          record.name,
+          record.email,
+          record.phone || null,
+          record.message,
+          record.meta.ip?.slice(0, 64) || null,
+          record.meta.userAgent || null,
+          'form',
+        ],
+      );
+      return;
+    } catch (error) {
+      // Keep the message: the file copy is imported into the database on the next start.
+      console.error('[parbon] could not save enquiry to the database, writing it to file instead:', error.message);
+    }
+  }
+  await persistToFile(record);
+}
+
+async function persistToFile(record) {
   await mkdir(config.paths.storage, { recursive: true });
   await appendFile(path.join(config.paths.storage, 'inquiries.ndjson'), `${JSON.stringify(record)}\n`, 'utf8');
 }

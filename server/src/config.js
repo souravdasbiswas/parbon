@@ -55,4 +55,16 @@ export const config = Object.freeze({
     sessionSecret: env.SESSION_SECRET || '',
     sessionHours: Number(env.SESSION_HOURS) || 8,
   },
+  // MySQL/MariaDB (e.g. Hostinger hPanel → Databases). When DB_HOST, DB_NAME and DB_USER are set,
+  // announcements, form responses and uploaded images live in the database; otherwise in files.
+  db: {
+    enabled: Boolean(env.DB_HOST && env.DB_NAME && env.DB_USER),
+    host: env.DB_HOST || '',
+    port: Number(env.DB_PORT) || 3306,
+    name: env.DB_NAME || '',
+    user: env.DB_USER || '',
+    password: env.DB_PASSWORD || '',
+  },
+  // Old storage folders (e.g. previous Hostinger deployments) to import once into the database.
+  legacyImportDirs: list(env.LEGACY_IMPORT_DIRS).map((dir) => path.resolve(dir)),
 });

@@ -1,5 +1,6 @@
 import { createApp } from './app.js';
 import { config } from './config.js';
+import { closeDatabase, databaseReady } from './db/index.js';
 
 const app = createApp();
 
@@ -7,9 +8,19 @@ const server = app.listen(config.port, () => {
   console.log(`[parbon] ${config.nodeEnv} server listening on port ${config.port}`);
 });
 
+if (config.db.enabled) {
+  // Create tables and import any old files now, rather than on the first visitor's request.
+  databaseReady().then(
+    () => console.log(`[parbon] storage: MySQL database "${config.db.name}" on ${config.db.host}:${config.db.port}`),
+    () => {}, // already logged; retried on the next request
+  );
+} else {
+  console.log(`[parbon] storage: files in ${config.paths.storage} (set DB_HOST, DB_NAME, DB_USER, DB_PASSWORD to use MySQL)`);
+}
+
 const shutdown = (signal) => {
   console.log(`[parbon] ${signal} received, shutting down…`);
-  server.close(() => process.exit(0));
+  server.close(() => closeDatabase().finally(() => process.exit(0)));
   setTimeout(() => process.exit(1), 10_000).unref();
 };
 
