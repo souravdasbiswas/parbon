@@ -55,11 +55,12 @@ export const config = Object.freeze({
     sessionSecret: env.SESSION_SECRET || '',
     sessionHours: Number(env.SESSION_HOURS) || 8,
   },
-  // MySQL/MariaDB (e.g. Hostinger hPanel → Databases). When DB_HOST, DB_NAME and DB_USER are set,
+  // MySQL/MariaDB (e.g. Hostinger hPanel → Databases). When DB_NAME and DB_USER are set,
   // announcements, form responses and uploaded images live in the database; otherwise in files.
+  // The host defaults to 127.0.0.1 (not "localhost", which Node may resolve to IPv6 ::1).
   db: {
-    enabled: Boolean(env.DB_HOST && env.DB_NAME && env.DB_USER),
-    host: env.DB_HOST || '',
+    enabled: Boolean(env.DB_NAME && env.DB_USER),
+    host: env.DB_HOST || '127.0.0.1',
     port: Number(env.DB_PORT) || 3306,
     name: env.DB_NAME || '',
     user: env.DB_USER || '',

@@ -332,7 +332,8 @@ Copy `.env.example` to `.env` for local use. On Hostinger, set these in hPanel. 
 | `SMTP_USER` / `SMTP_PASS` | *(empty)*      | Mailbox credentials (never commit these)                      |
 | `MAIL_FROM` / `MAIL_TO`   | —              | Sender, and the committee inbox that receives enquiries       |
 | `DATA_DIR` / `MEDIA_DIR` / `STORAGE_DIR` | `server/…` | Optional overrides for content, media and runtime storage (announcements, enquiries) |
-| `DB_HOST` / `DB_PORT` / `DB_NAME` / `DB_USER` / `DB_PASSWORD` | *(empty)* / `3306` | MySQL/MariaDB for announcements, form responses and uploaded images (see [Database](#database-mysql)). Empty = file storage |
+| `DB_HOST` / `DB_PORT` | `127.0.0.1` / `3306` | MySQL/MariaDB server. On Hostinger use `127.0.0.1` (not `localhost`, which can resolve to IPv6 `::1`) |
+| `DB_NAME` / `DB_USER` / `DB_PASSWORD` | *(empty)* | Database for announcements, form responses and uploaded images (see [Database](#database-mysql)). Empty `DB_NAME` = file storage |
 | `LEGACY_IMPORT_DIRS` | *(empty)* | Comma-separated old app folders whose files are imported once into the database |
 | `ADMIN_USERNAME` | *(empty)*            | Admin sign-in name. Admin is disabled until all three admin variables are set |
 | `ADMIN_PASSWORD_HASH` | *(empty)*       | scrypt hash from `npm run admin:hash -- "password"` (never the plain password) |
@@ -377,7 +378,7 @@ Parbon needs Node.js hosting. On Hostinger that means **Business Web Hosting**, 
 
 #### Database (MySQL)
 
-With `DB_HOST`, `DB_NAME` and `DB_USER` set, the app stores these in MySQL/MariaDB:
+With `DB_NAME` and `DB_USER` set, the app stores these in MySQL/MariaDB:
 
 | Table | Holds |
 | --- | --- |
@@ -390,8 +391,8 @@ With `DB_HOST`, `DB_NAME` and `DB_USER` set, the app stores these in MySQL/Maria
 The tables are created automatically on start, so no SQL needs to be run by hand. `https://your-domain/api/health` shows `"storage": "mysql"` when the database is in use.
 
 Set it up on Hostinger:
-1. **hPanel → Databases → Management**: note the database name, user and **MySQL host** (usually `localhost`). Reset the user's password if needed.
-2. **Websites → your site → Environment variables**: add `DB_HOST`, `DB_PORT` (`3306`), `DB_NAME`, `DB_USER` and `DB_PASSWORD`.
+1. **hPanel → Databases → Management**: note the database name and user. Reset the user's password if needed.
+2. **Websites → your site → Environment variables**: add `DB_HOST` = `127.0.0.1`, `DB_PORT` = `3306`, `DB_NAME`, `DB_USER` and `DB_PASSWORD`. `DB_HOST` and `DB_PORT` can be left out, since those are the defaults.
 3. Redeploy. The runtime log shows `[parbon] storage: MySQL database "…"`.
 
 **Importing old data:** on every start, any `announcements.json` / `inquiries.ndjson` in `STORAGE_DIR`, and images in `MEDIA_DIR/announcements`, are imported once. To recover data from an **earlier deployment**, find its folder in File Manager, e.g. `/home/<user>/domains/<site>/hbuilds/versions/<id>/nodejs`. Add that path to **`LEGACY_IMPORT_DIRS`** (comma-separate several), then redeploy. Old files are only read and never changed. Rows use `INSERT IGNORE`, so nothing already in the database is overwritten or duplicated, and a file already imported is skipped.

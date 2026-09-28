@@ -15,7 +15,7 @@ if (config.db.enabled) {
     () => {}, // already logged; retried on the next request
   );
 } else {
-  console.log(`[parbon] storage: files in ${config.paths.storage} (set DB_HOST, DB_NAME, DB_USER, DB_PASSWORD to use MySQL)`);
+  console.log(`[parbon] storage: files in ${config.paths.storage} (set DB_NAME, DB_USER and DB_PASSWORD to use MySQL)`);
 }
 
 const shutdown = (signal) => {
