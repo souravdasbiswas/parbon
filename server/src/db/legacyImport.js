@@ -102,17 +102,39 @@ async function importImages(db, dir) {
   return added;
 }
 
-/** Imports announcements, form responses and uploaded images from the given folders. */
-export async function importLegacyData(db, { storageDirs = [], mediaDirs = [] } = {}) {
+/**
+ * Imports announcements, form responses and uploaded images from the given folders.
+ * Each deployment on Hostinger started from an empty folder, so every old folder may hold
+ * announcements that exist nowhere else: all announcements.json snapshots are merged, newest
+ * first, so the latest edit of an announcement wins and nothing is lost. inquiries.ndjson only
+ * ever grows and images are never edited, so those are merged too.
+ * `announcements: false` skips announcements (used for the follow-up checks after start-up).
+ */
+export async function importLegacyData(db, { storageDirs = [], mediaDirs = [], announcements = true } = {}) {
   const totals = { announcements: 0, inquiries: 0, images: 0 };
-  for (const dir of new Set(storageDirs.filter(Boolean))) {
+  const dirs = [...new Set(storageDirs.filter(Boolean))];
+
+  if (announcements) {
+    const snapshots = [];
+    for (const dir of dirs) {
+      const file = path.join(dir, 'announcements.json');
+      if (existsSync(file)) snapshots.push({ file, mtime: (await stat(file)).mtimeMs });
+    }
+    for (const { file } of snapshots.sort((a, b) => b.mtime - a.mtime)) {
+      try {
+        totals.announcements += await importAnnouncements(db, file);
+      } catch (error) {
+        console.error(`[parbon] could not import ${file}:`, error.message);
+      }
+    }
+  }
+
+  for (const dir of dirs) {
+    const file = path.join(dir, 'inquiries.ndjson');
     try {
-      const announcements = path.join(dir, 'announcements.json');
-      const inquiries = path.join(dir, 'inquiries.ndjson');
-      if (existsSync(announcements)) totals.announcements += await importAnnouncements(db, announcements);
-      if (existsSync(inquiries)) totals.inquiries += await importInquiries(db, inquiries);
+      if (existsSync(file)) totals.inquiries += await importInquiries(db, file);
     } catch (error) {
-      console.error(`[parbon] could not import files from ${dir}:`, error.message);
+      console.error(`[parbon] could not import ${file}:`, error.message);
     }
   }
   for (const dir of new Set(mediaDirs.filter(Boolean))) {
@@ -128,4 +150,45 @@ export async function importLegacyData(db, { storageDirs = [], mediaDirs = [] } 
     );
   }
   return totals;
+}
+
+/** Counts what the old files contain, without touching any database (for `db:migrate --dry-run`). */
+export async function scanLegacyData({ storageDirs = [], mediaDirs = [] } = {}) {
+  const found = [];
+  for (const dir of new Set(storageDirs.filter(Boolean))) {
+    const a = path.join(dir, 'announcements.json');
+    const q = path.join(dir, 'inquiries.ndjson');
+    if (existsSync(a)) {
+      const store = JSON.parse(await readFile(a, 'utf8'));
+      found.push({ file: a, modified: (await stat(a)).mtime.toISOString(), rows: (store.announcements || []).length });
+    }
+    if (existsSync(q)) {
+      const lines = (await readFile(q, 'utf8')).split(/\r?\n/).filter((l) => l.trim());
+      found.push({ file: q, modified: (await stat(q)).mtime.toISOString(), rows: lines.length });
+    }
+  }
+  for (const dir of new Set(mediaDirs.filter(Boolean))) {
+    if (!existsSync(dir)) continue;
+    const images = (await readdir(dir)).filter((n) => IMAGE_RE.test(n));
+    if (images.length) found.push({ file: dir, modified: '', rows: images.length });
+  }
+  return found;
+}
+
+/**
+ * Hostinger's Node.js hosting builds every deployment into
+ * …/hbuilds/versions/<id>/nodejs, so each deploy starts with an empty app folder. Finds the other
+ * (earlier) deployment folders next to the running one, newest first, so their files can be imported.
+ */
+export async function findPreviousDeployments(appRoot) {
+  const versionsDir = path.dirname(path.dirname(appRoot));
+  if (path.basename(versionsDir) !== 'versions' || path.basename(path.dirname(versionsDir)) !== 'hbuilds') return [];
+  const current = path.resolve(appRoot);
+  const found = [];
+  for (const id of await readdir(versionsDir).catch(() => [])) {
+    const dir = path.join(versionsDir, id, path.basename(appRoot));
+    if (path.resolve(dir) === current || !existsSync(dir)) continue;
+    found.push({ dir, mtime: (await stat(dir)).mtimeMs });
+  }
+  return found.sort((a, b) => b.mtime - a.mtime).map((f) => f.dir);
 }

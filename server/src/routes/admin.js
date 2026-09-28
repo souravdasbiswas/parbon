@@ -1,6 +1,7 @@
 import express, { Router } from 'express';
 import { rateLimit } from 'express-rate-limit';
 import { config } from '../config.js';
+import { storageReport } from '../db/index.js';
 import { requireAdmin, sameOrigin } from '../middleware/auth.js';
 import { HttpError } from '../middleware/errorHandler.js';
 import { announcementService } from '../services/announcementService.js';
@@ -129,4 +130,16 @@ adminRouter.get('/responses/export.csv', requireAdmin, async (req, res) => {
   res.setHeader('Content-Type', 'text/csv; charset=utf-8');
   res.setHeader('Content-Disposition', `attachment; filename="parbon-responses-${date}.csv"`);
   res.send(toCsv(CSV_COLUMNS, items));
+});
+
+// ── Storage status (to check the MySQL migration without server access) ──
+adminRouter.get('/storage', requireAdmin, async (_req, res) => {
+  if (!config.db.enabled) {
+    return res.json({ data: { storage: 'file', path: config.paths.storage } });
+  }
+  try {
+    res.json({ data: { storage: 'mysql', status: 'connected', ...(await storageReport()) } });
+  } catch (error) {
+    res.status(503).json({ data: { storage: 'mysql', status: 'unavailable', error: error.message } });
+  }
 });

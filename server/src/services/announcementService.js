@@ -4,7 +4,7 @@ import { existsSync } from 'node:fs';
 import path from 'node:path';
 import { config } from '../config.js';
 import { databaseReady } from '../db/index.js';
-import { announcementsTable } from '../db/announcementsTable.js';
+import { announcementsTable, readSeedAnnouncements } from '../db/announcementsTable.js';
 
 /**
  * Announcements are created by admins at runtime. With a database configured (DB_* variables)
@@ -98,6 +98,20 @@ const mysqlStore = {
 
 const store = config.db.enabled ? mysqlStore : fileStore;
 const load = () => store.list();
+
+/**
+ * For public pages: if the database is briefly unreachable, show the announcements shipped with the
+ * code (announcements.seed.json) instead of an error, so the home page and shared links keep working.
+ * Admin pages still use `load` and show the real error.
+ */
+async function loadPublic() {
+  try {
+    return await load();
+  } catch (error) {
+    if (!config.db.enabled) throw error;
+    return readSeedAnnouncements();
+  }
+}
 const sortForDisplay = (a, b) =>
   Number(Boolean(b.pinned)) - Number(Boolean(a.pinned)) || String(b.publishedAt).localeCompare(String(a.publishedAt));
 
@@ -126,20 +140,20 @@ function uniqueSlug(base, list, ignoreId) {
 
 export const announcementService = {
   async listPublished({ limit } = {}) {
-    const items = (await load()).filter((a) => isLive(a)).sort(sortForDisplay);
+    const items = (await loadPublic()).filter((a) => isLive(a)).sort(sortForDisplay);
     return limit ? items.slice(0, limit) : items;
   },
 
   /** What the home ticker shows: up to TICKER_SLOTS ticked, live announcements (pinned first, then newest). */
   async listForTicker() {
-    return (await load())
+    return (await loadPublic())
       .filter((a) => isLive(a) && inTicker(a))
       .sort(sortForDisplay)
       .slice(0, TICKER_SLOTS);
   },
 
   async getPublishedBySlug(slug) {
-    return (await load()).find((a) => a.slug === slug && isLive(a)) || null;
+    return (await loadPublic()).find((a) => a.slug === slug && isLive(a)) || null;
   },
 
   async listAll() {

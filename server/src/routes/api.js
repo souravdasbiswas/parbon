@@ -1,6 +1,7 @@
 import express, { Router } from 'express';
 import { rateLimit } from 'express-rate-limit';
 import { config } from '../config.js';
+import { databaseStatus } from '../db/index.js';
 import { HttpError } from '../middleware/errorHandler.js';
 import { announcementService } from '../services/announcementService.js';
 import { contentService } from '../services/contentService.js';
@@ -16,10 +17,13 @@ const cacheable = (_req, res, next) => {
   next();
 };
 
-apiRouter.get('/health', (_req, res) => {
+apiRouter.get('/health', async (_req, res) => {
   res.setHeader('Cache-Control', 'no-store');
-  // `storage` shows where announcements and form responses are kept: "mysql" or "file".
-  res.json({ status: 'ok', uptime: Math.round(process.uptime()), storage: config.db.enabled ? 'mysql' : 'file' });
+  // `storage` shows where announcements and form responses are kept: "mysql" or "file";
+  // `database` whether MySQL is reachable right now.
+  const body = { status: 'ok', uptime: Math.round(process.uptime()), storage: config.db.enabled ? 'mysql' : 'file' };
+  if (config.db.enabled) body.database = await databaseStatus();
+  res.json(body);
 });
 
 apiRouter.get('/site', cacheable, async (_req, res) => {

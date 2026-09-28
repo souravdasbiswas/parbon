@@ -6,9 +6,10 @@
 import assert from 'node:assert/strict';
 import { createHash, randomBytes, scryptSync } from 'node:crypto';
 import { existsSync } from 'node:fs';
-import { mkdir, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
+import { mkdir, mkdtemp, readFile, rm, utimes, writeFile } from 'node:fs/promises';
 import os from 'node:os';
 import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { after, before, describe, it } from 'node:test';
 
 const enabled = Boolean(process.env.TEST_DB_HOST);
@@ -17,7 +18,7 @@ describe('MySQL storage', { skip: !enabled && 'set TEST_DB_HOST to run the MySQL
   const PASSWORD = 'ma-durga-mysql-test';
   const dbName = `parbon_test_${randomBytes(4).toString('hex')}`;
   const seed = [];
-  let tmp, storage, legacyRoot, base, server, cookie, admin, closeDatabase, databaseReady, root, hashes;
+  let tmp, storage, legacyRoot, olderRoot, base, server, cookie, admin, closeDatabase, databaseReady, root, hashes;
 
   const sha = async (file) => createHash('sha256').update(await readFile(file)).digest('hex');
   const api = (p, { method = 'GET', body, auth = true } = {}) =>
@@ -80,6 +81,22 @@ describe('MySQL storage', { skip: !enabled && 'set TEST_DB_HOST to run the MySQL
     );
     const jpeg = Buffer.from([0xff, 0xd8, 0xff, 0xe0, 1, 2, 3, 4]);
     await writeFile(path.join(legacyRoot, 'server', 'media', 'announcements', '20260927-oldupload.jpg'), jpeg);
+    // An even older deployment: its snapshot has an announcement that exists nowhere else (must be
+    // kept) and an outdated copy of "admin-post" (the newer copy must win).
+    olderRoot = path.join(tmp, 'older-version', 'nodejs');
+    await mkdir(path.join(olderRoot, 'server', 'storage'), { recursive: true });
+    const olderFile = path.join(olderRoot, 'server', 'storage', 'announcements.json');
+    await writeFile(
+      olderFile,
+      JSON.stringify({
+        announcements: [
+          { ...adminPost, title: { en: 'Outdated title' } },
+          { ...original, id: 'older-era-post', slug: 'older-era-post', title: { en: 'Only in the older deployment' }, pinned: false },
+        ],
+      }),
+    );
+    const old = new Date(Date.now() - 7 * 86_400_000);
+    await utimes(olderFile, old, old);
 
     hashes = {
       store: await sha(path.join(storage, 'announcements.json')),
@@ -92,7 +109,7 @@ describe('MySQL storage', { skip: !enabled && 'set TEST_DB_HOST to run the MySQL
     Object.assign(process.env, {
       STORAGE_DIR: storage,
       MEDIA_DIR: path.join(tmp, 'media'),
-      LEGACY_IMPORT_DIRS: legacyRoot,
+      LEGACY_IMPORT_DIRS: `${legacyRoot},${olderRoot}`,
       DB_HOST: process.env.TEST_DB_HOST,
       DB_PORT: process.env.TEST_DB_PORT || '3306',
       DB_USER: process.env.TEST_DB_USER || 'root',
@@ -135,6 +152,12 @@ describe('MySQL storage', { skip: !enabled && 'set TEST_DB_HOST to run the MySQL
     assert.ok(ids.includes(original.id));
     assert.ok(ids.includes('admin-post'));
     assert.ok(!ids.includes(newest.id), 'deleted seed entry must not come back');
+  });
+
+  it('merges every old deployment: nothing only found in an older one is lost, the newest copy wins', async () => {
+    const all = await admin('/announcements');
+    assert.ok(all.some((a) => a.id === 'older-era-post'));
+    assert.equal(all.find((a) => a.id === 'admin-post').title.en, 'Admin post');
   });
 
   it('imports form responses from all old files once, without duplicates', async () => {
@@ -207,5 +230,38 @@ describe('MySQL storage', { skip: !enabled && 'set TEST_DB_HOST to run the MySQL
     await databaseReady();
     assert.equal((await admin('/responses')).total, before);
     assert.equal((await admin('/announcements')).length, announcementsBefore);
+  });
+
+  it('shows the storage status to admins only', async () => {
+    assert.equal((await api('/admin/storage', { auth: false })).status, 401);
+    const report = await admin('/storage');
+    assert.equal(report.status, 'connected');
+    assert.equal(report.counts.inquiries, (await admin('/responses')).total);
+    assert.ok(report.imports.some((i) => i.kind === 'inquiries'));
+  });
+
+  it('db:migrate script: dry run changes nothing, a real run imports downloaded files', async () => {
+    const { execFile } = await import('node:child_process');
+    const run = (args) =>
+      new Promise((resolve, reject) =>
+        execFile(process.execPath, [fileURLToPath(new URL('../../scripts/db-migrate.mjs', import.meta.url)), ...args], {
+          env: process.env,
+        }, (error, stdout, stderr) => (error ? reject(new Error(stderr || error.message)) : resolve(stdout))),
+      );
+    const download = path.join(tmp, 'downloaded-backup');
+    await mkdir(download, { recursive: true });
+    await writeFile(
+      path.join(download, 'inquiries.ndjson'),
+      `${JSON.stringify({ id: 'inq-downloaded', createdAt: '2026-09-25T08:00:00.000Z', type: 'performance', name: 'From Backup', email: 'b@example.com', message: 'Saved from a downloaded file.', meta: {} })}\n`,
+    );
+    const before = (await admin('/responses')).total;
+    const dry = await run(['--dry-run', '--from', download]);
+    assert.match(dry, /1\s+.*inquiries\.ndjson/);
+    assert.equal((await admin('/responses')).total, before);
+
+    const out = await run(['--from', download]);
+    assert.match(out, /Imported 0 announcements, 1 form responses, 0 images/);
+    assert.equal((await admin('/responses')).total, before + 1);
+    assert.match(await run(['--from', download]), /Imported 0 announcements, 0 form responses/);
   });
 });

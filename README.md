@@ -44,6 +44,7 @@ Open http://localhost:5173.
 | `npm test`       | Runs the API/server tests (`node:test`; MySQL tests run when `TEST_DB_HOST` is set) |
 | `npm run lint`   | Lints the React code with ESLint                                     |
 | `npm run images` | Regenerates optimized logo files from `images/logo.jpeg` (see §10)   |
+| `npm run db:migrate` | Imports old file data into MySQL (`--dry-run`, `--from <folder>`; see [Database](#database-mysql)) |
 | `npm run images:updates` | Prepares announcement posters from `images/updates/` (see §5) |
 
 To try the production build locally:
@@ -334,7 +335,7 @@ Copy `.env.example` to `.env` for local use. On Hostinger, set these in hPanel. 
 | `DATA_DIR` / `MEDIA_DIR` / `STORAGE_DIR` | `server/…` | Optional overrides for content, media and runtime storage (announcements, enquiries) |
 | `DB_HOST` / `DB_PORT` | `127.0.0.1` / `3306` | MySQL/MariaDB server. On Hostinger use `127.0.0.1` (not `localhost`, which can resolve to IPv6 `::1`) |
 | `DB_NAME` / `DB_USER` / `DB_PASSWORD` | *(empty)* | Database for announcements, form responses and uploaded images (see [Database](#database-mysql)). Empty `DB_NAME` = file storage |
-| `LEGACY_IMPORT_DIRS` | *(empty)* | Comma-separated old app folders whose files are imported once into the database |
+| `LEGACY_IMPORT_DIRS` | *(empty)* | Extra old app folders to import once into the database. Earlier Hostinger deployments are found automatically |
 | `ADMIN_USERNAME` | *(empty)*            | Admin sign-in name. Admin is disabled until all three admin variables are set |
 | `ADMIN_PASSWORD_HASH` | *(empty)*       | scrypt hash from `npm run admin:hash -- "password"` (never the plain password) |
 | `SESSION_SECRET` | *(empty)*            | 32+ random characters for signing admin sessions (printed by `admin:hash`) |
@@ -388,16 +389,51 @@ With `DB_NAME` and `DB_USER` set, the app stores these in MySQL/MariaDB:
 | `media` | Uploaded announcement images, served from `/media/announcements/<name>` |
 | `data_imports` | Old files already imported (by content hash) |
 
-The tables are created automatically on start, so no SQL needs to be run by hand. `https://your-domain/api/health` shows `"storage": "mysql"` when the database is in use.
+The tables are created automatically on start, so no SQL needs to be run by hand. `https://your-domain/api/health` shows `"storage": "mysql"` and `"database": "connected"` when the database is in use. The admin **Storage** page (`/admin/storage`) shows row counts, the old folders checked and what was imported.
 
-Set it up on Hostinger:
-1. **hPanel → Databases → Management**: note the database name and user. Reset the user's password if needed.
-2. **Websites → your site → Environment variables**: add `DB_HOST` = `127.0.0.1`, `DB_PORT` = `3306`, `DB_NAME`, `DB_USER` and `DB_PASSWORD`. `DB_HOST` and `DB_PORT` can be left out, since those are the defaults.
-3. Redeploy. The runtime log shows `[parbon] storage: MySQL database "…"`.
+##### Switching the live site to MySQL (first time)
 
-**Importing old data:** on every start, any `announcements.json` / `inquiries.ndjson` in `STORAGE_DIR`, and images in `MEDIA_DIR/announcements`, are imported once. To recover data from an **earlier deployment**, find its folder in File Manager, e.g. `/home/<user>/domains/<site>/hbuilds/versions/<id>/nodejs`. Add that path to **`LEGACY_IMPORT_DIRS`** (comma-separate several), then redeploy. Old files are only read and never changed. Rows use `INSERT IGNORE`, so nothing already in the database is overwritten or duplicated, and a file already imported is skipped.
+The migration runs by itself when the new version starts. There's no script to run and no downtime.
 
-If the database is briefly unreachable, a form submission is appended to `STORAGE_DIR/inquiries.ndjson` instead, and imported on the next start. Nothing is lost unless a redeploy happens first; the error appears in the runtime log.
+1. **Back up first (recommended):** in hPanel → File Manager, open the running deployment's folder (`/home/<user>/domains/<site>/hbuilds/versions/<newest id>/nodejs/server/`). Download `storage/` and `media/announcements/`.
+2. **hPanel → Databases → Management:** note the database name and user, and reset the user's password if needed.
+3. **Websites → your site → Environment variables:** add `DB_NAME`, `DB_USER` and `DB_PASSWORD`. `DB_HOST` (`127.0.0.1`) and `DB_PORT` (`3306`) are the defaults. Also make sure `ADMIN_USERNAME`, `ADMIN_PASSWORD_HASH` and `SESSION_SECRET` are set.
+4. **Deploy.** When the new version starts, it:
+   - creates the tables;
+   - finds the **earlier deployment folders** next to it (`hbuilds/versions/*/nodejs`) and imports their announcements, form responses and uploaded images. Nothing needs to be set;
+   - checks those folders again **2 and 10 minutes later**, to catch any form sent to the old version while the switch was happening.
+
+   While this happens, the old version keeps serving until Hostinger switches traffic, so visitors see no gap.
+5. **Check:**
+   - `/api/health` → `"database": "connected"`;
+   - `/admin/storage` → the counts match what you expect;
+   - `/admin/responses` lists earlier registrations;
+   - announcement images load.
+   The runtime log shows `[parbon] imported into MySQL: …`.
+
+How the import treats data:
+- Old files are **only read, never changed**.
+- Each file is imported once (tracked by content hash in `data_imports`). Rows use `INSERT IGNORE`, so nothing already in the database is overwritten or duplicated, and later redeploys import nothing new.
+- Every deployment used to start from an empty folder, so each old folder may hold announcements that exist nowhere else. All announcement snapshots are therefore merged, newest first; if the same announcement appears twice, the latest edit wins. An announcement deleted in one old deployment could come back if another old folder still has it; delete it again in the admin and it stays deleted. Form responses and images from all folders are merged.
+
+**If the old folders are gone or somewhere else:** add the folders to **`LEGACY_IMPORT_DIRS`** (comma-separated) and redeploy. Or import files downloaded from File Manager, from your computer:
+
+```bash
+npm run db:migrate -- --dry-run --from ./backup   # shows what the files contain; writes nothing
+npm run db:migrate -- --from ./backup             # imports into the database set in DB_* (safe to repeat)
+```
+
+To reach Hostinger's database from your computer, enable **hPanel → Databases → Remote MySQL** for your IP. Then use the remote host shown there as `DB_HOST` in your local `.env`. `--from` accepts an app folder, a `server` folder or a storage folder.
+
+**If something looks wrong after the switch:** nothing is lost, because the old folders are untouched. Removing `DB_NAME` and redeploying returns to file storage, but that starts from an empty folder again. Fixing the database settings and redeploying is better, since the import is safe to repeat.
+
+If the database is briefly unreachable:
+- form submissions are appended to `STORAGE_DIR/inquiries.ndjson` and imported on the next start;
+- public pages keep showing the announcements shipped with the code (`announcements.seed.json`);
+- images shipped with the site still load;
+- admin pages show the error.
+
+The error appears in the runtime log.
 
 **Without a database**, data lives in files: `server/storage/announcements.json`, `server/storage/inquiries.ndjson` and `server/media/announcements/`. Set **`STORAGE_DIR`** and **`MEDIA_DIR`** to folders outside the deployment directory (e.g. `/home/<user>/parbon-data/storage` and `/home/<user>/parbon-data/media`) so a redeploy doesn't replace them.
 

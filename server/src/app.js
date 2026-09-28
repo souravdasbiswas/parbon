@@ -61,16 +61,18 @@ export function createApp() {
   app.use('/media', express.static(config.paths.media, { maxAge: '30d', index: false }));
   // Announcement images uploaded while a database is configured are stored in MySQL.
   app.get('/media/announcements/:name', async (req, res, next) => {
+    let image;
     try {
-      const image = await findStoredImage(req.params.name);
-      if (!image) return next();
-      res.setHeader('Content-Type', image.mime);
-      // File names are random and never reused, so the image can be cached for a long time.
-      res.setHeader('Cache-Control', 'public, max-age=2592000, immutable');
-      res.send(image.bytes);
-    } catch (err) {
-      next(err);
+      image = await findStoredImage(req.params.name);
+    } catch {
+      // Database unreachable: answer 404 like any missing image rather than failing the page.
+      return next();
     }
+    if (!image) return next();
+    res.setHeader('Content-Type', image.mime);
+    // File names are random and never reused, so the image can be cached for a long time.
+    res.setHeader('Cache-Control', 'public, max-age=2592000, immutable');
+    res.send(image.bytes);
   });
   app.use('/media', (req, res) => {
     res.status(404).json({ error: { code: 'NOT_FOUND', message: `No file at ${req.originalUrl}` } });
