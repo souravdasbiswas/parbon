@@ -18,11 +18,11 @@ export function formatDate(iso, lang = 'en', options = { day: 'numeric', month: 
   return new Intl.DateTimeFormat(INTL_LOCALE[lang] || lang, options).format(date);
 }
 
-export function formatDateRange(startIso, endIso, lang = 'en') {
+export function formatDateRange(startIso, endIso, lang = 'en', options = { day: 'numeric', month: 'long', year: 'numeric' }) {
   const start = parseDate(startIso);
   const end = parseDate(endIso);
   if (!start) return '';
-  const fmt = new Intl.DateTimeFormat(INTL_LOCALE[lang] || lang, { day: 'numeric', month: 'long', year: 'numeric' });
+  const fmt = new Intl.DateTimeFormat(INTL_LOCALE[lang] || lang, options);
   if (!end || start.getTime() === end.getTime()) return fmt.format(start);
   return typeof fmt.formatRange === 'function' ? fmt.formatRange(start, end) : `${fmt.format(start)} – ${fmt.format(end)}`;
 }

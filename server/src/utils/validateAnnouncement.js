@@ -26,6 +26,21 @@ const isSitePath = (value) => /^\/(?!\/)[\w\-/.#?=&%]*$/.test(value);
 const localized = (field, max) => ({ en: clean(field?.en, max), bn: clean(field?.bn, max) });
 const compact = (obj) => (Object.values(obj).some((v) => v !== '' && v != null) ? obj : null);
 
+/** Ticker icons an admin may choose (null = pick automatically). Keep in sync with client/src/content/announcementIcons.js. */
+export const ANNOUNCEMENT_ICONS = Object.freeze([
+  'megaphone',
+  'dhak',
+  'people',
+  'lamp',
+  'music',
+  'bhog',
+  'calendar',
+  'book',
+  'alpana',
+  'sindoor',
+  'shankha',
+]);
+
 /** Validates an admin announcement payload. Returns { value } or { errors }. */
 export function validateAnnouncement(body) {
   const input = body && typeof body === 'object' ? body : {};
@@ -37,6 +52,9 @@ export function validateAnnouncement(body) {
     status: input.status === 'draft' ? 'draft' : 'published',
     pinned: Boolean(input.pinned),
     showDonation: Boolean(input.showDonation),
+    // Older clients don't send this field; announcements are in the ticker unless unticked.
+    showInTicker: input.showInTicker === undefined ? true : Boolean(input.showInTicker),
+    icon: ANNOUNCEMENT_ICONS.includes(input.icon) ? input.icon : null,
     publishedAt: null,
     slug: clean(input.slug, 80),
     image: null,

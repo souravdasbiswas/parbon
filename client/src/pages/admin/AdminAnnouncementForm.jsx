@@ -1,9 +1,11 @@
 import { useEffect, useId, useState } from 'react';
 import { useNavigate, useParams } from 'react-router';
 import AnnouncementCard from '../../components/announcements/AnnouncementCard.jsx';
+import Icon from '../../components/motifs/Icon.jsx';
 import Button from '../../components/ui/Button.jsx';
 import Seo from '../../components/ui/Seo.jsx';
 import { ErrorState, LoadingState } from '../../components/ui/States.jsx';
+import { ANNOUNCEMENT_ICONS, guessAnnouncementIcon, iconLabel } from '../../content/announcementIcons.js';
 import { invalidateApi } from '../../hooks/useApi.js';
 import { adminApi } from '../../services/api.js';
 import { AdminBar } from './AdminAnnouncements.jsx';
@@ -20,6 +22,8 @@ const EMPTY = {
   status: 'published',
   pinned: false,
   showDonation: false,
+  showInTicker: true,
+  icon: '',
   publishedAt: '',
 };
 
@@ -38,6 +42,8 @@ const fromRecord = (r) => ({
   location: { ...EMPTY.location, ...(r.location || {}) },
   contact: { ...EMPTY.contact, ...(r.contact || {}) },
   link: { ...EMPTY.link, ...(r.link || {}) },
+  icon: r.icon || '',
+  showInTicker: r.showInTicker !== false,
   publishedAt: toLocalInput(r.publishedAt),
 });
 
@@ -139,6 +145,7 @@ export default function AdminAnnouncementForm() {
     }
   };
 
+  const autoIcon = guessAnnouncementIcon(form);
   const preview = {
     ...form,
     slug: 'preview',
@@ -263,6 +270,43 @@ export default function AdminAnnouncementForm() {
                   <input type="checkbox" checked={form.pinned} onChange={(e) => set('pinned', e.target.checked)} />
                   Pin to the top
                 </label>
+                <label className={styles.check}>
+                  <input type="checkbox" checked={form.showInTicker} onChange={(e) => set('showInTicker', e.target.checked)} />
+                  Show in the home page ticker
+                </label>
+                <p className={styles.hint}>
+                  The ticker shows up to 3 of the ticked, published announcements: pinned ones first, then the newest. The
+                  Announcements list marks which ones are in it right now.
+                </p>
+                <Field
+                  label="Ticker icon"
+                  id={fid('icon')}
+                  hint={
+                    <span className={styles.iconHint}>
+                      Shown before the title in the home page’s running text.
+                      {!form.icon && (
+                        <>
+                          {' '}
+                          Automatic picks: <Icon name={autoIcon} size={16} /> {iconLabel(autoIcon)}
+                        </>
+                      )}
+                    </span>
+                  }
+                >
+                  <div className={styles.iconSelect}>
+                    <span className={styles.iconPreview} aria-hidden="true">
+                      <Icon name={form.icon || autoIcon} size={22} />
+                    </span>
+                    <select {...bind('icon')}>
+                      <option value="">Automatic (from the wording)</option>
+                      {ANNOUNCEMENT_ICONS.map((i) => (
+                        <option key={i.value} value={i.value}>
+                          {i.label}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                </Field>
                 <div className={styles.row2}>
                   <Field label="Status" id={fid('status')}>
                     <select {...bind('status')}>

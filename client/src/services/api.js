@@ -55,6 +55,7 @@ export const inquiryApi = {
 
 export const announcementsApi = {
   list: (limit) => api.get(limit ? `/announcements?limit=${limit}` : '/announcements'),
+  ticker: () => api.get('/announcements?ticker=1'),
   get: (slug) => api.get(`/announcements/${encodeURIComponent(slug)}`),
 };
 
@@ -68,4 +69,7 @@ export const adminApi = {
   updateAnnouncement: (id, data) => api.put(`/admin/announcements/${encodeURIComponent(id)}`, data),
   deleteAnnouncement: (id) => api.delete(`/admin/announcements/${encodeURIComponent(id)}`),
   uploadImage: (dataUrl) => api.post('/admin/uploads', { dataUrl }),
+  responses: (params, options) => api.get(`/admin/responses?${new URLSearchParams(params)}`, options),
+  /** Plain URL so the browser downloads the file with the admin cookie. */
+  responsesCsvUrl: (params) => `${BASE_URL}/api/admin/responses/export.csv?${new URLSearchParams(params)}`,
 };

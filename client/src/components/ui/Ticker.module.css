@@ -1,0 +1,335 @@
+/* ───────── Running-text band ("ticker") ───────── */
+.ticker {
+  --ticker-h: clamp(3.1rem, 2.85rem + 0.7vw, 3.5rem);
+  --chevron: 0.9rem;
+  position: relative;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: stretch;
+  width: 100%;
+  min-height: var(--ticker-h);
+  overflow: hidden;
+  border: 1px solid rgb(176 138 69 / 0.45);
+  border-radius: var(--radius-md);
+  background: linear-gradient(100deg, #fff 0%, var(--color-paper) 45%, var(--color-ivory) 100%);
+  box-shadow: var(--shadow-sm);
+  transition:
+    box-shadow var(--duration) ease,
+    border-color var(--duration) ease;
+}
+
+.ticker:hover,
+.ticker:focus-within {
+  border-color: rgb(168 32 26 / 0.4);
+  box-shadow: var(--shadow-md);
+}
+
+/* Lal-paar edge: a gold hairline over a vermilion stripe, like the border of a Bengali sari. */
+.ticker::after {
+  content: '';
+  position: absolute;
+  inset: auto 0 0;
+  z-index: 3;
+  height: 4px;
+  background: linear-gradient(var(--color-gold) 0 1px, transparent 1px 2px, var(--color-vermilion) 2px 100%);
+  pointer-events: none;
+}
+
+/* ── Label (left) ── */
+.label {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  margin: 0;
+  padding: 0 calc(var(--chevron) + 0.9rem) 4px 0.85rem;
+  background: linear-gradient(135deg, var(--color-vermilion-bright), var(--color-vermilion) 55%, var(--color-vermilion-deep));
+  color: #fff;
+  clip-path: polygon(0 0, calc(100% - var(--chevron)) 0, 100% 50%, calc(100% - var(--chevron)) 100%, 0 100%);
+}
+
+.icon {
+  position: relative;
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: 2.1rem;
+  height: 2.1rem;
+  border-radius: 50%;
+  background: rgb(255 255 255 / 0.16);
+  box-shadow: inset 0 0 0 1px rgb(239 226 196 / 0.45);
+}
+
+.labelText {
+  display: grid;
+  line-height: 1.05;
+}
+
+.labelBn {
+  font-family: var(--font-bengali-display);
+  font-size: 1.15rem;
+  line-height: 1.25;
+}
+
+.labelEn {
+  color: var(--color-gold-pale);
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: var(--tracking-caps);
+  text-transform: uppercase;
+}
+
+/* ── Scrolling area ── */
+.viewport {
+  position: relative;
+  display: flex;
+  align-items: center;
+  min-width: 0;
+  margin-left: calc(var(--chevron) * -1);
+  padding-bottom: 4px;
+  overflow: hidden;
+  -webkit-mask-image: linear-gradient(90deg, transparent 0, #000 calc(var(--chevron) + 1.75rem), #000 calc(100% - 2rem), transparent 100%);
+  mask-image: linear-gradient(90deg, transparent 0, #000 calc(var(--chevron) + 1.75rem), #000 calc(100% - 2rem), transparent 100%);
+}
+
+.track {
+  display: flex;
+  width: max-content;
+  will-change: transform;
+}
+
+.running {
+  animation: tickerScroll var(--ticker-duration, 40s) linear infinite;
+}
+
+.ticker:hover .running,
+.ticker:focus-within .running,
+.paused {
+  animation-play-state: paused;
+}
+
+@keyframes tickerScroll {
+  from {
+    transform: translate3d(0, 0, 0);
+  }
+  to {
+    transform: translate3d(-50%, 0, 0);
+  }
+}
+
+.group {
+  display: flex;
+  flex: none;
+  align-items: center;
+  margin: 0;
+  padding: 0 0 0 calc(var(--chevron) + 1.75rem);
+  list-style: none;
+}
+
+.item {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  gap: 0.5rem;
+  padding-right: 1.1rem;
+  white-space: nowrap;
+  font-size: clamp(0.95rem, 0.9rem + 0.2vw, 1.0625rem);
+}
+
+.sep {
+  flex: none;
+  margin-left: 0.6rem;
+  color: var(--color-gold);
+}
+
+/* Topic icon (dhak for Puja, people for a meet-up…) in a small gold-ringed disc. */
+.itemIcon {
+  display: grid;
+  flex: none;
+  place-items: center;
+  width: 1.85rem;
+  height: 1.85rem;
+  border-radius: 50%;
+  background: var(--color-gold-pale);
+  box-shadow: inset 0 0 0 1px rgb(176 138 69 / 0.55);
+  color: var(--color-vermilion);
+}
+
+.badge {
+  padding: 0.12rem 0.55rem;
+  border-radius: var(--radius-pill);
+  background: var(--color-vermilion);
+  color: #fff;
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.part {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 0.4rem;
+  color: var(--color-ink);
+}
+
+.link {
+  border-radius: 3px;
+  text-decoration: none;
+  transition: color var(--duration-fast) ease;
+}
+
+.link:hover {
+  color: var(--color-vermilion);
+}
+
+.link:hover > span:first-of-type,
+.link:focus-visible > span:first-of-type {
+  text-decoration: underline;
+  text-decoration-color: currentColor;
+  text-underline-offset: 0.22em;
+}
+
+.title {
+  font-weight: 600;
+}
+
+.event {
+  font-weight: 700;
+}
+
+.sub {
+  color: var(--color-terracotta);
+  font-weight: 600;
+}
+
+.sub::before {
+  content: '·';
+  margin-right: 0.4rem;
+  color: var(--color-gold);
+}
+
+.text {
+  color: var(--color-muted);
+}
+
+.place {
+  align-items: center;
+  gap: 0.3rem;
+  color: var(--color-vermilion);
+  font-weight: 600;
+}
+
+.place > span:first-of-type {
+  text-decoration: underline dotted;
+  text-decoration-color: rgb(168 32 26 / 0.55);
+  text-underline-offset: 0.25em;
+}
+
+.place:hover {
+  color: var(--color-vermilion-deep);
+}
+
+.pin {
+  flex: none;
+  align-self: center;
+}
+
+.ext {
+  font-size: 0.85em;
+}
+
+/* ── "All updates" (right) ── */
+.all {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0 1.1rem 4px;
+  border-left: 1px solid var(--color-line);
+  background: var(--color-ivory-deep);
+  color: var(--color-charcoal);
+  font-size: var(--text-sm);
+  font-weight: 700;
+  white-space: nowrap;
+  text-decoration: none;
+  transition:
+    background-color var(--duration) ease,
+    color var(--duration) ease;
+}
+
+.all svg {
+  transition: transform var(--duration) ease;
+}
+
+.all:hover {
+  background: var(--color-vermilion);
+  color: #fff;
+}
+
+.all:hover svg {
+  transform: translateX(3px);
+}
+
+/* ── Small screens: icon-only label and arrow-only action give the text most of the width ── */
+@media (max-width: 559px) {
+  .ticker {
+    --chevron: 0.7rem;
+  }
+  .label {
+    padding-left: 0.6rem;
+    padding-right: calc(var(--chevron) + 0.5rem);
+  }
+  .labelText,
+  .allText {
+    display: none;
+  }
+  .icon {
+    width: 1.9rem;
+    height: 1.9rem;
+  }
+  .group {
+    padding-left: calc(var(--chevron) + 1.1rem);
+  }
+  .all {
+    justify-content: center;
+    min-width: 44px;
+    padding-inline: 0.7rem;
+  }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .icon::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: 50%;
+    animation: tickerPulse 2.4s ease-out 0.8s infinite;
+  }
+}
+
+@keyframes tickerPulse {
+  0% {
+    box-shadow: 0 0 0 0 rgb(255 255 255 / 0.55);
+  }
+  70%,
+  100% {
+    box-shadow: 0 0 0 9px rgb(255 255 255 / 0);
+  }
+}
+
+/* No movement: show a single copy the visitor can scroll sideways. */
+@media (prefers-reduced-motion: reduce) {
+  .running {
+    animation: none;
+  }
+  .viewport {
+    overflow-x: auto;
+    scrollbar-width: thin;
+  }
+  .group[aria-hidden='true'] {
+    display: none;
+  }
+}

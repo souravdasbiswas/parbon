@@ -5,6 +5,7 @@ import Button from '../../components/ui/Button.jsx';
 import Seo from '../../components/ui/Seo.jsx';
 import { ErrorState, LoadingState } from '../../components/ui/States.jsx';
 import { invalidateApi } from '../../hooks/useApi.js';
+import { announcementIcon } from '../../content/announcementIcons.js';
 import { adminApi } from '../../services/api.js';
 import { useAdminSession } from './adminSession.js';
 import styles from './Admin.module.css';
@@ -13,6 +14,9 @@ const when = (iso) =>
   new Intl.DateTimeFormat('en-IN', { day: 'numeric', month: 'short', year: 'numeric', hour: 'numeric', minute: '2-digit' }).format(
     new Date(iso),
   );
+
+const TICKER_SLOTS = 3;
+const isLive = (a) => a.status === 'published' && new Date(a.publishedAt) <= new Date();
 
 export function AdminBar({ session }) {
   return (
@@ -24,6 +28,7 @@ export function AdminBar({ session }) {
         </p>
         <nav className={styles.barNav} aria-label="Admin">
           <Link to="/admin/announcements">Announcements</Link>
+          <Link to="/admin/responses">Responses</Link>
           <Link to="/announcements" target="_blank">
             View site ↗
           </Link>
@@ -65,6 +70,14 @@ export default function AdminAnnouncements() {
     );
   }
 
+  // Same rule as the server: the list is already sorted pinned-first, then newest.
+  const tickerIds = new Set(
+    (items || [])
+      .filter((a) => isLive(a) && a.showInTicker !== false)
+      .slice(0, TICKER_SLOTS)
+      .map((a) => a.id),
+  );
+
   return (
     <>
       <Seo title="Manage announcements" noindex />
@@ -80,6 +93,12 @@ export default function AdminAnnouncements() {
             </Button>
           </div>
           {error && <ErrorState error={error} />}
+          {items?.length > 0 && (
+            <p className={styles.listSummary}>
+              Home ticker: {tickerIds.size} of {TICKER_SLOTS} slots in use. Tick or untick “Show in the home page ticker” when
+              editing an announcement to choose which ones appear.
+            </p>
+          )}
           {!items && !error && <LoadingState lines={4} />}
           {items?.length === 0 && <p className="muted">No announcements yet — create the first one.</p>}
           {items?.length > 0 && (
@@ -90,7 +109,7 @@ export default function AdminAnnouncements() {
                     <img src={a.image.src} alt="" width="64" height="64" className={styles.thumb} />
                   ) : (
                     <span className={styles.thumb} aria-hidden="true">
-                      <Icon name="megaphone" size={24} />
+                      <Icon name={announcementIcon(a)} size={24} />
                     </span>
                   )}
                   <div className={styles.rowMain}>
@@ -100,6 +119,12 @@ export default function AdminAnnouncements() {
                         {a.status === 'draft' ? 'Draft' : new Date(a.publishedAt) > new Date() ? 'Scheduled' : 'Published'}
                       </span>
                       {a.pinned && <span className={styles.badge}>Pinned</span>}
+                      {tickerIds.has(a.id) && <span className={`${styles.badge} ${styles.badgeTicker}`}>In ticker</span>}
+                      {a.showInTicker !== false && !tickerIds.has(a.id) && isLive(a) && (
+                        <span className={`${styles.badge} ${styles.badgeDraft}`} title="Only 3 ticked announcements fit in the ticker">
+                          Ticker full
+                        </span>
+                      )}
                       <span>{when(a.publishedAt)}</span>
                     </p>
                   </div>
