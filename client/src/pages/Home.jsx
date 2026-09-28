@@ -15,12 +15,46 @@ import Logo from '../components/ui/Logo.jsx';
 import SectionHeading from '../components/ui/SectionHeading.jsx';
 import Seo from '../components/ui/Seo.jsx';
 import { ErrorState, LoadingState } from '../components/ui/States.jsx';
+import Ticker from '../components/ui/Ticker.jsx';
+import { announcementIcon } from '../content/announcementIcons.js';
 import { announcements as announcementsCopy, home } from '../content/pages.js';
 import { useApi } from '../hooks/useApi.js';
-import { formatDate, toBengaliDigits } from '../i18n/format.js';
+import { formatDate, formatDateRange, toBengaliDigits } from '../i18n/format.js';
 import { useLocale } from '../i18n/LocaleContext.jsx';
 import { announcementsApi, contentApi } from '../services/api.js';
 import styles from './Home.module.css';
+
+const tickerCopy = announcementsCopy.ticker;
+
+/** Fixed Puja item first (dates → Puja page, venue → Google Maps), then the latest announcements. */
+function buildTickerItems({ puja, news, t }) {
+  const items = [];
+  if (puja) {
+    const parts = [
+      {
+        kind: 'event',
+        text: t(puja.title),
+        sub: formatDateRange(puja.startDate, puja.endDate, 'en', { day: 'numeric', month: 'short' }),
+        to: '/durga-puja',
+      },
+    ];
+    const venue = puja.venue;
+    if (venue?.name) {
+      const place = [t(venue.name), t(venue.area)?.split(',')[0]].filter(Boolean).join(', ');
+      parts.push({ kind: 'text', text: t(tickerCopy.at) });
+      parts.push(
+        venue.mapUrl
+          ? { kind: 'place', text: place, href: venue.mapUrl, ariaLabel: `${place} — ${t(tickerCopy.opensMap)}` }
+          : { kind: 'place', text: place },
+      );
+    }
+    items.push({ key: `event-${puja.slug}`, icon: 'dhak', badge: t(tickerCopy.new), parts });
+  }
+  for (const a of news || []) {
+    items.push({ key: a.id, icon: announcementIcon(a), parts: [{ kind: 'title', text: t(a.title), to: `/announcements/${a.slug}` }] });
+  }
+  return items;
+}
 
 export default function Home() {
   const { t } = useLocale();
@@ -29,11 +63,13 @@ export default function Home() {
   const events = useApi('events', () => contentApi.events());
   const puja = useApi('event:durga-puja-2026', () => contentApi.event('durga-puja-2026'));
   const news = useApi('announcements:home', () => announcementsApi.list(2));
-  const latest = news.data?.[0];
+  const tickerNews = useApi('announcements:ticker', announcementsApi.ticker);
 
   const featured = site.data?.featuredEvent;
   const upcoming = (events.data || []).slice(0, 3);
   const pujaDays = (puja.data?.schedule || []).filter((d) => d.main);
+  const tickerItems = buildTickerItems({ puja: puja.data, news: tickerNews.data, t });
+  const latestCards = news.data || [];
 
   return (
     <>
@@ -43,29 +79,15 @@ export default function Home() {
       <section className={styles.hero} aria-labelledby="page-title">
         <Alpana className={styles.heroAlpana} strokeWidth={0.8} />
         <div className={`container ${styles.heroGrid}`}>
-          {/* Reserved slot so the notice (loaded from the API) never shifts the hero. First on mobile. */}
+          {/* Reserved slot so the ticker (loaded from the API) never shifts the hero. First on every screen. */}
           <div className={styles.noticeSlot}>
-            {latest && (
-              <div className={styles.notice}>
-                <Link to={`/announcements/${latest.slug}`} className={styles.noticeMain}>
-                  <span className={styles.noticeIcon} aria-hidden="true">
-                    <Icon name="megaphone" size={20} />
-                  </span>
-                  <span className={styles.noticeBody}>
-                    <span className={styles.noticeTag}>
-                      <span lang="bn">{announcementsCopy.home.pill.bn}</span> · {announcementsCopy.home.pill.en}
-                    </span>
-                    <span className={styles.noticeText}>{t(latest.title)}</span>
-                    <span className={styles.noticeCta}>
-                      {t(announcementsCopy.home.read)} <Icon name="arrow" size={15} />
-                    </span>
-                  </span>
-                </Link>
-                <Link to="/announcements" className={styles.noticeAll}>
-                  {t(announcementsCopy.home.all)}
-                </Link>
-              </div>
-            )}
+            <Ticker
+              items={tickerItems}
+              label={tickerCopy.label}
+              ariaLabel={tickerCopy.aria}
+              allTo="/announcements"
+              allLabel={t(announcementsCopy.home.all)}
+            />
           </div>
           <div className={styles.heroText}>
             <p className={styles.eyebrow}>
@@ -205,12 +227,12 @@ export default function Home() {
       </section>
 
       {/* ───────── Announcements ───────── */}
-      {news.data?.length > 0 && (
+      {latestCards.length > 0 && (
         <section className={`section ${styles.news}`} aria-labelledby="news-title">
           <div className="container">
             <SectionHeading id="news-title" eyebrow={announcementsCopy.home.eyebrow} title={announcementsCopy.home.title} />
-            <div className={`${styles.newsGrid} ${news.data.length === 1 ? styles.newsSingle : ''}`}>
-              {news.data.map((a) => (
+            <div className={`${styles.newsGrid} ${latestCards.length === 1 ? styles.newsSingle : ''}`}>
+              {latestCards.map((a) => (
                 <div key={a.id} className="reveal">
                   <AnnouncementCard announcement={a} compact />
                 </div>

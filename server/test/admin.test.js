@@ -143,6 +143,39 @@ describe('admin announcement management', () => {
   });
 });
 
+describe('home ticker', () => {
+  const ticker = async () => (await (await api('/announcements?ticker=1', { auth: false })).json()).data;
+  const createPost = async (title, extra = {}) =>
+    (await (await api('/admin/announcements', { method: 'POST', body: { ...sample, title: { en: title }, ...extra } })).json()).data;
+  const made = [];
+
+  after(async () => {
+    for (const a of made) await api(`/admin/announcements/${a.id}`, { method: 'DELETE' });
+  });
+
+  it('defaults to ticked, keeps a chosen icon and ignores unknown icons', async () => {
+    const a = await createPost('Ticker default post', { icon: 'music' });
+    const b = await createPost('Ticker odd icon', { icon: '<script>' });
+    made.push(a, b);
+    assert.equal(a.showInTicker, true);
+    assert.equal(a.icon, 'music');
+    assert.equal(b.icon, null);
+  });
+
+  it('shows at most 3 ticked, published announcements and respects unticking', async () => {
+    const hidden = await createPost('Not for the ticker', { showInTicker: false, pinned: true });
+    made.push(hidden);
+    const list = await ticker();
+    assert.equal(list.length, 3);
+    assert.ok(!list.some((a) => a.id === hidden.id));
+    assert.ok(list.every((a) => a.status === 'published' && a.showInTicker !== false));
+
+    // Ticking it again brings it in (pinned, so it goes first).
+    await api(`/admin/announcements/${hidden.id}`, { method: 'PUT', body: { ...sample, title: { en: 'Not for the ticker' }, pinned: true } });
+    assert.equal((await ticker())[0].id, hidden.id);
+  });
+});
+
 describe('admin image uploads', () => {
   const png1x1 =
     'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==';

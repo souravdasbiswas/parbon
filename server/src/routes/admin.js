@@ -5,7 +5,9 @@ import { requireAdmin, sameOrigin } from '../middleware/auth.js';
 import { HttpError } from '../middleware/errorHandler.js';
 import { announcementService } from '../services/announcementService.js';
 import { SESSION_COOKIE, adminConfigured, checkCredentials, createSessionToken } from '../services/authService.js';
+import { queryResponses } from '../services/responsesService.js';
 import { saveAnnouncementImage } from '../services/uploadService.js';
+import { toCsv } from '../utils/csv.js';
 import { validateAnnouncement } from '../utils/validateAnnouncement.js';
 
 export const adminRouter = Router();
@@ -93,4 +95,38 @@ adminRouter.delete('/announcements/:id', requireAdmin, async (req, res) => {
 adminRouter.post('/uploads', requireAdmin, express.json({ limit: '8mb' }), async (req, res) => {
   const saved = await saveAnnouncementImage(req.body?.dataUrl);
   res.status(201).json({ data: saved });
+});
+
+// ── Contact-form responses (read-only view of inquiries.ndjson) ──
+
+adminRouter.get('/responses', requireAdmin, async (req, res) => {
+  res.json({ data: await queryResponses(req.query) });
+});
+
+// India Standard Time has no daylight saving, so a fixed +05:30 offset is exact.
+const IST_OFFSET_MS = 330 * 60 * 1000;
+const toIst = (iso) => {
+  const time = Date.parse(iso);
+  return Number.isNaN(time) ? '' : new Date(time + IST_OFFSET_MS).toISOString().slice(0, 16).replace('T', ' ');
+};
+
+const CSV_COLUMNS = [
+  { header: 'Received (IST)', value: (r) => toIst(r.createdAt) },
+  { header: 'Received (ISO)', value: (r) => r.createdAt },
+  { header: 'Type', value: (r) => r.typeLabel },
+  { header: 'Name', value: (r) => r.name },
+  { header: 'Email', value: (r) => r.email },
+  { header: 'Phone', value: (r) => r.phone },
+  { header: 'Message', value: (r) => r.message },
+  { header: 'Reference ID', value: (r) => r.id },
+  { header: 'IP address', value: (r) => r.ip },
+  { header: 'Browser (user agent)', value: (r) => r.userAgent },
+];
+
+adminRouter.get('/responses/export.csv', requireAdmin, async (req, res) => {
+  const { items } = await queryResponses(req.query);
+  const date = toIst(new Date().toISOString()).slice(0, 10);
+  res.setHeader('Content-Type', 'text/csv; charset=utf-8');
+  res.setHeader('Content-Disposition', `attachment; filename="parbon-responses-${date}.csv"`);
+  res.send(toCsv(CSV_COLUMNS, items));
 });

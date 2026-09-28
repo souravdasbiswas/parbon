@@ -54,6 +54,7 @@ const shortCache = (_req, res, next) => {
 };
 
 apiRouter.get('/announcements', shortCache, async (req, res) => {
+  if (req.query.ticker === '1') return res.json({ data: await announcementService.listForTicker() });
   const limit = Math.min(50, Math.max(0, Number.parseInt(req.query.limit, 10) || 0)) || undefined;
   res.json({ data: await announcementService.listPublished({ limit }) });
 });

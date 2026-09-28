@@ -289,8 +289,13 @@ export const announcements = {
     eyebrow: { en: 'Latest from the Samity', bn: 'সাম্প্রতিক' },
     title: { bn: 'খবরাখবর', en: 'Announcements' },
     cta: { en: 'All announcements', bn: 'সব খবর' },
-    pill: { en: 'New update', bn: 'নতুন' },
-    read: { en: 'Read the update', bn: 'বিস্তারিত পড়ুন' },
     all: { en: 'All updates', bn: 'সব খবর' },
+  },
+  ticker: {
+    label: { bn: 'নতুন', en: 'Latest' },
+    aria: 'Latest updates',
+    new: { en: 'New', bn: 'নতুন' },
+    at: { en: 'at', bn: '—' },
+    opensMap: { en: 'opens Google Maps', bn: 'গুগল ম্যাপে খুলবে' },
   },
 };

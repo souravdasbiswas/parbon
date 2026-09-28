@@ -18,6 +18,7 @@ const AnnouncementDetail = lazy(() => import('./pages/AnnouncementDetail.jsx'));
 const AdminLogin = lazy(() => import('./pages/admin/AdminLogin.jsx'));
 const AdminAnnouncements = lazy(() => import('./pages/admin/AdminAnnouncements.jsx'));
 const AdminAnnouncementForm = lazy(() => import('./pages/admin/AdminAnnouncementForm.jsx'));
+const AdminResponses = lazy(() => import('./pages/admin/AdminResponses.jsx'));
 const NotFound = lazy(() => import('./pages/NotFound.jsx'));
 
 function RouteError() {
@@ -54,6 +55,7 @@ export const router = createBrowserRouter([
       { path: 'admin/announcements', Component: AdminAnnouncements },
       { path: 'admin/announcements/new', Component: AdminAnnouncementForm },
       { path: 'admin/announcements/:id', Component: AdminAnnouncementForm },
+      { path: 'admin/responses', Component: AdminResponses },
       { path: '*', Component: NotFound },
     ],
   },

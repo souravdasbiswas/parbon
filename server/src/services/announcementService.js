@@ -70,6 +70,9 @@ const sortForDisplay = (a, b) =>
   Number(Boolean(b.pinned)) - Number(Boolean(a.pinned)) || String(b.publishedAt).localeCompare(String(a.publishedAt));
 
 const isLive = (a, now = Date.now()) => a.status === 'published' && new Date(a.publishedAt).getTime() <= now;
+// Announcements saved before the ticker setting existed count as ticked.
+export const inTicker = (a) => a.showInTicker !== false;
+export const TICKER_SLOTS = 3;
 
 export function slugify(text) {
   return (
@@ -93,6 +96,14 @@ export const announcementService = {
   async listPublished({ limit } = {}) {
     const items = (await load()).filter((a) => isLive(a)).sort(sortForDisplay);
     return limit ? items.slice(0, limit) : items;
+  },
+
+  /** What the home ticker shows: up to TICKER_SLOTS ticked, live announcements (pinned first, then newest). */
+  async listForTicker() {
+    return (await load())
+      .filter((a) => isLive(a) && inTicker(a))
+      .sort(sortForDisplay)
+      .slice(0, TICKER_SLOTS);
   },
 
   async getPublishedBySlug(slug) {

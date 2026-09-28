@@ -180,7 +180,17 @@ Committee members sign in at **`/admin`** (the link isn't shown publicly). From 
 - an optional button (e.g. "Puja timings" → `/durga-puja`)
 - an optional **"Offer pronami"** button
 
-A live preview shows exactly how the WhatsApp-style card will look. Published announcements appear on `/announcements`, the home page (the "New update" notice at the top of the hero and the latest cards), and the sitemap. Shared links show the poster and text in WhatsApp and Facebook previews.
+A live preview shows exactly how the WhatsApp-style card will look. Published announcements appear on `/announcements`, the home page (the running-text ticker at the top of the hero and the latest cards), and the sitemap. Shared links show the poster and text in WhatsApp and Facebook previews.
+
+**Home ticker (running text)**
+
+The band at the top of the home hero scrolls:
+1. A fixed **"NEW · Durga Puja 2026 · 16–21 Oct at 📍 venue"** item. The title and dates open `/durga-puja`, and the venue opens Google Maps. The title, dates, venue name/area and map link come from the `durga-puja-2026` entry in `server/data/events.json` (`title`, `startDate`, `endDate`, `venue.name`, `venue.area`, `venue.mapUrl`), so edit that file to change them.
+2. Up to **3 announcements** that have **"Show in the home page ticker"** ticked (new announcements start ticked). Pinned ones come first, then the newest, and each links to its page. To choose which three appear, tick or untick that box when editing an announcement. The admin Announcements list shows an **In ticker** badge on the ones currently shown, and **Ticker full** on ticked ones that don't fit.
+
+Each item starts with a topic icon, so its subject is clear at a glance: a dhak for the Puja item, and for announcements a people, lamp (pronami/donation), music, bhog, calendar, book, alpana, sindoor, shankha or megaphone icon. By default it's chosen automatically from words in the title (then the message), e.g. "meet & greet" → people, "cultural" → music. Admins can override it with the **Ticker icon** dropdown in the announcement form, which also previews the automatic choice. The keyword rules are in `client/src/content/announcementIcons.js`.
+
+It pauses on hover, keyboard focus or touch, and it becomes a static, horizontally scrollable row for visitors who prefer reduced motion.
 
 **Announcements from the repo (posters in `images/updates/`)**
 
@@ -249,6 +259,17 @@ Then update `upiId` and `upiLink` in `support.json`. Pronami appears in the home
 
 **Enquiries** from the contact form are appended to `server/storage/inquiries.ndjson` (one JSON object per line). If SMTP is configured, they're also emailed to `MAIL_TO`.
 
+**Viewing form responses (admin)**
+
+Signed-in admins can open **Responses** in the admin bar (`/admin/responses`). The page reads `inquiries.ndjson` **read-only**: it never changes the file or how the form saves. It shows every submission in a table with these columns: received (IST), type, name, email, phone, message, reference ID, IP address and browser.
+- Click a column heading to sort; click it again to reverse the order. Newest submissions are shown first by default.
+- Filter by type (the chips show counts), and search across name, email, phone and message.
+- Email addresses and phone numbers are clickable (email, call, WhatsApp). Long messages expand with *Show more*.
+- **Export CSV** downloads everything that matches the current filter, search and sort, not just the visible page, as `parbon-responses-YYYY-MM-DD.csv`. The file is UTF-8 with a BOM, so Excel shows Bengali correctly. Cells that look like spreadsheet formulas are prefixed with `'` so they can't run.
+- Damaged or partial lines in the file are skipped, and the page says how many were skipped.
+
+The file is the only copy of these messages, apart from any notification emails. Download a backup now and then, and set `STORAGE_DIR` outside the app folder (see [Deploying to Hostinger](#9-deploying-to-hostinger)).
+
 ---
 
 ## 6. Content checklist before launch
@@ -283,7 +304,7 @@ All responses are JSON: `{ "data": … }` on success, `{ "error": { "code", "mes
 | GET    | `/api/announcements/:slug` | A single published announcement                          |
 | POST   | `/api/inquiries`      | Contact / volunteer / membership / sponsorship enquiry        |
 
-Admin endpoints (require the admin session cookie, and reject cross-site requests): `POST /api/admin/login`, `POST /api/admin/logout`, `GET /api/admin/me`, `GET|POST /api/admin/announcements`, `GET|PUT|DELETE /api/admin/announcements/:id`, and `POST /api/admin/uploads` (image as a base64 data URL; the file is checked by its content bytes, max 5 MB).
+Admin endpoints (require the admin session cookie, and reject cross-site requests): `POST /api/admin/login`, `POST /api/admin/logout`, `GET /api/admin/me`, `GET|POST /api/admin/announcements`, `GET|PUT|DELETE /api/admin/announcements/:id`, `POST /api/admin/uploads` (image as a base64 data URL; the file is checked by its content bytes, max 5 MB), and the read-only `GET /api/admin/responses` and `GET /api/admin/responses/export.csv` (both accept `type`, `q`, `sort` = `createdAt|type|name|email|phone|ip`, and `dir` = `asc|desc`).
 
 `POST /api/inquiries` body:
 
@@ -351,7 +372,7 @@ Parbon needs Node.js hosting. On Hostinger that means **Business Web Hosting**, 
 
 **Persisted data:** these are created at runtime:
 - `server/storage/announcements.json` — admin-created announcements; entries from `server/data/announcements.seed.json` are merged in once each (tracked in its `seeded` list)
-- `server/storage/inquiries.ndjson` — contact form messages
+- `server/storage/inquiries.ndjson` — contact form messages (viewable and exportable at `/admin/responses`)
 - `server/media/announcements/` — uploaded announcement images
 
 A Git redeploy can replace the app folder. On Hostinger, set **`STORAGE_DIR`** and **`MEDIA_DIR`** to folders outside the deployment directory (e.g. `/home/<user>/parbon-data/storage` and `/home/<user>/parbon-data/media`), then copy the `server/media` contents there once. After that, redeploys never touch your announcements, images or enquiries.
