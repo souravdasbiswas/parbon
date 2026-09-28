@@ -3,13 +3,15 @@ import { mkdir, readFile, rename, writeFile } from 'node:fs/promises';
 import { existsSync } from 'node:fs';
 import path from 'node:path';
 import { config } from '../config.js';
+import { databaseReady } from '../db/index.js';
+import { announcementsTable, readSeedAnnouncements } from '../db/announcementsTable.js';
 
 /**
- * Announcements are created by admins at runtime, so they live in STORAGE_DIR
- * (never overwritten by a code redeploy). Entries in server/data/announcements.seed.json
- * are merged into the store once each (tracked in `seeded`), so new seed entries reach an
- * existing site after a deploy, and an entry an admin deletes stays deleted.
- * Swap this module for a database later — the routes only use the exported functions.
+ * Announcements are created by admins at runtime. With a database configured (DB_* variables)
+ * they live in MySQL, which survives redeploys; otherwise in STORAGE_DIR/announcements.json.
+ * Entries in server/data/announcements.seed.json are merged in once each, so new seed entries
+ * reach an existing site after a deploy, and an entry an admin deletes stays deleted.
+ * Routes only use the exported functions, whichever store is active.
  */
 const storeFile = () => path.join(config.paths.storage, 'announcements.json');
 const seedFile = () => path.join(config.paths.data, 'announcements.seed.json');
@@ -22,6 +24,7 @@ const exclusive = (fn) => {
   return run;
 };
 
+// ── File store ──
 let seeded = [];
 
 async function readStore() {
@@ -40,7 +43,7 @@ async function syncSeed() {
   const fresh = seed.filter((a) => a.id && !seeded.includes(a.id));
   if (!store || !store.seeded || fresh.length) {
     seeded = [...seeded, ...fresh.map((a) => a.id)];
-    await save([...announcements, ...fresh]);
+    await saveFile([...announcements, ...fresh]);
   }
 }
 
@@ -53,19 +56,62 @@ const init = () => {
   return ready;
 };
 
-async function load() {
+async function loadFile() {
   await init();
   const { announcements = [] } = (await readStore()) || {};
   return announcements;
 }
 
-async function save(announcements) {
+async function saveFile(announcements) {
   const file = storeFile();
   const tmp = `${file}.${process.pid}.tmp`;
   await writeFile(tmp, JSON.stringify({ announcements, seeded }, null, 2), 'utf8');
   await rename(tmp, file); // atomic replace
 }
 
+const fileStore = {
+  list: loadFile,
+  async insert(record) {
+    const list = await loadFile();
+    await saveFile([...list, record]);
+  },
+  async update(record) {
+    const list = await loadFile();
+    await saveFile(list.map((a) => (a.id === record.id ? record : a)));
+  },
+  async remove(id) {
+    const list = await loadFile();
+    const next = list.filter((a) => a.id !== id);
+    if (next.length === list.length) return false;
+    await saveFile(next);
+    return true;
+  },
+};
+
+// ── MySQL store ──
+const mysqlStore = {
+  list: async () => announcementsTable.all(await databaseReady()),
+  insert: async (record) => announcementsTable.insert(await databaseReady(), record),
+  update: async (record) => announcementsTable.update(await databaseReady(), record),
+  remove: async (id) => announcementsTable.remove(await databaseReady(), id),
+};
+
+const store = config.db.enabled ? mysqlStore : fileStore;
+const load = () => store.list();
+
+/**
+ * For public pages: if the database is briefly unreachable, show the announcements shipped with the
+ * code (announcements.seed.json) instead of an error, so the home page and shared links keep working.
+ * Admin pages still use `load` and show the real error.
+ */
+async function loadPublic() {
+  try {
+    return await load();
+  } catch (error) {
+    if (!config.db.enabled) throw error;
+    return readSeedAnnouncements();
+  }
+}
 const sortForDisplay = (a, b) =>
   Number(Boolean(b.pinned)) - Number(Boolean(a.pinned)) || String(b.publishedAt).localeCompare(String(a.publishedAt));
 
@@ -94,20 +140,20 @@ function uniqueSlug(base, list, ignoreId) {
 
 export const announcementService = {
   async listPublished({ limit } = {}) {
-    const items = (await load()).filter((a) => isLive(a)).sort(sortForDisplay);
+    const items = (await loadPublic()).filter((a) => isLive(a)).sort(sortForDisplay);
     return limit ? items.slice(0, limit) : items;
   },
 
   /** What the home ticker shows: up to TICKER_SLOTS ticked, live announcements (pinned first, then newest). */
   async listForTicker() {
-    return (await load())
+    return (await loadPublic())
       .filter((a) => isLive(a) && inTicker(a))
       .sort(sortForDisplay)
       .slice(0, TICKER_SLOTS);
   },
 
   async getPublishedBySlug(slug) {
-    return (await load()).find((a) => a.slug === slug && isLive(a)) || null;
+    return (await loadPublic()).find((a) => a.slug === slug && isLive(a)) || null;
   },
 
   async listAll() {
@@ -131,8 +177,7 @@ export const announcementService = {
         updatedAt: now,
         author,
       };
-      list.push(record);
-      await save(list);
+      await store.insert(record);
       return record;
     });
   },
@@ -144,19 +189,13 @@ export const announcementService = {
       if (index === -1) return null;
       const current = list[index];
       const slug = uniqueSlug(slugify(input.slug || current.slug || input.title.en), list, id);
-      list[index] = { ...current, ...input, slug, id, createdAt: current.createdAt, updatedAt: new Date().toISOString() };
-      await save(list);
-      return list[index];
+      const record = { ...current, ...input, slug, id, createdAt: current.createdAt, updatedAt: new Date().toISOString() };
+      await store.update(record);
+      return record;
     });
   },
 
   remove(id) {
-    return exclusive(async () => {
-      const list = await load();
-      const next = list.filter((a) => a.id !== id);
-      if (next.length === list.length) return false;
-      await save(next);
-      return true;
-    });
+    return exclusive(() => store.remove(id));
   },
 };

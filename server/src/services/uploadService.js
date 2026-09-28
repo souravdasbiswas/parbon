@@ -2,9 +2,11 @@ import { randomBytes } from 'node:crypto';
 import { mkdir, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 import { config } from '../config.js';
+import { databaseReady } from '../db/index.js';
 import { HttpError } from '../middleware/errorHandler.js';
 
 const MAX_BYTES = 5 * 1024 * 1024;
+const MIME = { jpg: 'image/jpeg', png: 'image/png', webp: 'image/webp' };
 
 // Identify images by their magic bytes — never trust the declared type or file name.
 const SIGNATURES = [
@@ -13,7 +15,7 @@ const SIGNATURES = [
   { ext: 'webp', test: (b) => b.subarray(0, 4).toString('ascii') === 'RIFF' && b.subarray(8, 12).toString('ascii') === 'WEBP' },
 ];
 
-/** Saves a base64 data-URL image under MEDIA_DIR/announcements and returns its public path. */
+/** Saves a base64 data-URL image (database, or MEDIA_DIR/announcements) and returns its public path. */
 export async function saveAnnouncementImage(dataUrl) {
   const match = /^data:image\/(jpeg|png|webp);base64,([A-Za-z0-9+/=]+)$/.exec(String(dataUrl || ''));
   if (!match) throw new HttpError(422, 'INVALID_IMAGE', 'Please choose a JPEG, PNG or WebP image.');
@@ -23,10 +25,30 @@ export async function saveAnnouncementImage(dataUrl) {
   const kind = SIGNATURES.find((s) => s.test(buffer));
   if (!kind) throw new HttpError(422, 'INVALID_IMAGE', 'That file does not look like a valid image.');
 
-  const dir = path.join(config.paths.media, 'announcements');
-  await mkdir(dir, { recursive: true });
   const date = new Date().toISOString().slice(0, 10).replace(/-/g, '');
   const name = `${date}-${randomBytes(6).toString('hex')}.${kind.ext}`;
-  await writeFile(path.join(dir, name), buffer);
+  if (config.db.enabled) {
+    // In the database, so the image survives redeploys (the app folder is replaced on each deploy).
+    const db = await databaseReady();
+    await db.query('INSERT INTO media (name, mime, size, bytes, created_at) VALUES (?, ?, ?, ?, ?)', [
+      name,
+      MIME[kind.ext],
+      buffer.length,
+      buffer,
+      new Date().toISOString(),
+    ]);
+  } else {
+    const dir = path.join(config.paths.media, 'announcements');
+    await mkdir(dir, { recursive: true });
+    await writeFile(path.join(dir, name), buffer);
+  }
   return { src: `/media/announcements/${name}`, bytes: buffer.length };
+}
+
+/** Finds an uploaded image stored in the database (null when not found or no database). */
+export async function findStoredImage(name) {
+  if (!config.db.enabled || !/^[\w.-]+\.(jpe?g|png|webp)$/i.test(name)) return null;
+  const db = await databaseReady();
+  const [rows] = await db.query('SELECT mime, bytes FROM media WHERE name = ?', [name]);
+  return rows[0] || null;
 }

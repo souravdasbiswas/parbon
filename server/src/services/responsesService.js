@@ -1,11 +1,12 @@
 import { readFile, stat } from 'node:fs/promises';
 import path from 'node:path';
 import { config } from '../config.js';
+import { databaseReady } from '../db/index.js';
 import { INQUIRY_TYPES } from './inquiryService.js';
 
 /**
- * Read-only view of the contact-form submissions that inquiryService appends to
- * STORAGE_DIR/inquiries.ndjson. This module only ever reads that file.
+ * Read-only view of the contact-form submissions saved by inquiryService: the `inquiries` table
+ * when a database is configured, otherwise STORAGE_DIR/inquiries.ndjson. This module never writes.
  */
 const responsesFile = () => path.join(config.paths.storage, 'inquiries.ndjson');
 
@@ -31,8 +32,32 @@ function toResponse(record, index) {
   };
 }
 
+async function readFromDatabase() {
+  const db = await databaseReady();
+  const [rows] = await db.query(
+    'SELECT id, created_at, type, name, email, phone, message, ip, user_agent FROM inquiries ORDER BY created_at DESC',
+  );
+  const items = rows.map((r, index) =>
+    toResponse(
+      {
+        id: r.id,
+        createdAt: r.created_at,
+        type: r.type,
+        name: r.name,
+        email: r.email,
+        phone: r.phone,
+        message: r.message,
+        meta: { ip: r.ip, userAgent: r.user_agent },
+      },
+      index,
+    ),
+  );
+  return { items, skipped: 0 };
+}
+
 /** Parses the file, skipping blank or damaged lines. Cached until the file changes. */
 export async function readResponses() {
+  if (config.db.enabled) return readFromDatabase();
   const file = responsesFile();
   let info;
   try {

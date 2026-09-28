@@ -41,9 +41,10 @@ Open http://localhost:5173.
 | `npm run dev`    | Runs the Express API (auto-restart) and the Vite dev server together |
 | `npm run build`  | Builds the React app into `client/dist`                              |
 | `npm start`      | Starts the production server (`server.js`): API + built frontend     |
-| `npm test`       | Runs the API/server tests (`node:test`, no extra dependencies)       |
+| `npm test`       | Runs the API/server tests (`node:test`; MySQL tests run when `TEST_DB_HOST` is set) |
 | `npm run lint`   | Lints the React code with ESLint                                     |
 | `npm run images` | Regenerates optimized logo files from `images/logo.jpeg` (see §10)   |
+| `npm run db:migrate` | Imports old file data into MySQL (`--dry-run`, `--from <folder>`; see [Database](#database-mysql)) |
 | `npm run images:updates` | Prepares announcement posters from `images/updates/` (see §5) |
 
 To try the production build locally:
@@ -88,16 +89,17 @@ Parbon/
 └── server/                    # Node.js backend (Express 5)
     ├── data/                  # ★ Site content as JSON — edit these files to update the site
     ├── media/                 # ★ Uploaded photos (gallery/, committee/) served at /media
-    ├── storage/               # Saved enquiries (inquiries.ndjson) — not committed
+    ├── storage/               # File store when no database is configured — not committed
     ├── src/
-    │   ├── index.js           # Starts the HTTP server
+    │   ├── index.js           # Starts the HTTP server (and connects to MySQL if configured)
     │   ├── app.js             # Express app: security, compression, API, static files, SPA fallback
     │   ├── config.js          # All environment configuration in one place
-    │   ├── routes/            # api.js (REST), seo.js (robots.txt, sitemap.xml)
-    │   ├── services/          # contentService, inquiryService, mailService
-    │   ├── middleware/        # cors, errorHandler
-    │   └── utils/validate.js
-    └── test/api.test.js
+    │   ├── db/                # MySQL: connection + schema, announcements table, one-time import of old files
+    │   ├── routes/            # api.js (REST), admin.js, seo.js (robots.txt, sitemap.xml)
+    │   ├── services/          # content, announcements, inquiries, responses, uploads, mail
+    │   ├── middleware/        # cors, errorHandler, auth
+    │   └── utils/             # validation, CSV
+    └── test/                  # node:test suites (MySQL suite runs when TEST_DB_HOST is set)
 ```
 
 ---
@@ -107,7 +109,7 @@ Parbon/
 ```
 Browser ──► Express (server.js)
              ├── /api/*          REST API (JSON)  ──► contentService ──► server/data/*.json
-             │                                     └► inquiryService ──► storage/*.ndjson (+ optional email)
+             │                                     └► inquiryService ──► MySQL `inquiries` or storage/*.ndjson (+ optional email)
              ├── /media/*        uploaded photos
              ├── /robots.txt, /sitemap.xml         (built from SITE_URL + events)
              ├── /assets/*       hashed JS/CSS/fonts (cached for 1 year)
@@ -120,7 +122,7 @@ Key decisions:
 - **Frontend and backend stay separate.** `client/` and `server/` are separate npm workspaces. The frontend only talks to the backend over REST (`client/src/services/api.js`). You can later host them apart by setting `VITE_API_BASE_URL` and `CORS_ORIGINS`.
 - **Content is data.** Events, gallery, committee, sponsorship tiers and contact details live in `server/data/*.json`. The server re-reads a file when it changes, so edits go live without a restart or rebuild.
 - **Repository pattern.** `JsonContentRepository` is the only code that knows content lives in files. To move to a database or headless CMS, write a repository with the same `read(name)` method (or swap `createContentService`). Routes and the frontend don't change.
-- **No unnecessary infrastructure.** No database, Docker, serverless or third-party services are needed. Email notifications are optional (SMTP).
+- **No unnecessary infrastructure.** No Docker, serverless or third-party services are needed. A MySQL database is optional: it's recommended on Hostinger so runtime data survives redeploys, and without it the app uses files. Email notifications are optional (SMTP).
 
 ---
 
@@ -331,6 +333,9 @@ Copy `.env.example` to `.env` for local use. On Hostinger, set these in hPanel. 
 | `SMTP_USER` / `SMTP_PASS` | *(empty)*      | Mailbox credentials (never commit these)                      |
 | `MAIL_FROM` / `MAIL_TO`   | —              | Sender, and the committee inbox that receives enquiries       |
 | `DATA_DIR` / `MEDIA_DIR` / `STORAGE_DIR` | `server/…` | Optional overrides for content, media and runtime storage (announcements, enquiries) |
+| `DB_HOST` / `DB_PORT` | `127.0.0.1` / `3306` | MySQL/MariaDB server. On Hostinger use `127.0.0.1` (not `localhost`, which can resolve to IPv6 `::1`) |
+| `DB_NAME` / `DB_USER` / `DB_PASSWORD` | *(empty)* | Database for announcements, form responses and uploaded images (see [Database](#database-mysql)). Empty `DB_NAME` = file storage |
+| `LEGACY_IMPORT_DIRS` | *(empty)* | Extra old app folders to import once into the database. Earlier Hostinger deployments are found automatically |
 | `ADMIN_USERNAME` | *(empty)*            | Admin sign-in name. Admin is disabled until all three admin variables are set |
 | `ADMIN_PASSWORD_HASH` | *(empty)*       | scrypt hash from `npm run admin:hash -- "password"` (never the plain password) |
 | `SESSION_SECRET` | *(empty)*            | 32+ random characters for signing admin sessions (printed by `admin:hash`) |
@@ -370,12 +375,67 @@ Parbon needs Node.js hosting. On Hostinger that means **Business Web Hosting**, 
 
 **Updating content on Hostinger:** edit the files in `server/data/` and upload photos to `server/media/` with **File Manager**. The changes are live immediately. If you deploy from Git, commit content changes to the repo too, or a redeploy will overwrite files you edited on the server.
 
-**Persisted data:** these are created at runtime:
-- `server/storage/announcements.json` — admin-created announcements; entries from `server/data/announcements.seed.json` are merged in once each (tracked in its `seeded` list)
-- `server/storage/inquiries.ndjson` — contact form messages (viewable and exportable at `/admin/responses`)
-- `server/media/announcements/` — uploaded announcement images
+**Persisted data:** announcements, contact-form messages and uploaded announcement images are created at runtime. **Hostinger's Node.js hosting builds each deployment into a new folder, so anything saved inside the app folder is lost on the next deploy.** Use the database (below) so this data survives.
 
-A Git redeploy can replace the app folder. On Hostinger, set **`STORAGE_DIR`** and **`MEDIA_DIR`** to folders outside the deployment directory (e.g. `/home/<user>/parbon-data/storage` and `/home/<user>/parbon-data/media`), then copy the `server/media` contents there once. After that, redeploys never touch your announcements, images or enquiries.
+#### Database (MySQL)
+
+With `DB_NAME` and `DB_USER` set, the app stores these in MySQL/MariaDB:
+
+| Table | Holds |
+| --- | --- |
+| `announcements` | Admin-created announcements (whole record as JSON in `data`) |
+| `announcement_seeds` | Seed entries already merged once, so a seed an admin deletes stays deleted |
+| `inquiries` | Contact-form submissions (shown on `/admin/responses`) |
+| `media` | Uploaded announcement images, served from `/media/announcements/<name>` |
+| `data_imports` | Old files already imported (by content hash) |
+
+The tables are created automatically on start, so no SQL needs to be run by hand. `https://your-domain/api/health` shows `"storage": "mysql"` and `"database": "connected"` when the database is in use. The admin **Storage** page (`/admin/storage`) shows row counts, the old folders checked and what was imported.
+
+##### Switching the live site to MySQL (first time)
+
+The migration runs by itself when the new version starts. There's no script to run and no downtime.
+
+1. **Back up first (recommended):** in hPanel → File Manager, open the running deployment's folder (`/home/<user>/domains/<site>/hbuilds/versions/<newest id>/nodejs/server/`). Download `storage/` and `media/announcements/`.
+2. **hPanel → Databases → Management:** note the database name and user, and reset the user's password if needed.
+3. **Websites → your site → Environment variables:** add `DB_NAME`, `DB_USER` and `DB_PASSWORD`. `DB_HOST` (`127.0.0.1`) and `DB_PORT` (`3306`) are the defaults. Also make sure `ADMIN_USERNAME`, `ADMIN_PASSWORD_HASH` and `SESSION_SECRET` are set.
+4. **Deploy.** When the new version starts, it:
+   - creates the tables;
+   - finds the **earlier deployment folders** next to it (`hbuilds/versions/*/nodejs`) and imports their announcements, form responses and uploaded images. Nothing needs to be set;
+   - checks those folders again **2 and 10 minutes later**, to catch any form sent to the old version while the switch was happening.
+
+   While this happens, the old version keeps serving until Hostinger switches traffic, so visitors see no gap.
+5. **Check:**
+   - `/api/health` → `"database": "connected"`;
+   - `/admin/storage` → the counts match what you expect;
+   - `/admin/responses` lists earlier registrations;
+   - announcement images load.
+   The runtime log shows `[parbon] imported into MySQL: …`.
+
+How the import treats data:
+- Old files are **only read, never changed**.
+- Each file is imported once (tracked by content hash in `data_imports`). Rows use `INSERT IGNORE`, so nothing already in the database is overwritten or duplicated, and later redeploys import nothing new.
+- Every deployment used to start from an empty folder, so each old folder may hold announcements that exist nowhere else. All announcement snapshots are therefore merged, newest first; if the same announcement appears twice, the latest edit wins. An announcement deleted in one old deployment could come back if another old folder still has it; delete it again in the admin and it stays deleted. Form responses and images from all folders are merged.
+
+**If the old folders are gone or somewhere else:** add the folders to **`LEGACY_IMPORT_DIRS`** (comma-separated) and redeploy. Or import files downloaded from File Manager, from your computer:
+
+```bash
+npm run db:migrate -- --dry-run --from ./backup   # shows what the files contain; writes nothing
+npm run db:migrate -- --from ./backup             # imports into the database set in DB_* (safe to repeat)
+```
+
+To reach Hostinger's database from your computer, enable **hPanel → Databases → Remote MySQL** for your IP. Then use the remote host shown there as `DB_HOST` in your local `.env`. `--from` accepts an app folder, a `server` folder or a storage folder.
+
+**If something looks wrong after the switch:** nothing is lost, because the old folders are untouched. Removing `DB_NAME` and redeploying returns to file storage, but that starts from an empty folder again. Fixing the database settings and redeploying is better, since the import is safe to repeat.
+
+If the database is briefly unreachable:
+- form submissions are appended to `STORAGE_DIR/inquiries.ndjson` and imported on the next start;
+- public pages keep showing the announcements shipped with the code (`announcements.seed.json`);
+- images shipped with the site still load;
+- admin pages show the error.
+
+The error appears in the runtime log.
+
+**Without a database**, data lives in files: `server/storage/announcements.json`, `server/storage/inquiries.ndjson` and `server/media/announcements/`. Set **`STORAGE_DIR`** and **`MEDIA_DIR`** to folders outside the deployment directory (e.g. `/home/<user>/parbon-data/storage` and `/home/<user>/parbon-data/media`) so a redeploy doesn't replace them.
 
 **Admin on Hostinger:** run `npm run admin:hash -- "your-strong-password"` locally, then add `ADMIN_USERNAME`, `ADMIN_PASSWORD_HASH` and `SESSION_SECRET` as environment variables in hPanel. Sign in at `https://your-domain/admin`. The site must be served over HTTPS in production, because the session cookie is `Secure`.
 
@@ -442,14 +502,14 @@ To update: `git pull && npm ci && npm run build && pm2 restart parbon`.
 
 **Security:** Helmet with a strict Content-Security-Policy (`script-src 'self'`), no `x-powered-by`, input validation and normalisation, request size limits, rate limiting, a honeypot, output rendered safely by React (no `dangerouslySetInnerHTML`), secrets only in environment variables, and `.env` git-ignored. The admin area uses an scrypt-hashed password, a signed `HttpOnly` + `SameSite=Strict` + `Secure` session cookie, origin checks against CSRF, a sign-in rate limit (10 per 15 minutes), content-sniffed image uploads with random file names, and `noindex` on all admin pages.
 
-**Tests:** `npm test` covers the content API, validation, rate limiting, honeypot, Bengali text persistence, security headers, SEO routes and SPA status codes.
+**Tests:** `npm test` covers the content API, validation, rate limiting, honeypot, Bengali text persistence, security headers, SEO routes and SPA status codes. The MySQL store tests (`server/test/mysql.test.js`) cover importing old files, preventing duplicates, uploaded images and admin changes. They run when a disposable server is available: `TEST_DB_HOST=127.0.0.1 TEST_DB_PORT=3306 TEST_DB_USER=root TEST_DB_PASSWORD= npm test`. Each run creates and drops its own database.
 
 ---
 
 ## 12. Extending the site
 
 - **Language switcher:** add a toggle that calls `useLocale().setLocale('bn' | 'en')`. The content already supports it.
-- **Database:** implement a repository (e.g. MySQL, which Hostinger provides) with the same interface as `JsonContentRepository`, and replace `persist()` in `inquiryService.js`.
+- **More content in the database:** announcements, form responses and images already use MySQL when configured (`server/src/db/`). Site content in `server/data/*.json` (events, gallery…) is shipped with the code and doesn't need it. It could move behind the same kind of table plus admin pages later.
 - **Admin/CMS:** announcements already have a full admin area (`/admin`). Other content (events, gallery) can follow the same pattern: a storage-backed service, `/api/admin/*` routes protected by `requireAdmin` + `sameOrigin`, and a lazy-loaded admin page.
 - **New event:** add an object to `events.json` with a unique `slug`. It automatically appears on `/events`, gets its own page `/events/<slug>`, and is added to the sitemap.
 - **Online donations:** integrate a payment gateway (e.g. Razorpay) as a new server route. Keep API keys in environment variables.

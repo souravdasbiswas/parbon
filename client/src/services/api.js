@@ -72,4 +72,5 @@ export const adminApi = {
   responses: (params, options) => api.get(`/admin/responses?${new URLSearchParams(params)}`, options),
   /** Plain URL so the browser downloads the file with the admin cookie. */
   responsesCsvUrl: (params) => `${BASE_URL}/api/admin/responses/export.csv?${new URLSearchParams(params)}`,
+  storage: () => api.get('/admin/storage'),
 };
