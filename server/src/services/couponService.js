@@ -429,20 +429,31 @@ export const couponService = {
     };
   },
 
-  async createEvent(value) {
-    const pool = await db();
+  /**
+   * Creates the event and (optionally) its first coupon types in one transaction — either all of
+   * it is saved or none of it, so a failed attempt never leaves a half-made event behind.
+   */
+  async createEvent(value, types = []) {
     const at = now();
     const id = randomUUID();
     const { slug, status, startsAt, endsAt, ...data } = value;
-    try {
-      await pool.query(
-        'INSERT INTO coupon_events (id, slug, status, starts_at, ends_at, created_at, updated_at, data) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
-        [id, slug, status, startsAt, endsAt, at, at, JSON.stringify(data)],
-      );
-    } catch (error) {
-      if (error.code === 'ER_DUP_ENTRY') throw invalid({ slug: 'Another event already uses this link name.' });
-      throw error;
-    }
+    await withTransaction(async (conn) => {
+      try {
+        await conn.query(
+          'INSERT INTO coupon_events (id, slug, status, starts_at, ends_at, created_at, updated_at, data) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
+          [id, slug, status, startsAt, endsAt, at, at, JSON.stringify(data)],
+        );
+      } catch (error) {
+        if (error.code === 'ER_DUP_ENTRY') throw invalid({ slug: 'Another coupon event already uses this link name. Choose another one, or open that event from Coupons.' });
+        throw error;
+      }
+      for (const [index, type] of types.entries()) {
+        const { sortOrder, ...typeData } = type;
+        await conn.query('INSERT INTO coupon_types (id, event_id, sort_order, created_at, updated_at, data) VALUES (?, ?, ?, ?, ?, ?)', [
+          randomUUID(), id, sortOrder || index, at, at, JSON.stringify({ design: null, ...typeData }),
+        ]);
+      }
+    });
     return this.getEvent(id);
   },
 
@@ -459,7 +470,7 @@ export const couponService = {
           [slug, status, startsAt, endsAt, now(), JSON.stringify(data), id],
         );
       } catch (error) {
-        if (error.code === 'ER_DUP_ENTRY') throw invalid({ slug: 'Another event already uses this link name.' });
+        if (error.code === 'ER_DUP_ENTRY') throw invalid({ slug: 'Another coupon event already uses this link name. Choose another one, or open that event from Coupons.' });
         throw error;
       }
     });

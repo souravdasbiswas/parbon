@@ -170,67 +170,115 @@ function fromSiteEvent(ev) {
   return Object.fromEntries(Object.entries(out).filter(([, v]) => v !== undefined));
 }
 
-/** A new event: pick a ready-made event (or blank), then check the details and create everything. */
+/** `base` if no coupon event uses it yet, otherwise base-2, base-3, … */
+function freeSlug(base, couponEvents) {
+  const taken = new Set(couponEvents.map((e) => e.slug));
+  if (!taken.has(base)) return base;
+  let n = 2;
+  while (taken.has(`${base}-${n}`)) n += 1;
+  return `${base}-${n}`;
+}
+
+/** A new event: choose the website event (optional) and a ready-made event (or blank), then check the details and create everything. */
 function NewEvent({ onCreated }) {
   const [step, setStep] = useState('pick');
   const [preset, setPreset] = useState(null);
   const [types, setTypes] = useState([]);
-  const [previous, setPrevious] = useState(null);
-  const [params] = useSearchParams();
-  const from = params.get('from');
-  const [linked, setLinked] = useState(null);
+  const [typeErrors, setTypeErrors] = useState({});
+  const [couponEvents, setCouponEvents] = useState(null);
+  const [siteEvents, setSiteEvents] = useState(null);
+  const [params, setParams] = useSearchParams();
+  const from = params.get('from') || '';
 
-  // Reuse the venue, contact and payment details of the latest event, so they needn't be typed again.
+  // Existing coupon events (to reuse the latest venue/contact/payment details and to spot one already
+  // made for the chosen website event) and every website event, drafts included, for the picker.
   useEffect(() => {
-    adminCouponsApi.events().then((list) => setPrevious(list?.[0] || null), () => {});
+    adminCouponsApi.events().then((list) => setCouponEvents(list || []), () => setCouponEvents([]));
+    adminApi.events().then((list) => setSiteEvents(list || []), () => setSiteEvents([]));
   }, []);
 
-  // "Set up registration & coupons" from a website event: start from its name, dates and venue, linked to it.
-  useEffect(() => {
-    if (!from) return;
-    adminApi.events().then((list) => {
-      const ev = list.find((x) => x.slug === from);
-      if (ev) setLinked(fromSiteEvent(ev));
-    }, () => {});
-  }, [from]);
+  const previous = couponEvents?.[0] || null;
+  const siteEvent = from ? siteEvents?.find((x) => x.slug === from) : null;
+  const existing = from && couponEvents ? couponEvents.filter((e) => e.linkedEventSlug === from || e.slug === from) : [];
+  // The website event's name, dates and venue — with a link name no other coupon event uses.
+  const linked = siteEvent ? { ...fromSiteEvent(siteEvent), slug: freeSlug(siteEvent.slug, couponEvents || []) } : null;
+
+  const chooseSiteEvent = (slug) => setParams(slug ? { from: slug } : {}, { replace: true });
 
   const pick = (p) => {
     const base = { ...(previous ? { venue: previous.venue, contact: previous.contact, payment: previous.payment } : {}), ...(p?.event || {}), ...(linked || {}) };
     setPreset(p ? { ...p, event: base } : linked ? { id: 'linked', label: linked.title.en, types: [], event: base } : null);
     setTypes(p ? p.types.map((t) => ({ ...t, enabled: true })) : []);
+    setTypeErrors({});
     setStep('form');
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
-  const save = async (data) => {
-    const created = await adminCouponsApi.createEvent(data);
-    let order = 0;
-    for (const { template, enabled, ...type } of types) {
-      if (!enabled) continue;
-      await adminCouponsApi.createType(created.id, {
-        ...type,
-        price: Number(type.price) || 0,
-        sortOrder: order++,
-        design: structuredClone(templateById(template).design),
-      });
+  // One request: the event and its ticked coupon types are saved together, or not at all.
+  const enabledRows = types.map((t, i) => (t.enabled ? i : -1)).filter((i) => i >= 0);
+  const save = (data) =>
+    adminCouponsApi.createEvent({
+      ...data,
+      types: enabledRows.map((row, order) => {
+        const { template, enabled: _enabled, ...type } = types[row];
+        return { ...type, price: Math.round(Number(type.price) || 0), sortOrder: order, design: structuredClone(templateById(template).design) };
+      }),
+    });
+
+  // "types.<n>.<field>" errors → the preset row they belong to, and a readable name for the summary.
+  const onErrors = (fields) => {
+    const byRow = {};
+    for (const [key, message] of Object.entries(fields || {})) {
+      const m = key.match(/^types\.(\d+)\./);
+      if (m && enabledRows[Number(m[1])] !== undefined) (byRow[enabledRows[Number(m[1])]] ||= []).push(message);
     }
-    return created;
+    setTypeErrors(byRow);
   };
+  const typeLabel = (n) => (types[enabledRows[n]] ? `Coupon “${types[enabledRows[n]].name.en}”` : `Coupon type ${n + 1}`);
+
+  const linkNotice = existing.length > 0 && (
+    <p className={styles.notice}>
+      <strong>{siteEvent?.title.en || from}</strong> already has a coupon event:{' '}
+      {existing.map((e, i) => (
+        <span key={e.id}>
+          {i > 0 && ', '}
+          <Link to={`/admin/coupons/${e.id}`}>open “{e.title.en}”</Link>
+        </span>
+      ))}
+      . To add coupon types to it, open it instead. Creating another one gives it its own link name ({linked?.slug}).
+    </p>
+  );
 
   if (step === 'pick') {
     return (
       <>
-        {linked && (
+        <div className={`${styles.field} ${c.linkPick}`}>
+          <label htmlFor="coupon-site-event">Which website event are these coupons for?</label>
+          <select id="coupon-site-event" value={siteEvents ? from : ''} onChange={(e) => chooseSiteEvent(e.target.value)} disabled={!siteEvents}>
+            <option value="">{siteEvents ? '— Not linked to a website event —' : 'Loading events…'}</option>
+            {(siteEvents || []).map((s) => (
+              <option key={s.slug} value={s.slug}>
+                {s.title.en}
+                {s.startDate ? ` · ${s.startDate}` : ''}
+                {s.state === 'draft' ? ' (draft)' : ''}
+              </option>
+            ))}
+          </select>
+          <p className={styles.hint}>Its name, dates and venue are filled in, and its page on the website gets a “Get your coupons” button. Optional.</p>
+        </div>
+        {from && siteEvents && !siteEvent && <p className={styles.formError}>That website event wasn’t found. Choose one from the list, or leave it unlinked.</p>}
+        {linkNotice}
+        {linked && !existing.length && (
           <p className={styles.notice}>
             Setting up registration &amp; coupons for <strong>{linked.title.en}</strong> — its name, dates and venue are filled in and it will be linked
             to the event page. Pick the kind of coupons to start with.
           </p>
         )}
-        <PresetPicker onPick={pick} />
+        {from && (!siteEvents || !couponEvents) ? <LoadingState lines={3} /> : <PresetPicker onPick={pick} />}
       </>
     );
   }
-  const count = types.filter((t) => t.enabled).length;
+  const count = enabledRows.length;
   return (
     <div className={c.narrow}>
       <p className={c.crumb}>
@@ -238,6 +286,7 @@ function NewEvent({ onCreated }) {
           ← Choose a different starting point
         </button>
       </p>
+      {linkNotice}
       {preset && (
         <p className={styles.notice}>
           Starting from <strong>{preset.label}</strong>. Check the dates, venue and payment details below, then create — the coupons are ready to use
@@ -245,12 +294,18 @@ function NewEvent({ onCreated }) {
         </p>
       )}
       <div className={c.panel}>
-        {preset?.types.length > 0 && <PresetTypes preset={preset} event={preset.event} value={types} onChange={setTypes} />}
+        {preset?.types.length > 0 && <PresetTypes preset={preset} event={preset.event} value={types} onChange={setTypes} errors={typeErrors} />}
         <CouponEventForm
           key={preset?.id || 'blank'}
           preset={preset?.event}
+          siteEvents={siteEvents}
           save={save}
           onSaved={onCreated}
+          onErrors={onErrors}
+          describeKey={(key) => {
+            const m = key.match(/^types\.(\d+)\./);
+            return m ? typeLabel(Number(m[1])) : null;
+          }}
           submitLabel={preset && count ? `Create event & ${count} coupon type${count === 1 ? '' : 's'}` : 'Create event'}
         />
       </div>

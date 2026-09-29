@@ -138,6 +138,57 @@ describe('coupons (MySQL)', { skip: !enabled && 'set TEST_DB_HOST to run the MyS
     assert.equal(edited.data.design.elements.length, 2);
   });
 
+  it('creates an event together with its coupon types, all or nothing', async () => {
+    const { EVENT_PRESETS } = await import('../../client/src/components/coupons/eventPresets.js');
+    const { templateById } = await import('../../client/src/components/coupons/templates.js');
+    const count = async () => (await admin('/events')).data.length;
+    const before = await count();
+    const typesOf = (preset) =>
+      preset.types.map(({ template, ...t }, i) => ({ ...t, sortOrder: i, design: structuredClone(templateById(template).design) }));
+
+    // Every ready-made event, created in one request with its designed coupon types.
+    for (const [i, preset] of EVENT_PRESETS.entries()) {
+      const res = await admin('/events', {
+        method: 'POST',
+        body: { ...preset.event, slug: `preset-${preset.id}`, startsAt: inHours(48 + i), endsAt: inHours(52 + i), linkedEventSlug: '', types: typesOf(preset) },
+      });
+      assert.equal(res.status, 201, `${preset.id}: ${res.text.slice(0, 300)}`);
+      const full = (await admin(`/events/${res.data.id}`)).data;
+      assert.deepEqual(full.types.map((t) => t.name.en), preset.types.map((t) => t.name.en), preset.id);
+      assert.ok(full.types.every((t) => t.design?.elements.some((e) => e.type === 'qr')), `${preset.id}: designs kept`);
+    }
+    assert.equal(await count(), before + EVENT_PRESETS.length);
+
+    const meetup = EVENT_PRESETS.find((p) => p.id === 'meetup');
+    const good = { ...meetup.event, slug: 'all-or-nothing', startsAt: inHours(30), endsAt: inHours(33) };
+
+    // A bad coupon type: nothing is created, and the error names the type and field.
+    const badType = await admin('/events', { method: 'POST', body: { ...good, types: [typesOf(meetup)[0], { ...typesOf(meetup)[1], price: 12.5, name: { en: '' } }] } });
+    assert.equal(badType.status, 422);
+    assert.ok(badType.error.fields['types.1.price'] && badType.error.fields['types.1.name.en'], JSON.stringify(badType.error.fields));
+    assert.equal(await count(), before + EVENT_PRESETS.length, 'no half-made event is left behind');
+
+    // Event and type problems are reported together (the Meet-up preset has no dates of its own).
+    const both = await admin('/events', { method: 'POST', body: { ...meetup.event, types: [{ name: { en: '' } }] } });
+    assert.equal(both.status, 422);
+    assert.ok(both.error.fields.startsAt && both.error.fields.endsAt && both.error.fields['types.0.name.en'], JSON.stringify(both.error.fields));
+
+    // A taken link name: nothing is created, the types are not orphaned, and retrying with another name works.
+    const clash = await admin('/events', { method: 'POST', body: { ...good, slug: 'preset-meetup', types: typesOf(meetup) } });
+    assert.equal(clash.status, 422);
+    assert.match(clash.error.fields.slug, /already uses this link name/);
+    assert.equal(await count(), before + EVENT_PRESETS.length);
+    const retry = await admin('/events', { method: 'POST', body: { ...good, types: typesOf(meetup) } });
+    assert.equal(retry.status, 201, retry.text);
+    assert.equal((await admin(`/events/${retry.data.id}`)).data.types.length, 2);
+
+    assert.equal((await admin('/events', { method: 'POST', body: { ...good, slug: 'too-many', types: Array(13).fill(typesOf(meetup)[0]) } })).status, 422);
+    assert.equal((await admin('/events', { method: 'POST', body: { ...good, slug: 'no-types' } })).status, 201, 'types are optional');
+
+    // Clean up so the later tests see only their own events.
+    for (const e of (await admin('/events')).data) if (e.id !== event.id) assert.equal((await admin(`/events/${e.id}`, { method: 'DELETE' })).status, 204);
+  });
+
   it('shows open events publicly, including from the linked site event', async () => {
     const list = await call('/coupons/events?linked=durga-puja-2026');
     assert.equal(list.data.length, 1);

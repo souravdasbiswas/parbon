@@ -181,3 +181,9 @@
   font-size: var(--text-xs);
   color: var(--color-muted);
 }
+
+.rowError {
+  grid-column: 1 / -1;
+  margin: 0;
+}
+

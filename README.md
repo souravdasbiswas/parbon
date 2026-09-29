@@ -318,14 +318,19 @@ The file is the only copy of these messages, apart from any notification emails.
 Admins can sell or give out digital coupons for an event (entry passes, bhog coupons and so on), and volunteers scan them at the gate with a phone. **Coupons need the MySQL database** (`DB_*` variables). Without it the feature switches itself off, and the rest of the site keeps working.
 
 **1. Set up the event** (**Admin → Coupons → New event**)
+- **Which website event?** First choose the event on the website these coupons are for (drafts are listed too), or leave it unlinked.
+  - Its name, dates and venue are filled in, and its page gets a **Get your coupons** button (and `/durga-puja` for Durga Puja 2026).
+  - **Set up registration & coupons** in **Admin → Events** does the same.
+  - If that website event already has a coupon event, the page says so and links to it. Open it to add coupon types, rather than creating a second one; a second one would get its own link name, e.g. `meet-and-greet-2026-2`.
 - **Quickest:** pick a **ready-made event**: Durga Puja, Bijoya Sammilani, Kojagori Lakshmi Puja, Kali Puja & Diwali, Saraswati Puja, Poila Boishakh, Cultural evening / concert or Meet-up / adda.
   - The form fills itself in, and its coupon types (e.g. *Entry pass*, *Ashtami bhog*, *Navami bhog*, *Cultural night pass*) are created already designed.
   - Untick any you don’t need, or change the prices.
   - The venue, help contact and payment details are copied from your most recent event.
-  - Check the dates, then **Create**. Or choose *Start from scratch*.
+  - Check the dates, then **Create**. Or choose *Start from scratch*. Some ready-made events (e.g. Meet-up) have no dates of their own, so fill in **Starts** and **Ends** unless you linked a website event.
+  - The event and its coupon types are saved **together**: if anything needs fixing, nothing is created. Every problem is listed above the button, and the page jumps to the first highlighted field.
 - Fill in the name, dates, venue, the **total number of coupons** (e.g. 500) and the most people per registration.
 - The **link name** becomes the public page, e.g. `/register/durga-puja-2026`.
-- *Show a “Get your coupons” button on* adds a button to that website event page (and to `/durga-puja` for Durga Puja 2026).
+- **Website event** (at the top of the form, also under *Event details* later) sets or changes the linked website event.
 - **Payment**: there is no payment gateway. Choose whether people can pay by UPI and enter the transaction ID, choose “I’ll pay at the counter”, or allow both. The UPI ID starts out as the site’s donation UPI.
 - **Coupon links stop working** at the time you set; if you leave it empty, that’s when the event ends. After that, coupon links show “This event is over” and the scanner refuses them.
 
@@ -438,10 +443,10 @@ Returns `201`, or `422` with per-field errors. The endpoint is rate-limited (5 p
 | GET | `/api/coupons/status` | `{ enabled, mailEnabled }` |
 | GET | `/api/coupons/events` | Events open for registration; `?linked=<site-event-slug>` |
 | GET | `/api/coupons/events/:slug` | Event, coupon types, prices and places left |
-| POST | `/api/coupons/events/:slug/register` | Register and get coupons (rate-limited, honeypot). `422` per-field errors, `409` sold out or closed |
+| POST | `/api/coupons/events/:slug/register` | Register and get coupons (60 per 15 minutes per network, honeypot). `422` per-field errors, `409` sold out or closed |
 | GET | `/api/coupons/c/:token` | A coupon for its page; `410` once the event's links have expired |
 
-Admin coupon endpoints live under `/api/admin/coupons/…`: events, types, designs, registrations, walk-ins, payment status, cancel and reissue, resend email, `events/:id/export.csv`, and gate volunteers (`gate-users`, `gate-users/:id`, `gate-users/:id/reset-pin`).
+Admin coupon endpoints live under `/api/admin/coupons/…`: events (`POST /events` also accepts `types: [...]`, created together with the event in one transaction, errors keyed `types.<n>.<field>`), types, designs, registrations, walk-ins, payment status, cancel and reissue, resend email, `events/:id/export.csv`, and gate volunteers (`gate-users`, `gate-users/:id`, `gate-users/:id/reset-pin`).
 
 The gate scanner uses `/api/admin/scan/…`: `login` (username + PIN), `logout`, `me`, `events`, `events/:id/stats`, `lookup`, `checkin`, `undo` and `mark-paid`. These accept an admin session (every permission) or a gate volunteer session. The server checks a volunteer's permissions and allowed events on every request.
 
