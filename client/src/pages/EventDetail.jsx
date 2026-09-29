@@ -10,7 +10,7 @@ import { ErrorState, LoadingState } from '../components/ui/States.jsx';
 import VenueCard from '../components/ui/VenueCard.jsx';
 import { useApi } from '../hooks/useApi.js';
 import { useScrollToHash } from '../hooks/useScrollToHash.js';
-import { formatDateRange } from '../i18n/format.js';
+import { formatDateRange, formatTimeRange } from '../i18n/format.js';
 import { useLocale } from '../i18n/LocaleContext.jsx';
 import { contentApi } from '../services/api.js';
 import NotFound from './NotFound.jsx';
@@ -40,16 +40,21 @@ export default function EventDetail() {
 
   const when = event.startDate ? formatDateRange(event.startDate, event.endDate, 'en') : t(event.dateLabel);
   const whenBn = event.startDate ? formatDateRange(event.startDate, event.endDate, 'bn') : event.dateLabel?.bn;
+  const time = event.startDate ? formatTimeRange(event.startTime, event.endTime) : '';
+  const art = event.image?.src ? (
+    <img src={event.image.src} alt={event.image.alt || ''} className={styles.cover} width={event.image.width || undefined} height={event.image.height || undefined} />
+  ) : undefined;
 
   return (
     <>
-      <Seo title={event.title.en} description={t(event.summary)} type="article" />
-      <PageHero eyebrow={event.category} title={event.title} intro={event.summary}>
+      <Seo title={event.title.en} description={t(event.summary)} type="article" image={event.image?.src || undefined} />
+      <PageHero eyebrow={event.category} title={event.title} intro={event.summary} art={art}>
         <dl className={styles.facts}>
           <div>
             <dt>When</dt>
             <dd>
               {when}
+              {time && <span className={styles.whereMeta}>{time}</span>}
               {whenBn && (
                 <span lang="bn" className={styles.bn}>
                   {whenBn}

@@ -96,7 +96,7 @@ Parbon/
     │   ├── index.js           # Starts the HTTP server (and connects to MySQL if configured)
     │   ├── app.js             # Express app: security, compression, API, static files, SPA fallback
     │   ├── config.js          # All environment configuration in one place
-    │   ├── db/                # MySQL: connection + schema, announcements table, one-time import of old files
+    │   ├── db/                # MySQL: connection + schema, announcements and events tables, one-time import of old files
     │   ├── routes/            # api.js (REST), admin.js, coupons.js (registration, admin, scanner), seo.js
     │   ├── services/          # content, announcements, inquiries, responses, uploads, mail, coupons
     │   ├── middleware/        # cors, errorHandler, auth
@@ -168,7 +168,7 @@ All dynamic content is in **`server/data/`**. Edit the JSON (for example with Ho
 | File             | Controls                                                                             |
 | ---------------- | ------------------------------------------------------------------------------------ |
 | `site.json`      | Organisation name, contact email/phone/WhatsApp/address, map embed, social links, countdown target |
-| `events.json`    | Events: dates, venue, descriptions, day-by-day schedule, highlights, status (`upcoming` / `planned` / `past`) |
+| `events.json`    | **Starting events only.** Events are managed in **Admin → Events** (see below). This file seeds them the first time the site starts |
 | `gallery.json`   | Albums and photos                                                                    |
 | `committee.json` | Committee members (the section shows "introduced soon" until you add people)        |
 | `support.json`   | Sponsorship tiers, donation methods (UPI + QR), pronami copy, volunteer roles        |
@@ -186,10 +186,39 @@ Committee members sign in at **`/admin`** (the link isn't shown publicly). From 
 
 A live preview shows exactly how the WhatsApp-style card will look. Published announcements appear on `/announcements`, the home page (the running-text ticker at the top of the hero and the latest cards), and the sitemap. Shared links show the poster and text in WhatsApp and Facebook previews.
 
+**Events (admin area)**
+
+**Admin → Events** (`/admin/events`) lists every event in date order, with badges for **Draft**, **Scheduled** or **Published**, and for **Upcoming**, **Date to be announced** or **Past**. From there you can View, Edit, Publish or Unpublish, and Delete.
+
+To add an event, click **New event** and fill in:
+- the name in English and Bengali, a category (festival, gathering, cultural, community…) and a tagline;
+- the dates (a single day or a range) and optional start and end times. You can also tick **Date to be announced** and add a note such as "After Durga Puja";
+- the venue: name, spot, area, full address, a Google Maps link and optional coordinates (`17.47, 78.31`) for the embedded map;
+- a short summary for the event cards, description paragraphs and a cover image (poster);
+- optional highlights (each with an icon) and a day-by-day schedule.
+
+A live preview shows the card as it will appear on the site. Then use one of these buttons:
+- **Publish** makes the event public right away. If you set a later **Publish at** time, it stays **Scheduled** and goes public automatically at that time.
+- **Save draft** keeps it visible only in the admin area.
+- **Unpublish** hides a published event again.
+
+Once an event has been published, its web address (`/events/<slug>`) is locked, so shared links keep working.
+
+**How the public pages order events:** the site works out each event's status from its dates in Indian time:
+- **Upcoming:** the event hasn't ended yet. These are listed soonest first.
+- **On our horizon:** the date is to be announced.
+- **Past:** the event has ended. These are listed most recent first.
+
+The home page shows the next 3 upcoming events.
+
+**Set up registration & coupons** (on a saved event) opens a new coupon event pre-filled with the event's name, date and venue, and linked to it, so its page shows a **Register** button.
+
+`server/data/events.json` is used only to seed events. On start, entries that are new to the site are added once, and published ones go live. Events edited or deleted in the admin area are never overwritten or brought back. The 2 October 2026 **Meet & Greet** is shipped as a draft: review it and click **Publish** when ready.
+
 **Home ticker (running text)**
 
 The band at the top of the home hero scrolls:
-1. A fixed **"NEW · Durga Puja 2026 · 16–21 Oct at 📍 venue"** item. The title and dates open `/durga-puja`, and the venue opens Google Maps. The title, dates, venue name/area and map link come from the `durga-puja-2026` entry in `server/data/events.json` (`title`, `startDate`, `endDate`, `venue.name`, `venue.area`, `venue.mapUrl`), so edit that file to change them.
+1. A fixed **"NEW · Durga Puja 2026 · 16–21 Oct at 📍 venue"** item. The title and dates open `/durga-puja`, and the venue opens Google Maps. The title, dates, venue name/area and map link come from the `durga-puja-2026` event (`title`, `startDate`, `endDate`, `venue.name`, `venue.area`, `venue.mapUrl`), so edit that event in **Admin → Events** to change them.
 2. Up to **3 announcements** that have **"Show in the home page ticker"** ticked (new announcements start ticked). Pinned ones come first, then the newest, and each links to its page. To choose which three appear, tick or untick that box when editing an announcement. The admin Announcements list shows an **In ticker** badge on the ones currently shown, and **Ticker full** on ticked ones that don't fit.
 
 Each item starts with a topic icon, so its subject is clear at a glance: a dhak for the Puja item, and for announcements a people, lamp (pronami/donation), music, bhog, calendar, book, alpana, sindoor, shankha or megaphone icon. By default it's chosen automatically from words in the title (then the message), e.g. "meet & greet" → people, "cultural" → music. Admins can override it with the **Ticker icon** dropdown in the announcement form, which also previews the automatic choice. The keyword rules are in `client/src/content/announcementIcons.js`.
@@ -373,8 +402,8 @@ All responses are JSON: `{ "data": … }` on success, `{ "error": { "code", "mes
 | ------ | --------------------- | ------------------------------------------------------------- |
 | GET    | `/api/health`         | Liveness check `{ status, uptime }`                            |
 | GET    | `/api/site`           | Organisation details, contact, social links, featured event   |
-| GET    | `/api/events`         | Event summaries sorted by date; `?status=upcoming\|planned\|past` |
-| GET    | `/api/events/:slug`   | Full event including schedule and highlights (404 if unknown) |
+| GET    | `/api/events`         | Published event summaries: upcoming soonest first, then date TBA, then past most recent first; `?status=upcoming\|planned\|past` |
+| GET    | `/api/events/:slug`   | Full published event including schedule and highlights (404 if unknown or a draft) |
 | GET    | `/api/gallery`        | Albums and photos                                             |
 | GET    | `/api/committee`      | Committee members                                             |
 | GET    | `/api/support`        | Sponsorship tiers, donation methods (UPI), volunteer roles    |
@@ -382,7 +411,7 @@ All responses are JSON: `{ "data": … }` on success, `{ "error": { "code", "mes
 | GET    | `/api/announcements/:slug` | A single published announcement                          |
 | POST   | `/api/inquiries`      | Contact / volunteer / membership / sponsorship enquiry        |
 
-Admin endpoints (require the admin session cookie, and reject cross-site requests): `POST /api/admin/login`, `POST /api/admin/logout`, `GET /api/admin/me`, `GET|POST /api/admin/announcements`, `GET|PUT|DELETE /api/admin/announcements/:id`, `POST /api/admin/uploads` (image as a base64 data URL; the file is checked by its content bytes, max 5 MB), and the read-only `GET /api/admin/responses` and `GET /api/admin/responses/export.csv` (both accept `type`, `q`, `sort` = `createdAt|type|name|email|phone|ip`, and `dir` = `asc|desc`).
+Admin endpoints (require the admin session cookie, and reject cross-site requests): `POST /api/admin/login`, `POST /api/admin/logout`, `GET /api/admin/me`, `GET|POST /api/admin/announcements`, `GET|PUT|DELETE /api/admin/announcements/:id`, `GET|POST /api/admin/events` (all events, including drafts), `GET|PUT|DELETE /api/admin/events/:id`, `POST /api/admin/uploads` (image as a base64 data URL; the file is checked by its content bytes, max 5 MB), and the read-only `GET /api/admin/responses` and `GET /api/admin/responses/export.csv` (both accept `type`, `q`, `sort` = `createdAt|type|name|email|phone|ip`, and `dir` = `asc|desc`).
 
 `POST /api/inquiries` body:
 
@@ -476,6 +505,8 @@ With `DB_NAME` and `DB_USER` set, the app stores these in MySQL/MariaDB:
 | --- | --- |
 | `announcements` | Admin-created announcements (whole record as JSON in `data`) |
 | `announcement_seeds` | Seed entries already merged once, so a seed an admin deletes stays deleted |
+| `site_events` | Website events managed in **Admin → Events**: draft/published state, publish time and start date as columns, the whole event as JSON in `data` |
+| `event_seeds` | Seed events from `events.json` already imported once, so an event an admin deletes stays deleted |
 | `inquiries` | Contact-form submissions (shown on `/admin/responses`) |
 | `media` | Uploaded announcement images and coupon pictures, served from `/media/announcements/<name>` |
 | `data_imports` | Old files already imported (by content hash) |
@@ -605,9 +636,9 @@ To update: `git pull && npm ci && npm run build && pm2 restart parbon`.
 ## 12. Extending the site
 
 - **Language switcher:** add a toggle that calls `useLocale().setLocale('bn' | 'en')`. The content already supports it.
-- **More content in the database:** announcements, form responses and images already use MySQL when configured (`server/src/db/`). Site content in `server/data/*.json` (events, gallery…) is shipped with the code and doesn't need it. It could move behind the same kind of table plus admin pages later.
-- **Admin/CMS:** announcements already have a full admin area (`/admin`). Other content (events, gallery) can follow the same pattern: a storage-backed service, `/api/admin/*` routes protected by `requireAdmin` + `sameOrigin`, and a lazy-loaded admin page.
-- **New event:** add an object to `events.json` with a unique `slug`. It automatically appears on `/events`, gets its own page `/events/<slug>`, and is added to the sitemap.
+- **More content in the database:** announcements, events, form responses and images already use MySQL when configured (`server/src/db/`). The rest of the site content in `server/data/*.json` (gallery, committee…) ships with the code and doesn't need it. It could move behind the same kind of table plus admin pages later.
+- **Admin/CMS:** announcements and events already have full admin pages (`/admin`). Other content (for example the gallery) can follow the same pattern: a storage-backed service, `/api/admin/*` routes protected by `requireAdmin` + `sameOrigin`, and a lazy-loaded admin page.
+- **New event:** create it in **Admin → Events**. Once published, it appears on `/events`, gets its own page `/events/<slug>`, and is added to the sitemap.
 - **Online donations:** integrate a payment gateway (e.g. Razorpay) as a new server route. Keep API keys in environment variables.
 
 ---

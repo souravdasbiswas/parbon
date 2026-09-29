@@ -1,10 +1,16 @@
 /** Nested get/set on plain objects by "a.b" paths, for simple controlled forms. */
 export const getPath = (obj, path) => path.split('.').reduce((o, k) => (o == null ? undefined : o[k]), obj);
 
+/** Immutable set by path; numeric segments update arrays in place (e.g. "schedule.0.items.2.time"). */
 export function setPath(obj, path, value) {
   const [head, ...rest] = path.split('.');
-  if (!rest.length) return { ...obj, [head]: value };
-  return { ...obj, [head]: setPath(obj?.[head] || {}, rest.join('.'), value) };
+  const next = rest.length ? setPath(obj?.[head] ?? (/^\d+$/.test(rest[0]) ? [] : {}), rest.join('.'), value) : value;
+  if (Array.isArray(obj)) {
+    const copy = [...obj];
+    copy[Number(head)] = next;
+    return copy;
+  }
+  return { ...obj, [head]: next };
 }
 
 /** Returns a binder: bind('title.en') → props for an input tied to `form` at that path. */

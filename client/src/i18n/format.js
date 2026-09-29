@@ -28,3 +28,16 @@ export function formatDateRange(startIso, endIso, lang = 'en', options = { day: 
 }
 
 export const formatNumber = (n, lang = 'en') => new Intl.NumberFormat(INTL_LOCALE[lang] || lang).format(n);
+
+/** "17:00", "19:00" → "5:00 – 7:00 pm" (India English style); a single time when there is no end. */
+export function formatTimeRange(start, end) {
+  const fmt = (hhmm) => {
+    if (!/^\d{2}:\d{2}$/.test(hhmm || '')) return '';
+    const [h, m] = hhmm.split(':').map(Number);
+    return new Intl.DateTimeFormat('en-IN', { hour: 'numeric', minute: '2-digit', timeZone: 'UTC' }).format(Date.UTC(2000, 0, 1, h, m));
+  };
+  const s = fmt(start);
+  const e = fmt(end);
+  if (!s) return '';
+  return e ? `${s} – ${e}` : s;
+}

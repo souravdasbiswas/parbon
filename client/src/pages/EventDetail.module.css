@@ -98,3 +98,11 @@
   gap: var(--space-3);
   margin-top: var(--space-5);
 }
+
+.cover {
+  width: 100%;
+  max-width: 420px;
+  height: auto;
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-lg);
+}

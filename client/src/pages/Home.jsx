@@ -66,7 +66,8 @@ export default function Home() {
   const tickerNews = useApi('announcements:ticker', announcementsApi.ticker);
 
   const featured = site.data?.featuredEvent;
-  const upcoming = (events.data || []).slice(0, 3);
+  // Already in date order from the server: soonest upcoming first, then "date to be announced".
+  const upcoming = (events.data || []).filter((e) => e.status !== 'past').slice(0, 3);
   const pujaDays = (puja.data?.schedule || []).filter((d) => d.main);
   const tickerItems = buildTickerItems({ puja: puja.data, news: tickerNews.data, t });
   const latestCards = news.data || [];

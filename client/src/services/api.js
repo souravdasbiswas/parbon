@@ -73,6 +73,11 @@ export const adminApi = {
   /** Plain URL so the browser downloads the file with the admin cookie. */
   responsesCsvUrl: (params) => `${BASE_URL}/api/admin/responses/export.csv?${new URLSearchParams(params)}`,
   storage: () => api.get('/admin/storage'),
+  events: () => api.get('/admin/events'),
+  event: (id) => api.get(`/admin/events/${encodeURIComponent(id)}`),
+  createEvent: (data) => api.post('/admin/events', data),
+  updateEvent: (id, data) => api.put(`/admin/events/${encodeURIComponent(id)}`, data),
+  deleteEvent: (id) => api.delete(`/admin/events/${encodeURIComponent(id)}`),
 };
 
 const enc = encodeURIComponent;

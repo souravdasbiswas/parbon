@@ -1,7 +1,7 @@
 import { useEffect, useId, useState } from 'react';
 import { fromLocalInput, toLocalInput } from '../../../components/coupons/couponUtils.js';
 import Button from '../../../components/ui/Button.jsx';
-import { contentApi } from '../../../services/api.js';
+import { adminApi, contentApi } from '../../../services/api.js';
 import styles from '../Admin.module.css';
 import { Field } from './formKit.jsx';
 import { makeBinder } from './formUtils.js';
@@ -60,7 +60,8 @@ export default function CouponEventForm({ event, preset, onSaved, onDelete, save
   const bind = makeBinder(form, setForm, errors, uid);
 
   useEffect(() => {
-    contentApi.events().then(setSiteEvents, () => {});
+    // Every website event, including drafts, so coupons can be set up before the event page is published.
+    adminApi.events().then(setSiteEvents, () => contentApi.events().then(setSiteEvents, () => {}));
     if (event) return;
     contentApi.support().then((support) => {
       const upi = support?.donation?.methods?.find((m) => m.type === 'upi');
@@ -168,6 +169,7 @@ export default function CouponEventForm({ event, preset, onSaved, onDelete, save
             {siteEvents.map((s) => (
               <option key={s.slug} value={s.slug}>
                 {s.title.en}
+                {s.state === 'draft' ? ' (draft)' : ''}
               </option>
             ))}
           </select>

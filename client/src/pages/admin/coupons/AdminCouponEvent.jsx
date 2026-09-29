@@ -5,7 +5,7 @@ import Icon from '../../../components/motifs/Icon.jsx';
 import Button from '../../../components/ui/Button.jsx';
 import Seo from '../../../components/ui/Seo.jsx';
 import { ErrorState, LoadingState } from '../../../components/ui/States.jsx';
-import { adminCouponsApi } from '../../../services/api.js';
+import { adminApi, adminCouponsApi } from '../../../services/api.js';
 import { AdminBar } from '../AdminAnnouncements.jsx';
 import { useAdminSession } from '../adminSession.js';
 import styles from '../Admin.module.css';
@@ -152,28 +152,51 @@ function Overview({ event, onTab }) {
   );
 }
 
+/** A website event (Admin → Events) → the starting fields of its coupon event. */
+function fromSiteEvent(ev) {
+  const ist = (date, time, fallback) => (date ? new Date(`${date}T${time || fallback}:00+05:30`).toISOString() : undefined);
+  const out = {
+    title: ev.title,
+    tagline: ev.tagline || { en: '', bn: '' },
+    description: { en: ev.summary?.en || '', bn: '' },
+    slug: ev.slug,
+    linkedEventSlug: ev.slug,
+    startsAt: ist(ev.startDate, ev.startTime, '09:00'),
+    endsAt: ist(ev.endDate || ev.startDate, ev.endTime, '22:00'),
+    venue: ev.venue
+      ? { name: [ev.venue.name?.en, ev.venue.spot?.en].filter(Boolean).join(' — '), address: ev.venue.address?.en || '', mapUrl: ev.venue.mapUrl || '' }
+      : undefined,
+  };
+  return Object.fromEntries(Object.entries(out).filter(([, v]) => v !== undefined));
+}
+
 /** A new event: pick a ready-made event (or blank), then check the details and create everything. */
 function NewEvent({ onCreated }) {
   const [step, setStep] = useState('pick');
   const [preset, setPreset] = useState(null);
   const [types, setTypes] = useState([]);
   const [previous, setPrevious] = useState(null);
+  const [params] = useSearchParams();
+  const from = params.get('from');
+  const [linked, setLinked] = useState(null);
 
   // Reuse the venue, contact and payment details of the latest event, so they needn't be typed again.
   useEffect(() => {
     adminCouponsApi.events().then((list) => setPrevious(list?.[0] || null), () => {});
   }, []);
 
+  // "Set up registration & coupons" from a website event: start from its name, dates and venue, linked to it.
+  useEffect(() => {
+    if (!from) return;
+    adminApi.events().then((list) => {
+      const ev = list.find((x) => x.slug === from);
+      if (ev) setLinked(fromSiteEvent(ev));
+    }, () => {});
+  }, [from]);
+
   const pick = (p) => {
-    setPreset(
-      p && {
-        ...p,
-        event: {
-          ...(previous ? { venue: previous.venue, contact: previous.contact, payment: previous.payment } : {}),
-          ...p.event,
-        },
-      },
-    );
+    const base = { ...(previous ? { venue: previous.venue, contact: previous.contact, payment: previous.payment } : {}), ...(p?.event || {}), ...(linked || {}) };
+    setPreset(p ? { ...p, event: base } : linked ? { id: 'linked', label: linked.title.en, types: [], event: base } : null);
     setTypes(p ? p.types.map((t) => ({ ...t, enabled: true })) : []);
     setStep('form');
     window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -194,7 +217,19 @@ function NewEvent({ onCreated }) {
     return created;
   };
 
-  if (step === 'pick') return <PresetPicker onPick={pick} />;
+  if (step === 'pick') {
+    return (
+      <>
+        {linked && (
+          <p className={styles.notice}>
+            Setting up registration &amp; coupons for <strong>{linked.title.en}</strong> — its name, dates and venue are filled in and it will be linked
+            to the event page. Pick the kind of coupons to start with.
+          </p>
+        )}
+        <PresetPicker onPick={pick} />
+      </>
+    );
+  }
   const count = types.filter((t) => t.enabled).length;
   return (
     <div className={c.narrow}>
@@ -210,7 +245,7 @@ function NewEvent({ onCreated }) {
         </p>
       )}
       <div className={c.panel}>
-        {preset && <PresetTypes preset={preset} event={preset.event} value={types} onChange={setTypes} />}
+        {preset?.types.length > 0 && <PresetTypes preset={preset} event={preset.event} value={types} onChange={setTypes} />}
         <CouponEventForm
           key={preset?.id || 'blank'}
           preset={preset?.event}

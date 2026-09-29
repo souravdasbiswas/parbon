@@ -197,3 +197,27 @@
     font-size: 1.4rem;
   }
 }
+
+/* A cover picture, when the event has one, sits on the right (below the text on phones). */
+.withImage {
+  grid-template-columns: auto 1fr minmax(0, 140px);
+}
+
+.cover {
+  width: 100%;
+  max-height: 180px;
+  align-self: start;
+  object-fit: cover;
+  object-position: top;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--color-line);
+}
+
+@media (max-width: 640px) {
+  .withImage {
+    grid-template-columns: auto 1fr;
+  }
+  .cover {
+    display: none;
+  }
+}
