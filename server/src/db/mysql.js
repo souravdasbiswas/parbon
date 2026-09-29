@@ -116,6 +116,22 @@ const SCHEMA = [
     KEY idx_coupon_checkins_coupon (coupon_id),
     KEY idx_coupon_checkins_event (event_id, scanned_at)
   ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci`,
+  // Gate volunteers: sign in to the coupon scanner with a username and PIN (no admin access).
+  `CREATE TABLE IF NOT EXISTS gate_users (
+    id VARCHAR(64) NOT NULL PRIMARY KEY,
+    username VARCHAR(40) NOT NULL,
+    name VARCHAR(100) NOT NULL,
+    pin_hash VARCHAR(255) NOT NULL,
+    active TINYINT(1) NOT NULL DEFAULT 1,
+    can_mark_paid TINYINT(1) NOT NULL DEFAULT 0,
+    can_undo TINYINT(1) NOT NULL DEFAULT 0,
+    event_ids TEXT NULL,
+    session_version INT UNSIGNED NOT NULL DEFAULT 1,
+    last_login_at VARCHAR(32) NULL,
+    created_at VARCHAR(32) NOT NULL,
+    updated_at VARCHAR(32) NOT NULL,
+    UNIQUE KEY uq_gate_users_username (username)
+  ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci`,
   // Legacy files already imported (by content hash), so they are not imported again.
   `CREATE TABLE IF NOT EXISTS data_imports (
     source VARCHAR(191) NOT NULL PRIMARY KEY,

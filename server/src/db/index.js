@@ -64,7 +64,7 @@ function scheduleFollowUpImports(db, sources) {
 export async function storageReport() {
   const db = await databaseReady();
   const counts = {};
-  for (const table of ['announcements', 'inquiries', 'media', 'coupon_events', 'coupon_registrations', 'coupons']) {
+  for (const table of ['announcements', 'inquiries', 'media', 'coupon_events', 'coupon_registrations', 'coupons', 'gate_users']) {
     const [[row]] = await db.query(`SELECT COUNT(*) AS n FROM ${table}`);
     counts[table] = Number(row.n);
   }

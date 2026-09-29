@@ -73,7 +73,6 @@ describe('coupons (MySQL)', { skip: !enabled && 'set TEST_DB_HOST to run the MyS
       DB_NAME: dbName,
       ADMIN_USERNAME: 'admin',
       ADMIN_PASSWORD_HASH: hash(PASSWORD),
-      SCANNER_PIN_HASH: hash(PIN),
       SESSION_SECRET: randomBytes(48).toString('base64url'),
       SITE_URL: 'https://parbon.example',
       SMTP_HOST: '',
@@ -85,7 +84,11 @@ describe('coupons (MySQL)', { skip: !enabled && 'set TEST_DB_HOST to run the MyS
     base = `http://127.0.0.1:${server.address().port}`;
     const login = await call('/admin/login', { method: 'POST', body: { username: 'admin', password: PASSWORD } });
     adminCookie = login.headers.get('set-cookie').split(';')[0];
-    const pin = await call('/admin/scan/login', { method: 'POST', body: { pin: PIN } });
+    // A gate volunteer the admin creates, allowed to take payments and undo.
+    const created = await admin('/gate-users', { method: 'POST', body: { name: 'Gate Lead', username: 'gatelead', pin: PIN, canMarkPaid: true, canUndo: true } });
+    assert.equal(created.status, 201, created.text);
+    const pin = await call('/admin/scan/login', { method: 'POST', body: { username: 'gatelead', pin: PIN } });
+    assert.equal(pin.status, 200, pin.text);
     scannerCookie = pin.headers.get('set-cookie').split(';')[0];
   });
 
@@ -235,7 +238,7 @@ describe('coupons (MySQL)', { skip: !enabled && 'set TEST_DB_HOST to run the MyS
     const regs = await admin(`/events/${event.id}/registrations`);
     const reg = regs.data.find((r) => r.id === first.registration.id);
     assert.equal(reg.attendance, 'partial');
-    assert.match(reg.adminNote, /scanner: payment paid — collected at the gate/);
+    assert.match(reg.adminNote, /gatelead: payment paid — collected at the gate/);
   });
 
   it('cancels and reissues coupons; old links stop working at once', async () => {

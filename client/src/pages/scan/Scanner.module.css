@@ -92,7 +92,8 @@ button:disabled {
   font-weight: 700;
 }
 
-.pin {
+.pin,
+.userInput {
   min-height: 60px;
   padding: 0.5rem 1rem;
   border: 2px solid #5a4538;
@@ -102,6 +103,11 @@ button:disabled {
   font-size: 1.8rem;
   letter-spacing: 0.4em;
   text-align: center;
+}
+
+.userInput {
+  font-size: 1.3rem;
+  letter-spacing: 0.02em;
 }
 
 .eventBtn {

@@ -320,9 +320,10 @@ Admins can sell or give out digital coupons for an event (entry passes, bhog cou
 - Limits are checked at the moment coupons are issued, so they can never be oversold.
 
 **5. At the gate**: open **`/scan`** on a phone.
-- Volunteers sign in with the **scanner PIN** (`SCANNER_PIN_HASH`). Admins who are signed in can use it too.
+- **Website admins can always scan**: sign in at `/admin` and open `/scan`. They can do everything, for every event.
+- **Gate volunteers** sign in with the **username and PIN** the admin gave them (see *Gate team* below).
 - Scan the QR code with the camera or type the code. The screen turns **green** (valid), **amber** (already used) or **red** (cancelled, replaced, wrong event, event over).
-- Tap *Let 4 in* or let only some in. *Mark paid* records money collected at the counter, and *Undo* reverses a mistaken check-in.
+- Tap *Let 4 in* or let only some in. *Mark paid* records money collected at the counter, and *Undo* reverses a mistaken check-in. Volunteers only see these two buttons if the admin allowed them.
 
 **6. Follow up** (tab *Attendees & coupons*)
 - Filter by *Not in yet*, *Partly in*, *All in* or *Cancelled*, and by payment status. You can search by name, phone, email, code or transaction ID.
@@ -332,7 +333,19 @@ Admins can sell or give out digital coupons for an event (entry passes, bhog cou
 
 **Email (optional)**: Hostinger mailboxes can send to anyone. Set `SMTP_HOST=smtp.hostinger.com`, `SMTP_PORT=465`, `SMTP_SECURE=true`, `SMTP_USER=mail@parbon.in`, `SMTP_PASS=…` and `MAIL_FROM="Parbon Sanskritik Samity <mail@parbon.in>"`. The registration form then offers “Also email me my coupons”, and admins get *Email coupons*. Hostinger limits how many emails a mailbox sends per day, which is plenty for one email per registration.
 
-**Scanner PIN**: `npm run admin:hash -- --scanner 482913` prints `SCANNER_PIN_HASH=…`. Add it to the environment variables and share the PIN only with gate volunteers. The PIN opens only the scanner, never the admin area.
+**Gate team** (**Admin → Gate team**, or *Coupons → Gate team*): people who check coupons at the entrance and the bhog counter, without being website admins.
+- **Add volunteer**: enter a name. A username is suggested from it, e.g. `rahul.das`. Type a 4–6 digit PIN or leave it empty to get one.
+- Choose what they may do:
+  - Scanning and letting people in is always allowed.
+  - Tick *Take payments* to let them mark coupons as paid at the counter.
+  - Tick *Undo* to let them undo a check-in made by mistake.
+- Choose which events: all events, or only the ones you pick.
+- The PIN is shown **once**, with *Send on WhatsApp* and *Copy details* (scanner link, username and PIN). It can’t be viewed again; use **Reset PIN** to give a new one.
+- **Turn off**, **Reset PIN** and **Delete** sign the volunteer out on their phone straight away. Changes to their permissions apply straight away too.
+- Volunteers can only use the scanner. They can’t open any admin page.
+- After 5 wrong PINs, that username is locked for 15 minutes; a PIN reset unlocks it.
+- The list shows each volunteer’s last sign-in and how many people they checked in. Check-in history records who let people in.
+- Volunteer accounts are stored in the database, so there’s no server setting to change.
 
 ---
 
@@ -388,7 +401,9 @@ Returns `201`, or `422` with per-field errors. The endpoint is rate-limited (5 p
 | POST | `/api/coupons/events/:slug/register` | Register and get coupons (rate-limited, honeypot). `422` per-field errors, `409` sold out or closed |
 | GET | `/api/coupons/c/:token` | A coupon for its page; `410` once the event's links have expired |
 
-Admin coupon endpoints live under `/api/admin/coupons/…`: events, types, designs, registrations, walk-ins, payment status, cancel and reissue, resend email, and `events/:id/export.csv`. The gate scanner uses `/api/admin/scan/…`: `login` (PIN), `me`, `events`, `lookup`, `checkin`, `undo` and `mark-paid`. These accept an admin session or a scanner PIN session.
+Admin coupon endpoints live under `/api/admin/coupons/…`: events, types, designs, registrations, walk-ins, payment status, cancel and reissue, resend email, `events/:id/export.csv`, and gate volunteers (`gate-users`, `gate-users/:id`, `gate-users/:id/reset-pin`).
+
+The gate scanner uses `/api/admin/scan/…`: `login` (username + PIN), `logout`, `me`, `events`, `events/:id/stats`, `lookup`, `checkin`, `undo` and `mark-paid`. These accept an admin session (every permission) or a gate volunteer session. The server checks a volunteer's permissions and allowed events on every request.
 
 ---
 
@@ -414,8 +429,7 @@ Copy `.env.example` to `.env` for local use. On Hostinger, set these in hPanel. 
 | `ADMIN_PASSWORD_HASH` | *(empty)*       | scrypt hash from `npm run admin:hash -- "password"` (never the plain password) |
 | `SESSION_SECRET` | *(empty)*            | 32+ random characters for signing admin sessions (printed by `admin:hash`) |
 | `SESSION_HOURS`  | `8`                  | How long an admin stays signed in                               |
-| `SCANNER_PIN_HASH` | *(empty)*          | Gate volunteers' coupon-scanner PIN, from `npm run admin:hash -- --scanner <pin>`. Empty = only admins can scan |
-| `SCANNER_SESSION_HOURS` | `16`          | How long a volunteer stays signed in to the scanner             |
+| `SCANNER_SESSION_HOURS` | `16`          | How long a gate volunteer stays signed in to the scanner (volunteers are managed under *Gate team*) |
 | `VITE_API_BASE_URL` | *(empty)*            | **Build-time** (client). Only for split deployments           |
 
 ---
@@ -468,6 +482,7 @@ With `DB_NAME` and `DB_USER` set, the app stores these in MySQL/MariaDB:
 | `coupon_registrations` | Who registered: name, email, phone, number of people, payment method, transaction ID, payment status |
 | `coupons` | Issued coupons: code, private link token, quantity, how many used, status (active/cancelled/replaced) |
 | `coupon_checkins` | Every gate check-in (and undo), with time and who scanned |
+| `gate_users` | Gate volunteers: username, name, PIN hash (never the PIN), permissions, allowed events, last sign-in |
 
 The tables are created automatically on start, so no SQL needs to be run by hand. `https://your-domain/api/health` shows `"storage": "mysql"` and `"database": "connected"` when the database is in use. The admin **Storage** page (`/admin/storage`) shows row counts, the old folders checked and what was imported.
 

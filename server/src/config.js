@@ -55,9 +55,8 @@ export const config = Object.freeze({
     sessionSecret: env.SESSION_SECRET || '',
     sessionHours: Number(env.SESSION_HOURS) || 8,
   },
-  // Gate volunteers sign in to the coupon scanner with a PIN (scrypt hash from `npm run admin:hash`).
+  // How long a gate volunteer stays signed in to the coupon scanner.
   scanner: {
-    pinHash: env.SCANNER_PIN_HASH || '',
     sessionHours: Number(env.SCANNER_SESSION_HOURS) || 16,
   },
   // MySQL/MariaDB (e.g. Hostinger hPanel → Databases). When DB_NAME and DB_USER are set,

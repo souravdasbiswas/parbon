@@ -104,10 +104,15 @@ export const adminCouponsApi = {
   cancelCoupon: (id, reason) => api.post(`/admin/coupons/coupons/${enc(id)}/cancel`, { reason }),
   reissueCoupon: (id) => api.post(`/admin/coupons/coupons/${enc(id)}/reissue`),
   csvUrl: (eventId) => `${BASE_URL}/api/admin/coupons/events/${enc(eventId)}/export.csv`,
+  gateUsers: () => api.get('/admin/coupons/gate-users'),
+  createGateUser: (data) => api.post('/admin/coupons/gate-users', data),
+  updateGateUser: (id, data) => api.put(`/admin/coupons/gate-users/${enc(id)}`, data),
+  resetGatePin: (id, pin) => api.post(`/admin/coupons/gate-users/${enc(id)}/reset-pin`, { pin }),
+  deleteGateUser: (id) => api.delete(`/admin/coupons/gate-users/${enc(id)}`),
 };
 
 export const scanApi = {
-  login: (pin) => api.post('/admin/scan/login', { pin }),
+  login: (username, pin) => api.post('/admin/scan/login', { username, pin }),
   logout: () => api.post('/admin/scan/logout'),
   me: () => api.get('/admin/scan/me'),
   events: () => api.get('/admin/scan/events'),

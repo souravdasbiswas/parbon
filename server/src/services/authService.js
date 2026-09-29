@@ -68,36 +68,30 @@ export async function checkCredentials(username, password) {
   return passwordOk && safeEqual(username, config.admin.username);
 }
 
-// ── Coupon scanner (gate volunteers): a PIN that unlocks only the scan screen ──
+// ── Coupon gate scanner: sessions for gate volunteers (accounts the admin creates) ──
 
 export const SCANNER_COOKIE = 'parbon_scanner';
 
-export const scannerConfigured = () => Boolean(config.scanner.pinHash && config.admin.sessionSecret.length >= 32);
+// A separate prefix keeps gate and admin signatures from ever being interchangeable.
+const signGate = (payload) => sign(`gate:${payload}`);
 
-// A separate prefix keeps scanner and admin signatures from ever being interchangeable.
-const signScanner = (payload) => sign(`scanner:${payload}`);
-
-export function createScannerToken() {
+/** Signed token naming the volunteer and their account's session version (bumped to sign them out). */
+export function createGateToken(user) {
   const payload = Buffer.from(
-    JSON.stringify({ r: 'scanner', exp: Date.now() + config.scanner.sessionHours * 3600 * 1000 }),
+    JSON.stringify({ r: 'gate', uid: user.id, v: user.sessionVersion, exp: Date.now() + config.scanner.sessionHours * 3600 * 1000 }),
   ).toString('base64url');
-  return `${payload}.${signScanner(payload)}`;
+  return `${payload}.${signGate(payload)}`;
 }
 
-export function verifyScannerToken(token) {
-  if (!token || !scannerConfigured()) return null;
+export function verifyGateToken(token) {
+  if (!token || config.admin.sessionSecret.length < 32) return null;
   const [payload, signature] = String(token).split('.');
-  if (!payload || !signature || !safeEqual(signScanner(payload), signature)) return null;
+  if (!payload || !signature || !safeEqual(signGate(payload), signature)) return null;
   try {
     const data = JSON.parse(Buffer.from(payload, 'base64url').toString('utf8'));
-    if (data.r !== 'scanner' || typeof data.exp !== 'number' || data.exp < Date.now()) return null;
-    return { username: 'scanner', role: 'scanner', expiresAt: data.exp };
+    if (data.r !== 'gate' || typeof data.exp !== 'number' || data.exp < Date.now() || !data.uid) return null;
+    return { uid: data.uid, version: data.v, expiresAt: data.exp };
   } catch {
     return null;
   }
-}
-
-export async function checkScannerPin(pin) {
-  if (!scannerConfigured()) return false;
-  return verifyPassword(String(pin), config.scanner.pinHash);
 }

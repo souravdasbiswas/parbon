@@ -141,6 +141,9 @@ function Overview({ event, onTab }) {
         <Button to="/scan" arrow>
           Open the gate scanner
         </Button>
+        <Button to="/admin/coupons/gate-team" variant="secondary">
+          Gate team
+        </Button>
         <Button variant="secondary" onClick={() => onTab('people')}>
           See attendees
         </Button>

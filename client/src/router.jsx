@@ -23,6 +23,7 @@ const AdminStorage = lazy(() => import('./pages/admin/AdminStorage.jsx'));
 const AdminCouponEvents = lazy(() => import('./pages/admin/coupons/AdminCouponEvents.jsx'));
 const AdminCouponEvent = lazy(() => import('./pages/admin/coupons/AdminCouponEvent.jsx'));
 const AdminCouponDesigner = lazy(() => import('./pages/admin/coupons/AdminCouponDesigner.jsx'));
+const AdminGateTeam = lazy(() => import('./pages/admin/coupons/AdminGateTeam.jsx'));
 const Register = lazy(() => import('./pages/coupons/Register.jsx'));
 const CouponView = lazy(() => import('./pages/coupons/CouponView.jsx'));
 const Scanner = lazy(() => import('./pages/scan/Scanner.jsx'));
@@ -65,6 +66,7 @@ export const router = createBrowserRouter([
       { path: 'admin/responses', Component: AdminResponses },
       { path: 'admin/storage', Component: AdminStorage },
       { path: 'admin/coupons', Component: AdminCouponEvents },
+      { path: 'admin/coupons/gate-team', Component: AdminGateTeam },
       { path: 'admin/coupons/:id', Component: AdminCouponEvent },
       { path: 'admin/coupons/:eventId/types/:typeId/design', Component: AdminCouponDesigner },
       { path: 'register', Component: Register },

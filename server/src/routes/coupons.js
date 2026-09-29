@@ -1,11 +1,12 @@
 import express, { Router } from 'express';
 import { rateLimit } from 'express-rate-limit';
 import { config } from '../config.js';
-import { requireAdmin, requireScanner } from '../middleware/auth.js';
+import { canScanEvent, requireAdmin, requireScanner } from '../middleware/auth.js';
 import { HttpError } from '../middleware/errorHandler.js';
-import { SCANNER_COOKIE, checkScannerPin, createScannerToken, scannerConfigured } from '../services/authService.js';
+import { SCANNER_COOKIE, createGateToken } from '../services/authService.js';
 import { sendCouponEmail } from '../services/couponMail.js';
 import { couponService, couponsEnabled } from '../services/couponService.js';
+import { gateUserService, validateGateUser } from '../services/gateUserService.js';
 import { mailConfigured } from '../services/mailService.js';
 import { toCsv } from '../utils/csv.js';
 import {
@@ -108,7 +109,7 @@ adminCouponsRouter.use(requireAdmin);
 const json = express.json({ limit: '256kb' });
 
 adminCouponsRouter.get('/status', (_req, res) => {
-  res.json({ data: { enabled: couponsEnabled(), mailEnabled: mailConfigured(), scannerEnabled: scannerConfigured() } });
+  res.json({ data: { enabled: couponsEnabled(), mailEnabled: mailConfigured() } });
 });
 
 adminCouponsRouter.get('/events', async (_req, res) => {
@@ -229,7 +230,48 @@ adminCouponsRouter.get('/events/:id/export.csv', async (req, res) => {
   res.send(toCsv(CSV_COLUMNS, rows));
 });
 
-// ── Gate scanner: /api/admin/scan (admin session or volunteer PIN session) ──
+// ── Gate volunteers, managed by the admin: /api/admin/coupons/gate-users ──
+
+const gateUserJson = (u) => ({
+  id: u.id,
+  username: u.username,
+  name: u.name,
+  active: u.active,
+  canMarkPaid: u.canMarkPaid,
+  canUndo: u.canUndo,
+  eventIds: u.eventIds,
+  lastLoginAt: u.lastLoginAt,
+  checkIns: u.checkIns,
+  lastCheckInAt: u.lastCheckInAt,
+  locked: u.locked,
+  createdAt: u.createdAt,
+});
+
+adminCouponsRouter.get('/gate-users', async (_req, res) => {
+  res.json({ data: (await gateUserService.list()).map(gateUserJson) });
+});
+
+// The PIN is returned once, right after it is set, so the admin can pass it on.
+adminCouponsRouter.post('/gate-users', json, async (req, res) => {
+  const { user, pin } = await gateUserService.create(check(validateGateUser(req.body, { creating: true })));
+  res.status(201).json({ data: { user: gateUserJson(user), pin } });
+});
+
+adminCouponsRouter.put('/gate-users/:id', json, async (req, res) => {
+  res.json({ data: gateUserJson(await gateUserService.update(req.params.id, check(validateGateUser(req.body)))) });
+});
+
+adminCouponsRouter.post('/gate-users/:id/reset-pin', json, async (req, res) => {
+  const { user, pin } = await gateUserService.resetPin(req.params.id, String(req.body?.pin || '').trim());
+  res.json({ data: { user: gateUserJson(user), pin } });
+});
+
+adminCouponsRouter.delete('/gate-users/:id', async (req, res) => {
+  if (!(await gateUserService.remove(req.params.id))) throw new HttpError(404, 'NOT_FOUND', 'Volunteer not found.');
+  res.status(204).end();
+});
+
+// ── Gate scanner: /api/admin/scan (a website admin, or a gate volunteer with username + PIN) ──
 
 export const scanRouter = Router();
 
@@ -239,18 +281,18 @@ scanRouter.post(
   '/login',
   rateLimit({
     windowMs: 15 * 60 * 1000,
-    limit: 10,
+    limit: 20,
     standardHeaders: 'draft-8',
     legacyHeaders: false,
     skipSuccessfulRequests: true,
-    handler: (_req, res) => res.status(429).json({ error: { code: 'RATE_LIMITED', message: 'Too many wrong PINs. Please wait 15 minutes.' } }),
+    handler: (_req, res) => res.status(429).json({ error: { code: 'RATE_LIMITED', message: 'Too many sign-in attempts from this phone. Please wait 15 minutes.' } }),
   }),
   express.json({ limit: '2kb' }),
   async (req, res) => {
-    if (!scannerConfigured()) throw new HttpError(503, 'SCANNER_DISABLED', 'The scanner PIN is not set up. Sign in as admin instead.');
-    if (!(await checkScannerPin(String(req.body?.pin || '').trim()))) throw new HttpError(401, 'INVALID_PIN', 'Incorrect PIN.');
-    res.cookie(SCANNER_COOKIE, createScannerToken(), { ...scannerCookie(), maxAge: config.scanner.sessionHours * 3600 * 1000 });
-    res.json({ data: { role: 'scanner' } });
+    if (!couponsEnabled()) throw new HttpError(503, 'COUPONS_DISABLED', 'The scanner needs the database, which is not configured on this server.');
+    const user = await gateUserService.authenticate(req.body?.username, String(req.body?.pin || '').trim());
+    res.cookie(SCANNER_COOKIE, createGateToken(user), { ...scannerCookie(), maxAge: config.scanner.sessionHours * 3600 * 1000 });
+    res.json({ data: { role: 'gate', username: user.username, name: user.name } });
   },
 );
 
@@ -260,22 +302,29 @@ scanRouter.post('/logout', (_req, res) => {
 });
 
 scanRouter.get('/me', requireScanner, (req, res) => {
-  res.json({ data: { role: req.scanner.role, username: req.scanner.username, pinEnabled: scannerConfigured() } });
+  const { role, username, name, canMarkPaid, canUndo, eventIds } = req.scanner;
+  res.json({ data: { role, username, name, canMarkPaid, canUndo, eventIds } });
 });
 
-scanRouter.get('/events', requireScanner, async (_req, res) => {
-  res.json({ data: await couponService.scannerEvents() });
+scanRouter.get('/events', requireScanner, async (req, res) => {
+  const events = await couponService.scannerEvents();
+  res.json({ data: events.filter((e) => canScanEvent(req.scanner, e.id)) });
 });
+
+const allowEvent = (req, eventId) => {
+  if (!canScanEvent(req.scanner, eventId)) throw new HttpError(403, 'EVENT_NOT_ALLOWED', 'You are not set up to scan for this event. Please ask the admin.');
+  return eventId;
+};
 
 scanRouter.get('/events/:id/stats', requireScanner, async (req, res) => {
-  res.json({ data: await couponService.scannerStats(req.params.id) });
+  res.json({ data: await couponService.scannerStats(allowEvent(req, req.params.id)) });
 });
 
 const small = express.json({ limit: '4kb' });
 const eventIdOf = (req) => {
   const id = String(req.body?.eventId || '');
   if (!id) throw new HttpError(422, 'VALIDATION_FAILED', 'Choose the event you are scanning for.');
-  return id;
+  return allowEvent(req, id);
 };
 
 scanRouter.post('/lookup', requireScanner, small, async (req, res) => {
@@ -289,9 +338,11 @@ scanRouter.post('/checkin', requireScanner, small, async (req, res) => {
 });
 
 scanRouter.post('/undo', requireScanner, small, async (req, res) => {
+  if (!req.scanner.canUndo) throw new HttpError(403, 'NOT_PERMITTED', 'You are not allowed to undo check-ins. Please ask the admin.');
   res.json({ data: await couponService.undoCheckIn(eventIdOf(req), String(req.body?.checkinId || '')) });
 });
 
 scanRouter.post('/mark-paid', requireScanner, small, async (req, res) => {
+  if (!req.scanner.canMarkPaid) throw new HttpError(403, 'NOT_PERMITTED', 'You are not allowed to take payments. Please ask the admin.');
   res.json({ data: await couponService.markPaidAtGate(eventIdOf(req), String(req.body?.couponId || ''), req.scanner.username) });
 });

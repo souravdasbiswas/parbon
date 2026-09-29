@@ -57,6 +57,9 @@ export default function AdminCouponEvents() {
             </h1>
             {status?.enabled && (
               <div className={c.headActions}>
+                <Button to="/admin/coupons/gate-team" variant="secondary">
+                  Gate team
+                </Button>
                 <Button to="/scan" variant="secondary">
                   Open scanner
                 </Button>

@@ -125,16 +125,21 @@ function useQrCamera(onRead) {
   return { videoRef, cameraOn: state.on, cameraError: state.error, start, stop, resume, pause };
 }
 
-function Login({ onDone }) {
+const USER_KEY = 'parbon.scan.username';
+
+function Login({ onDone, note }) {
+  const [username, setUsername] = useState(() => localStorage.getItem(USER_KEY) || '');
   const [pin, setPin] = useState('');
   const [state, setState] = useState({ busy: false, message: '' });
   const submit = async (e) => {
     e.preventDefault();
     setState({ busy: true, message: '' });
     try {
-      await scanApi.login(pin);
+      await scanApi.login(username.trim(), pin);
+      localStorage.setItem(USER_KEY, username.trim().toLowerCase());
       onDone();
     } catch (err) {
+      setPin('');
       setState({ busy: false, message: err.message });
     }
   };
@@ -144,27 +149,42 @@ function Login({ onDone }) {
       <h1>
         <span lang="bn">প্রবেশদ্বার</span> Gate scanner
       </h1>
-      <label htmlFor="scan-pin">Volunteer PIN</label>
+      {note && !state.message && <p className={styles.err}>{note}</p>}
+      <label htmlFor="scan-user">Username</label>
+      <input
+        id="scan-user"
+        value={username}
+        onChange={(e) => setUsername(e.target.value.toLowerCase())}
+        className={styles.userInput}
+        autoComplete="username"
+        autoCapitalize="none"
+        spellCheck={false}
+        autoFocus={!username}
+      />
+      <label htmlFor="scan-pin">PIN</label>
       <input
         id="scan-pin"
         type="password"
         inputMode="numeric"
-        autoComplete="one-time-code"
+        autoComplete="current-password"
+        maxLength={6}
         value={pin}
-        onChange={(e) => setPin(e.target.value)}
+        onChange={(e) => setPin(e.target.value.replace(/\D/g, ''))}
         className={styles.pin}
-        autoFocus
+        autoFocus={Boolean(username)}
       />
       {state.message && (
         <p className={styles.err} role="alert">
           {state.message}
         </p>
       )}
-      <button type="submit" className={styles.primary} disabled={state.busy || pin.length < 4}>
+      <button type="submit" className={styles.primary} disabled={state.busy || pin.length < 4 || username.trim().length < 3}>
         {state.busy ? 'Checking…' : 'Start scanning'}
       </button>
       <p className={styles.muted}>
-        Committee member? <Link to="/admin">Sign in as admin</Link> and come back here.
+        Don’t have a username? Ask the committee admin to add you to the gate team.
+        <br />
+        Committee admin? <Link to="/admin">Sign in here</Link> and come back.
       </p>
     </form>
   );
@@ -182,6 +202,7 @@ export default function Scanner() {
   const [code, setCode] = useState('');
   const [count, setCount] = useState(1);
   const [history, setHistory] = useState([]);
+  const [note, setNote] = useState('');
 
   const checkSession = useCallback(() => {
     scanApi.me().then(setMe, () => setMe(null));
@@ -210,6 +231,14 @@ export default function Scanner() {
     return () => clearInterval(timer);
   }, [refreshStats]);
 
+  // A 401 mid-shift means the admin turned the account off or reset the PIN: back to sign-in.
+  const fail = useCallback((err) => {
+    if (err.status === 401) {
+      setMe(null);
+      setNote('You were signed out — your account was changed by the admin. Please sign in again.');
+    } else setError(err.message);
+  }, []);
+
   const lookup = useCallback(
     async (input) => {
       setBusy(true);
@@ -222,13 +251,13 @@ export default function Scanner() {
         feedback(found.verdict === 'ok');
       } catch (err) {
         setResult(null);
-        setError(err.message);
+        fail(err);
         feedback(false);
       } finally {
         setBusy(false);
       }
     },
-    [eventId],
+    [eventId, fail],
   );
 
   const { videoRef, cameraOn, cameraError, start: startCamera, stop: stopCamera, resume, pause } = useQrCamera(lookup);
@@ -259,7 +288,7 @@ export default function Scanner() {
       feedback(true);
       refreshStats();
     } catch (err) {
-      setError(err.message);
+      fail(err);
       feedback(false);
     } finally {
       setBusy(false);
@@ -276,7 +305,7 @@ export default function Scanner() {
       setHistory((h) => [{ at: new Date(), name: updated.registration.name, what: 'Undone', ok: false }, ...h].slice(0, 12));
       refreshStats();
     } catch (err) {
-      setError(err.message);
+      fail(err);
     } finally {
       setBusy(false);
     }
@@ -288,7 +317,7 @@ export default function Scanner() {
     try {
       setResult(await scanApi.markPaid(eventId, result.coupon.id));
     } catch (err) {
-      setError(err.message);
+      fail(err);
     } finally {
       setBusy(false);
     }
@@ -296,7 +325,8 @@ export default function Scanner() {
 
   const signOut = async () => {
     stopCamera();
-    if (me?.role === 'scanner') await scanApi.logout().catch(() => {});
+    if (me?.role === 'gate') await scanApi.logout().catch(() => {});
+    setNote('');
     setMe(null);
   };
 
@@ -306,7 +336,7 @@ export default function Scanner() {
     return (
       <div className={styles.shell}>
         <Seo title="Gate scanner" noindex />
-        <Login onDone={checkSession} />
+        <Login onDone={checkSession} note={note} />
       </div>
     );
   }
@@ -318,7 +348,11 @@ export default function Scanner() {
         <div className={styles.picker}>
           <h1>Which event are you scanning?</h1>
           {error && <p className={styles.err}>{error}</p>}
-          {events?.length === 0 && <p className={styles.muted}>No events are running right now.</p>}
+          {events?.length === 0 && (
+            <p className={styles.muted}>
+              {me.role === 'gate' ? 'There are no running events you can scan for. Please ask the admin.' : 'No events are running right now.'}
+            </p>
+          )}
           {events?.map((e) => (
             <button key={e.id} type="button" className={styles.eventBtn} onClick={() => setEventId(e.id)}>
               <strong>{e.title.en}</strong>
@@ -347,11 +381,14 @@ export default function Scanner() {
       <header className={styles.top}>
         <div>
           <p className={styles.eventName}>{event.title.en}</p>
-          {stats && (
-            <p className={styles.stats}>
-              <strong>{stats.checkedIn}</strong> in · {stats.issued} issued
-            </p>
-          )}
+          <p className={styles.stats}>
+            {stats && (
+              <>
+                <strong>{stats.checkedIn}</strong> in · {stats.issued} issued ·{' '}
+              </>
+            )}
+            {me.name}
+          </p>
         </div>
         <div className={styles.topActions}>
           {events.length > 1 && (
@@ -423,11 +460,12 @@ export default function Scanner() {
 
             {result.verdict === 'ok' && !admitted && (
               <div className={styles.admitBox}>
-                {payDue && (
+                {payDue && me.canMarkPaid && (
                   <button type="button" className={styles.payBtn} onClick={markPaid} disabled={busy}>
                     Collected {rupees(result.registration.amountDue)} — mark paid
                   </button>
                 )}
+                {payDue && !me.canMarkPaid && <p className={styles.reason}>Payment still due — please send them to the payment counter.</p>}
                 <button type="button" className={styles.admitAll} onClick={() => admit(result.coupon.remaining)} disabled={busy}>
                   {verb(result.coupon.remaining)}
                 </button>
@@ -455,7 +493,7 @@ export default function Scanner() {
               <button type="button" className={styles.primary} onClick={next}>
                 Scan next
               </button>
-              {admitted?.checkinId && (
+              {admitted?.checkinId && me.canUndo && (
                 <button type="button" className={styles.secondary} onClick={undo} disabled={busy}>
                   Undo
                 </button>

@@ -8,7 +8,6 @@ import { after, before, describe, it } from 'node:test';
 // No database configured: the coupon feature must switch itself off without breaking anything.
 const tmp = await mkdtemp(path.join(os.tmpdir(), 'parbon-coupons-'));
 const PASSWORD = 'durga-maa-ki-joi-2026';
-const PIN = '482913';
 const hash = (secret) => {
   const salt = randomBytes(16);
   const h = scryptSync(secret, salt, 64, { N: 16384, r: 8, p: 1 });
@@ -19,7 +18,6 @@ Object.assign(process.env, {
   MEDIA_DIR: path.join(tmp, 'media'),
   ADMIN_USERNAME: 'admin',
   ADMIN_PASSWORD_HASH: hash(PASSWORD),
-  SCANNER_PIN_HASH: hash(PIN),
   SESSION_SECRET: randomBytes(48).toString('base64url'),
   SITE_URL: 'http://localhost',
   SMTP_HOST: '',
@@ -30,6 +28,7 @@ Object.assign(process.env, {
 const { createApp } = await import('../src/app.js');
 const { validateCouponEvent, validateCouponType, validateDesign, validateRegistration } = await import('../src/utils/validateCoupons.js');
 const { parseScanInput, normaliseCode, formatCode, newCode, registrationState, attendanceOf } = await import('../src/services/couponService.js');
+const { validateGateUser, usernameFromName, generatePin } = await import('../src/services/gateUserService.js');
 
 let server;
 let base;
@@ -166,6 +165,23 @@ describe('ready-made coupon templates and events', () => {
   });
 });
 
+describe('gate volunteer accounts', () => {
+  it('validates names, usernames and PINs, and generates PINs when none is given', () => {
+    const ok = validateGateUser({ name: 'Rahul Das', username: 'Rahul.Das', pin: '4821', canUndo: true, eventIds: ['e1', 'e1', ''] }, { creating: true });
+    assert.equal(ok.errors, undefined);
+    assert.equal(ok.value.username, 'rahul.das');
+    assert.deepEqual(ok.value.eventIds, ['e1']);
+    assert.equal(ok.value.canMarkPaid, false);
+    assert.match(validateGateUser({ name: 'Rahul', username: 'rahul' }, { creating: true }).value.pin, /^\d{6}$/);
+    const bad = validateGateUser({ name: 'R', username: 'x!', pin: '12' }, { creating: true });
+    assert.ok(bad.errors.name && bad.errors.username && bad.errors.pin);
+    // The website admin's username can't be reused for a volunteer.
+    assert.ok(validateGateUser({ name: 'Admin', username: 'admin' }).errors.username);
+    assert.equal(usernameFromName('Śubhojit Ghosh'), 'subhojit.ghosh');
+    assert.match(generatePin(4), /^\d{4}$/);
+  });
+});
+
 describe('coupon codes and states', () => {
   it('makes readable codes and understands scans, links and typed codes', () => {
     const code = newCode();
@@ -218,20 +234,17 @@ describe('coupons without a database', () => {
     assert.equal((await request('/api/admin/scan/lookup', { method: 'POST', body: { eventId: 'x', input: 'ABCD2345' } })).status, 401);
   });
 
-  it('signs volunteers in with the scanner PIN, which does not open the admin area', async () => {
-    const wrong = await request('/api/admin/scan/login', { method: 'POST', body: { pin: '000000' } });
-    assert.equal(wrong.status, 401);
-    const res = await request('/api/admin/scan/login', { method: 'POST', body: { pin: PIN } });
-    assert.equal(res.status, 200);
-    const cookie = res.headers.get('set-cookie').split(';')[0];
-    assert.match(res.headers.get('set-cookie'), /Path=\/api\/admin\/scan/);
-    assert.equal((await (await request('/api/admin/scan/me', { cookie })).json()).data.role, 'scanner');
-    assert.equal((await request('/api/admin/me', { cookie })).status, 401);
-    assert.equal((await request('/api/admin/coupons/events', { cookie })).status, 401);
-    // Admin sessions can use the scanner too.
+  it('keeps the scanner for admins and gate volunteers; admins can always scan', async () => {
+    // Without a database there are no volunteer accounts, so volunteer sign-in is unavailable…
+    const volunteer = await request('/api/admin/scan/login', { method: 'POST', body: { username: 'rahul', pin: '1234' } });
+    assert.equal(volunteer.status, 503);
+    // …but a website admin can still use the scanner with their own sign-in, with every permission.
     const login = await request('/api/admin/login', { method: 'POST', body: { username: 'admin', password: PASSWORD } });
     const adminCookie = login.headers.get('set-cookie').split(';')[0];
-    assert.equal((await (await request('/api/admin/scan/me', { cookie: adminCookie })).json()).data.role, 'admin');
+    const me = (await (await request('/api/admin/scan/me', { cookie: adminCookie })).json()).data;
+    assert.deepEqual(me, { role: 'admin', username: 'admin', name: 'Admin', canMarkPaid: true, canUndo: true, eventIds: [] });
+    // Managing volunteers is admin-only.
+    assert.equal((await request('/api/admin/coupons/gate-users')).status, 401);
   });
 
   it('keeps coupon links and the scanner out of search engines', async () => {
