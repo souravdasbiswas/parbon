@@ -581,6 +581,45 @@ The error appears in the runtime log.
 
 **Admin on Hostinger:** run `npm run admin:hash -- "your-strong-password"` locally, then add `ADMIN_USERNAME`, `ADMIN_PASSWORD_HASH` and `SESSION_SECRET` as environment variables in hPanel. Sign in at `https://your-domain/admin`. The site must be served over HTTPS in production, because the session cookie is `Secure`.
 
+#### Keeping the settings across deploys (`~/parbon.env`)
+
+Hostinger's automatic GitHub deploys have started the app **without the environment variables** set in hPanel. When that happens:
+- storage falls back to files;
+- admin sign-in, coupons and email switch off;
+- `/api/health` shows `"admin": "not_configured"`.
+
+So the app also reads a settings file from your **home folder**. Deploys replace the app folder but never touch the home folder.
+
+1. In **hPanel → Files → File Manager**, go to your home folder: the top level, `/home/<your-user>/`, **not** `public_html` or `domains/…`.
+2. Create a file named **`parbon.env`**.
+3. Put one setting per line, `NAME=value`, with no quotes and no spaces around `=`. Use the same values as in hPanel:
+   ```
+   SITE_URL=https://parbon.in
+   ADMIN_USERNAME=…
+   ADMIN_PASSWORD_HASH=scrypt$…
+   SESSION_SECRET=…
+   DB_HOST=…
+   DB_NAME=…
+   DB_USER=…
+   DB_PASSWORD=…
+   SMTP_HOST=smtp.hostinger.com
+   SMTP_PORT=465
+   SMTP_SECURE=true
+   SMTP_USER=…
+   SMTP_PASS=…
+   MAIL_FROM=…
+   MAIL_TO=…
+   SESSION_HOURS=8
+   ```
+4. Set its **permissions to 600** (right-click → Permissions: owner read and write only). The start-up log warns if other accounts can read it.
+5. Restart the app, or deploy. The log line `.env files: … /home/<your-user>/parbon.env=loaded(16 keys, …)` confirms it was read.
+
+How the two sources combine:
+- Settings passed by hPanel still win.
+- The file only fills in settings that are missing, or that hPanel passed empty.
+- When you change a password or secret, update **both** hPanel and `parbon.env`.
+- The file is outside the website folder, so it is never served to visitors. Never commit it to Git.
+
 #### Diagnosing sign-in and settings (runtime logs)
 
 Open **hPanel → Websites → your site → Node.js → Logs** (runtime logs). Each start writes a `[parbon][config]` block. It lists setting **names**, counts and yes/no checks, and never a value:
@@ -605,7 +644,7 @@ Open **hPanel → Websites → your site → Node.js → Logs** (runtime logs). 
   - `SESSION_SECRET` shorter than 32 characters;
   - `ADMIN_PASSWORD_HASH` that isn't a hash from `npm run admin:hash`.
 - `database connection FAILED code=…` gives MySQL's error code, e.g. `ER_ACCESS_DENIED_ERROR` (wrong user or password) or `ECONNREFUSED` (wrong host).
-- `.env` files are read from the app folder and from the working folder. Variables set in hPanel always take precedence.
+- Settings files are read from the app folder, the working folder and `~/parbon.env` (see above). Variables set in hPanel take precedence.
 
 Every sign-in attempt (admin and gate volunteers) writes one `[parbon][auth]` line:
 

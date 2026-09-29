@@ -23,7 +23,7 @@ Object.assign(process.env, {
 });
 
 const { createApp } = await import('../src/app.js');
-const { loadEnvFiles } = await import('../src/config.js');
+const { ENV_FILE_CANDIDATES, loadEnvFiles } = await import('../src/config.js');
 const { configReport, configReportLines, adminProblems } = await import('../src/utils/configReport.js');
 const { logSignIn, maskUsername, resetSignInLogThrottle } = await import('../src/services/authLog.js');
 
@@ -71,6 +71,21 @@ describe('.env loading', () => {
     assert.deepEqual(target, { HOSTSET: 'from-host', ONE: 'from-root', TWO: 'from-root', THREE: 'from-cwd' });
     assert.deepEqual(result.map((r) => r.status), ['loaded', 'loaded', 'absent', 'unreadable']);
     assert.deepEqual([result[1].keys, result[1].applied], [3, 1]);
+  });
+
+  it('also reads parbon.env in the home folder, which fills settings the host left missing or empty', async () => {
+    assert.equal(ENV_FILE_CANDIDATES.at(-1), path.join(os.homedir(), 'parbon.env'));
+    const home = path.join(tmp, 'home-parbon.env');
+    await writeFile(home, 'DB_NAME=from-home\nADMIN_USERNAME=from-home\nSITE_URL=from-home\nEMPTY_IN_FILE=\n');
+    const target = { DB_NAME: '', SITE_URL: 'https://from-host', EMPTY_IN_FILE: '' };
+    const [result] = loadEnvFiles([home], target, { fillEmptyFrom: home });
+    // Missing and empty host values are filled; a real host value still wins.
+    assert.deepEqual(target, { DB_NAME: 'from-home', ADMIN_USERNAME: 'from-home', SITE_URL: 'https://from-host', EMPTY_IN_FILE: '' });
+    assert.equal(result.applied, 2);
+    // Other files never replace an empty host value.
+    const other = { DB_NAME: '' };
+    loadEnvFiles([home], other, { fillEmptyFrom: '' });
+    assert.equal(other.DB_NAME, '');
   });
 });
 

@@ -83,7 +83,7 @@ export function configReport(env = process.env) {
 export function configReportLines(report = configReport()) {
   const list = (items) => (items.length ? items.join(', ') : 'none');
   const files = report.envFiles
-    .map((f) => `${f.file}=${f.status}${f.status === 'loaded' ? `(${f.keys} keys, ${f.applied} used)` : f.error ? `(${f.error})` : ''}`)
+    .map((f) => `${f.file}=${f.status}${f.status === 'loaded' ? `(${f.keys} keys, ${f.applied} used${f.warning ? `; WARNING: ${f.warning}` : ''})` : f.error ? `(${f.error})` : ''}`)
     .join('  ');
   const f = report.features;
   const others = report.otherVariables;

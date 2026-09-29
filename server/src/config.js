@@ -1,4 +1,5 @@
-import { existsSync, readFileSync } from 'node:fs';
+import { existsSync, readFileSync, statSync } from 'node:fs';
+import os from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { parseEnv } from 'node:util';
@@ -7,21 +8,43 @@ const here = path.dirname(fileURLToPath(import.meta.url));
 export const SERVER_ROOT = path.resolve(here, '..');
 export const PROJECT_ROOT = path.resolve(SERVER_ROOT, '..');
 
+const homeDir = () => {
+  try {
+    return os.homedir();
+  } catch {
+    return '';
+  }
+};
+
 /**
- * Loads `.env` files if present: the app root first, then the working folder when it differs
- * (some hosts write the file there). Variables already set by the host (e.g. Hostinger hPanel)
- * always take precedence, and an earlier file wins over a later one. Returns what happened to
- * each file — names and counts only — for the start-up diagnostics.
+ * Where settings files are looked for, in order:
+ * 1. the app folder;
+ * 2. the working folder, when it differs (some hosts write `.env` there);
+ * 3. `parbon.env` in the account's home folder. Hosting deploys replace the app folder but never
+ *    touch the home folder, so settings kept there survive every deploy even if the host fails to
+ *    pass its own environment variables to the app.
  */
-export function loadEnvFiles(files = [path.join(PROJECT_ROOT, '.env'), path.resolve(process.cwd(), '.env')], target = process.env) {
+export const HOME_ENV_FILE = homeDir() ? path.join(homeDir(), 'parbon.env') : '';
+export const ENV_FILE_CANDIDATES = Object.freeze([path.join(PROJECT_ROOT, '.env'), path.resolve(process.cwd(), '.env'), HOME_ENV_FILE].filter(Boolean));
+
+/**
+ * Loads the settings files that exist. Variables already set by the host (e.g. Hostinger hPanel)
+ * take precedence, and an earlier file wins over a later one — except that the home-folder file
+ * also fills settings the host passed EMPTY (an empty value is never valid for Parbon's settings).
+ * Returns what happened to each file — names and counts only — for the start-up diagnostics.
+ */
+export function loadEnvFiles(files = ENV_FILE_CANDIDATES, target = process.env, { fillEmptyFrom = HOME_ENV_FILE } = {}) {
   return [...new Set(files)].map((file) => {
     if (!existsSync(file)) return { file, status: 'absent' };
     try {
       const parsed = parseEnv(readFileSync(file, 'utf8'));
       const keys = Object.keys(parsed);
-      const applied = keys.filter((k) => target[k] === undefined);
+      const fillEmpty = file === fillEmptyFrom;
+      const applied = keys.filter((k) => target[k] === undefined || (fillEmpty && target[k] === '' && parsed[k] !== ''));
       for (const k of applied) target[k] = parsed[k];
-      return { file, status: 'loaded', keys: keys.length, applied: applied.length };
+      // The file holds secrets: on Linux it should be readable by this account only (chmod 600).
+      const shared = process.platform !== 'win32' && (statSync(file).mode & 0o077) !== 0;
+      return { file, status: 'loaded', keys: keys.length, applied: applied.length, ...(shared && { warning: 'readable by other accounts (chmod 600)' }) };
     } catch (error) {
       return { file, status: 'unreadable', error: error.code || error.name };
     }
