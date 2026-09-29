@@ -67,3 +67,37 @@ export async function checkCredentials(username, password) {
   const passwordOk = await verifyPassword(password, config.admin.passwordHash);
   return passwordOk && safeEqual(username, config.admin.username);
 }
+
+// ── Coupon scanner (gate volunteers): a PIN that unlocks only the scan screen ──
+
+export const SCANNER_COOKIE = 'parbon_scanner';
+
+export const scannerConfigured = () => Boolean(config.scanner.pinHash && config.admin.sessionSecret.length >= 32);
+
+// A separate prefix keeps scanner and admin signatures from ever being interchangeable.
+const signScanner = (payload) => sign(`scanner:${payload}`);
+
+export function createScannerToken() {
+  const payload = Buffer.from(
+    JSON.stringify({ r: 'scanner', exp: Date.now() + config.scanner.sessionHours * 3600 * 1000 }),
+  ).toString('base64url');
+  return `${payload}.${signScanner(payload)}`;
+}
+
+export function verifyScannerToken(token) {
+  if (!token || !scannerConfigured()) return null;
+  const [payload, signature] = String(token).split('.');
+  if (!payload || !signature || !safeEqual(signScanner(payload), signature)) return null;
+  try {
+    const data = JSON.parse(Buffer.from(payload, 'base64url').toString('utf8'));
+    if (data.r !== 'scanner' || typeof data.exp !== 'number' || data.exp < Date.now()) return null;
+    return { username: 'scanner', role: 'scanner', expiresAt: data.exp };
+  } catch {
+    return null;
+  }
+}
+
+export async function checkScannerPin(pin) {
+  if (!scannerConfigured()) return false;
+  return verifyPassword(String(pin), config.scanner.pinHash);
+}

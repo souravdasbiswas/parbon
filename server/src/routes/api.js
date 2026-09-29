@@ -8,6 +8,7 @@ import { contentService } from '../services/contentService.js';
 import { INQUIRY_TYPES, submitInquiry } from '../services/inquiryService.js';
 import { validateInquiry } from '../utils/validate.js';
 import { adminRouter } from './admin.js';
+import { publicCouponsRouter } from './coupons.js';
 
 export const apiRouter = Router();
 
@@ -72,6 +73,7 @@ apiRouter.get('/announcements/:slug', shortCache, async (req, res) => {
 });
 
 apiRouter.use('/admin', adminRouter);
+apiRouter.use('/coupons', publicCouponsRouter);
 
 const inquiryLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,

@@ -1,6 +1,6 @@
 import { config } from '../config.js';
 import { HttpError } from './errorHandler.js';
-import { SESSION_COOKIE, verifySessionToken } from '../services/authService.js';
+import { SCANNER_COOKIE, SESSION_COOKIE, verifyScannerToken, verifySessionToken } from '../services/authService.js';
 
 export function readCookie(req, name) {
   const header = req.headers.cookie || '';
@@ -16,6 +16,15 @@ export function requireAdmin(req, _res, next) {
   const session = verifySessionToken(readCookie(req, SESSION_COOKIE));
   if (!session) return next(new HttpError(401, 'UNAUTHENTICATED', 'Please sign in to continue.'));
   req.admin = session;
+  next();
+}
+
+/** For the gate scanner: an admin session or a scanner (PIN) session. Attaches req.scanner. */
+export function requireScanner(req, _res, next) {
+  const admin = verifySessionToken(readCookie(req, SESSION_COOKIE));
+  const session = admin ? { ...admin, role: 'admin' } : verifyScannerToken(readCookie(req, SCANNER_COOKIE));
+  if (!session) return next(new HttpError(401, 'UNAUTHENTICATED', 'Please sign in to the scanner.'));
+  req.scanner = session;
   next();
 }
 

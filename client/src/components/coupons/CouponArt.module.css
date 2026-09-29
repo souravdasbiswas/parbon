@@ -1,0 +1,124 @@
+.wrap {
+  position: relative;
+  width: 100%;
+  overflow: hidden;
+  container-type: inline-size;
+  box-shadow: var(--shadow-md);
+  background: var(--color-ivory-deep);
+}
+
+.art {
+  position: absolute;
+  top: 0;
+  left: 0;
+  overflow: hidden;
+  transform-origin: 0 0;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+.bgImage {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+}
+
+.border {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.el {
+  position: absolute;
+  box-sizing: border-box;
+}
+
+.fill {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+.fill svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+.text {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  height: 100%;
+  box-sizing: border-box;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.lineWrap {
+  display: flex;
+  align-items: center;
+  width: 100%;
+  height: 100%;
+}
+
+/* ── Editing ── */
+.editing .el {
+  cursor: move;
+  touch-action: none;
+}
+
+.editing .el:hover {
+  outline: var(--outline) dashed rgb(31 95 191 / 0.55);
+}
+
+.editing .locked {
+  cursor: default;
+}
+
+.selected,
+.editing .selected:hover {
+  outline: var(--outline) solid #1f5fbf;
+}
+
+.handle {
+  position: absolute;
+  width: var(--handle);
+  height: var(--handle);
+  border: var(--outline) solid #1f5fbf;
+  border-radius: 2px;
+  background: #fff;
+  touch-action: none;
+}
+
+.h_nw { top: calc(var(--handle) / -2); left: calc(var(--handle) / -2); cursor: nwse-resize; }
+.h_n { top: calc(var(--handle) / -2); left: calc(50% - var(--handle) / 2); cursor: ns-resize; }
+.h_ne { top: calc(var(--handle) / -2); right: calc(var(--handle) / -2); cursor: nesw-resize; }
+.h_e { top: calc(50% - var(--handle) / 2); right: calc(var(--handle) / -2); cursor: ew-resize; }
+.h_se { bottom: calc(var(--handle) / -2); right: calc(var(--handle) / -2); cursor: nwse-resize; }
+.h_s { bottom: calc(var(--handle) / -2); left: calc(50% - var(--handle) / 2); cursor: ns-resize; }
+.h_sw { bottom: calc(var(--handle) / -2); left: calc(var(--handle) / -2); cursor: nesw-resize; }
+.h_w { top: calc(50% - var(--handle) / 2); left: calc(var(--handle) / -2); cursor: ew-resize; }
+
+.guideV,
+.guideH {
+  position: absolute;
+  z-index: 10;
+  background: #e0217a;
+  pointer-events: none;
+}
+
+.guideV {
+  top: 0;
+  bottom: 0;
+  width: var(--outline);
+}
+
+.guideH {
+  left: 0;
+  right: 0;
+  height: var(--outline);
+}

@@ -10,6 +10,7 @@ import { queryResponses } from '../services/responsesService.js';
 import { saveAnnouncementImage } from '../services/uploadService.js';
 import { toCsv } from '../utils/csv.js';
 import { validateAnnouncement } from '../utils/validateAnnouncement.js';
+import { adminCouponsRouter, scanRouter } from './coupons.js';
 
 export const adminRouter = Router();
 
@@ -25,6 +26,9 @@ adminRouter.use((_req, res, next) => {
   next();
 });
 adminRouter.use(sameOrigin);
+
+adminRouter.use('/coupons', adminCouponsRouter);
+adminRouter.use('/scan', scanRouter);
 
 const loginLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
