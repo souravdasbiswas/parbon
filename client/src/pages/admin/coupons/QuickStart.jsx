@@ -49,16 +49,17 @@ export function PresetPicker({ onPick }) {
 }
 
 /** The coupon types a preset will create, with a tick and a price for each. */
-export function PresetTypes({ preset, event, value, onChange }) {
+export function PresetTypes({ preset, event, value, onChange, errors = {} }) {
   const set = (i, patch) => onChange(value.map((t, j) => (j === i ? { ...t, ...patch } : t)));
   return (
-    <fieldset className={styles.group}>
+    <fieldset className={styles.group} id="preset-types">
       <legend>Coupon types to create</legend>
       <p className={styles.hint}>Each comes with a ready design. You can change designs, prices and limits later in “Coupon types & designs”.</p>
       <ul className={q.typeList} role="list">
         {value.map((t, i) => {
           const tpl = templateById(t.template);
           const tall = tpl.design.height > tpl.design.width;
+          const rowErrors = errors[i];
           return (
             <li key={`${preset.id}-${i}`} className={`${q.typeRow} ${t.enabled ? '' : q.off}`}>
               <label className={q.typeCheck}>
@@ -76,13 +77,20 @@ export function PresetTypes({ preset, event, value, onChange }) {
                 <input
                   type="number"
                   min="0"
+                  step="1"
                   inputMode="numeric"
                   value={t.price}
                   aria-label={`Price for ${t.name.en}`}
-                  onChange={(e) => set(i, { price: e.target.value === '' ? '' : Math.max(0, Number(e.target.value)) })}
+                  aria-invalid={rowErrors ? 'true' : undefined}
+                  onChange={(e) => set(i, { price: e.target.value === '' ? '' : Math.max(0, Math.round(Number(e.target.value))) })}
                 />
                 <span className={q.priceText}>{Number(t.price) ? rupees(t.price) : 'Free'}</span>
               </label>
+              {rowErrors && (
+                <p className={`${styles.fieldError} ${q.rowError}`} role="alert">
+                  {rowErrors.join(' ')}
+                </p>
+              )}
             </li>
           );
         })}

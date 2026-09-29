@@ -1,10 +1,27 @@
-import { useEffect, useId, useState } from 'react';
+import { useEffect, useId, useRef, useState } from 'react';
 import { fromLocalInput, toLocalInput } from '../../../components/coupons/couponUtils.js';
 import Button from '../../../components/ui/Button.jsx';
 import { adminApi, contentApi } from '../../../services/api.js';
 import styles from '../Admin.module.css';
 import { Field } from './formKit.jsx';
 import { makeBinder } from './formUtils.js';
+
+/** Field names for the error summary, so a problem is findable even when it's scrolled out of view. */
+const FIELD_LABELS = {
+  'title.en': 'Event name',
+  slug: 'Link name',
+  linkedEventSlug: 'Website event',
+  startsAt: 'Starts',
+  endsAt: 'Ends',
+  registrationClosesAt: 'Registrations close',
+  linksExpireAt: 'Coupon links stop working',
+  totalQuota: 'Total coupons',
+  maxAttendees: 'Most people per registration',
+  'venue.mapUrl': 'Google Maps link',
+  'payment.upiId': 'UPI ID',
+  'payment.allowPledge': 'Payment',
+  'contact.phone': 'Help contact phone',
+};
 
 const EMPTY = {
   title: { en: '', bn: '' },
@@ -51,38 +68,58 @@ function toPayload(form) {
   return payload;
 }
 
-export default function CouponEventForm({ event, preset, onSaved, onDelete, save, submitLabel }) {
+export default function CouponEventForm({ event, preset, onSaved, onDelete, save, submitLabel, siteEvents: givenSiteEvents, onErrors, describeKey }) {
   const uid = useId();
+  const formRef = useRef(null);
   const [form, setForm] = useState(() => (event ? fromEvent(event) : preset ? fromEvent({ ...EMPTY, ...preset }) : EMPTY));
   const [errors, setErrors] = useState({});
-  const [state, setState] = useState({ busy: false, message: '', ok: '' });
-  const [siteEvents, setSiteEvents] = useState([]);
+  const [state, setState] = useState({ busy: false, message: '', ok: '', attempt: 0 });
+  const [loadedSiteEvents, setSiteEvents] = useState([]);
+  const siteEvents = givenSiteEvents || loadedSiteEvents;
   const bind = makeBinder(form, setForm, errors, uid);
 
   useEffect(() => {
     // Every website event, including drafts, so coupons can be set up before the event page is published.
-    adminApi.events().then(setSiteEvents, () => contentApi.events().then(setSiteEvents, () => {}));
+    if (!givenSiteEvents) adminApi.events().then(setSiteEvents, () => contentApi.events().then(setSiteEvents, () => {}));
     if (event) return;
     contentApi.support().then((support) => {
       const upi = support?.donation?.methods?.find((m) => m.type === 'upi');
       if (upi) setForm((f) => ({ ...f, payment: { ...f.payment, upiId: f.payment.upiId || upi.upiId, payeeName: upi.payeeName || f.payment.payeeName } }));
     }, () => {});
-  }, [event]);
+  }, [event, givenSiteEvents]);
+
+  // After a failed save, bring the first problem into view: a highlighted field in this form,
+  // otherwise the coupon types above it, otherwise the message.
+  useEffect(() => {
+    if (!state.attempt || !state.message) return;
+    const root = formRef.current;
+    const target = root?.querySelector('[aria-invalid="true"]') || document.querySelector('#preset-types [aria-invalid="true"]') || root?.querySelector('[role="alert"]');
+    if (!target) return;
+    target.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    if (typeof target.focus === 'function' && target.matches('input, select, textarea')) target.focus({ preventScroll: true });
+  }, [state.attempt, state.message]);
 
   const submit = async (e) => {
     e.preventDefault();
-    setState({ busy: true, message: '', ok: '' });
+    setState((s) => ({ ...s, busy: true, message: '', ok: '' }));
     setErrors({});
+    onErrors?.({});
     try {
       const saved = await save(toPayload(form));
       setForm(fromEvent(saved));
-      setState({ busy: false, message: '', ok: 'Saved.' });
+      setState((s) => ({ ...s, busy: false, message: '', ok: 'Saved.' }));
       onSaved?.(saved);
     } catch (err) {
       setErrors(err.fields || {});
-      setState({ busy: false, message: err.message, ok: '' });
+      onErrors?.(err.fields || {});
+      setState((s) => ({ busy: false, message: err.message, ok: '', attempt: s.attempt + 1 }));
     }
   };
+
+  const summary = Object.entries(errors).map(([key, message]) => {
+    const label = FIELD_LABELS[key] || describeKey?.(key) || null;
+    return label ? `${label}: ${message}` : message;
+  });
 
   const check = (path) => ({
     checked: path.split('.').reduce((o, k) => o?.[k], form) !== false,
@@ -90,9 +127,27 @@ export default function CouponEventForm({ event, preset, onSaved, onDelete, save
   });
 
   return (
-    <form className={styles.form} onSubmit={submit} noValidate>
+    <form className={styles.form} onSubmit={submit} noValidate ref={formRef}>
       <fieldset className={styles.group}>
         <legend>Event</legend>
+        <Field
+          label="Website event"
+          id={bind('linkedEventSlug').id}
+          error={errors.linkedEventSlug}
+          hint="The event on the website these coupons are for. Its page gets a “Get your coupons” button. Optional."
+        >
+          <select {...bind('linkedEventSlug')}>
+            <option value="">— Not linked to a website event —</option>
+            {siteEvents.map((s) => (
+              <option key={s.slug} value={s.slug}>
+                {s.title.en}
+                {s.startDate ? ` · ${s.startDate}` : ''}
+                {s.state === 'draft' ? ' (draft)' : ''}
+              </option>
+            ))}
+            {form.linkedEventSlug && !siteEvents.some((s) => s.slug === form.linkedEventSlug) && <option value={form.linkedEventSlug}>{form.linkedEventSlug}</option>}
+          </select>
+        </Field>
         <Field label="Event name (English)" id={bind('title.en').id} error={errors['title.en']} required>
           <input {...bind('title.en')} maxLength={140} required placeholder="Durga Puja 2026" />
         </Field>
@@ -163,17 +218,6 @@ export default function CouponEventForm({ event, preset, onSaved, onDelete, save
         <Field label="Google Maps link" id={bind('venue.mapUrl').id} error={errors['venue.mapUrl']}>
           <input type="url" {...bind('venue.mapUrl')} maxLength={500} placeholder="https://maps.app.goo.gl/…" />
         </Field>
-        <Field label="Show a “Get your coupons” button on" id={bind('linkedEventSlug').id} error={errors.linkedEventSlug}>
-          <select {...bind('linkedEventSlug')}>
-            <option value="">— no website event —</option>
-            {siteEvents.map((s) => (
-              <option key={s.slug} value={s.slug}>
-                {s.title.en}
-                {s.state === 'draft' ? ' (draft)' : ''}
-              </option>
-            ))}
-          </select>
-        </Field>
       </fieldset>
 
       <fieldset className={styles.group}>
@@ -211,9 +255,16 @@ export default function CouponEventForm({ event, preset, onSaved, onDelete, save
       </fieldset>
 
       {state.message && (
-        <p className={styles.formError} role="alert">
-          {state.message}
-        </p>
+        <div className={styles.formError} role="alert">
+          <p>{summary.length ? 'Please fix the following, then try again:' : state.message}</p>
+          {summary.length > 0 && (
+            <ul>
+              {summary.map((line) => (
+                <li key={line}>{line}</li>
+              ))}
+            </ul>
+          )}
+        </div>
       )}
       {state.ok && (
         <p className={styles.notice} role="status">

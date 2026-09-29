@@ -22,6 +22,11 @@ export function errorHandler(err, req, res, _next) {
   const status =
     err instanceof HttpError ? err.status : upstreamStatus >= 400 && upstreamStatus < 500 ? upstreamStatus : 500;
   if (status >= 500 && !(err instanceof HttpError)) console.error('[parbon] unhandled error:', err);
+  // Rejected admin saves: which fields (names only, never values), so the host's logs show why.
+  if (status === 422 && req.originalUrl?.startsWith('/api/admin') && err instanceof HttpError) {
+    const fields = Object.keys(err.details || {}).slice(0, 20).join(',') || 'none';
+    console.warn(`[parbon][admin] ${req.method} ${req.originalUrl.split('?')[0].slice(0, 120)} rejected (422) fields=${fields}`);
+  }
 
   const body = {
     error: {

@@ -18,14 +18,27 @@ import {
   validateRegistration,
 } from '../utils/validateCoupons.js';
 
-const limited = (limit, message, windowMs = 15 * 60 * 1000) =>
+const limited = (limit, message, windowMs = 15 * 60 * 1000, logAs = '') =>
   rateLimit({
     windowMs,
     limit,
     standardHeaders: 'draft-8',
     legacyHeaders: false,
-    handler: (_req, res) => res.status(429).json({ error: { code: 'RATE_LIMITED', message } }),
+    handler: (req, res) => {
+      // Throttled to one line per network per minute, so real visitors being turned away shows in the logs.
+      if (logAs) logThrottled(`${logAs}:${req.ip}`, `[parbon][coupons] ${logAs} rate_limited ip=${req.ip} limit=${limit}_per_${Math.round(windowMs / 60000)}min`);
+      res.status(429).json({ error: { code: 'RATE_LIMITED', message } });
+    },
   });
+
+const lastLogged = new Map();
+function logThrottled(key, line) {
+  const now = Date.now();
+  if (lastLogged.size > 5000) lastLogged.clear();
+  if (now - (lastLogged.get(key) || 0) < 60_000) return;
+  lastLogged.set(key, now);
+  console.warn(line);
+}
 
 const check = ({ value, errors }) => {
   if (errors) throw new HttpError(422, 'VALIDATION_FAILED', 'Please check the highlighted fields.', errors);
@@ -84,8 +97,9 @@ publicCouponsRouter.get('/events/:slug', async (req, res) => {
 
 publicCouponsRouter.post(
   '/events/:slug/register',
-  // Generous: many phones on Indian mobile networks share one public IP (carrier-grade NAT).
-  limited(30, 'Too many registrations from this network. Please try again a little later.'),
+  // Generous: many phones on Indian mobile networks share one public IP (carrier-grade NAT), and at the
+  // venue whole families register on the same Wi-Fi. Coupon quotas still cap what can be issued.
+  limited(60, 'Too many registrations from this network. Please try again a little later.', 15 * 60 * 1000, 'registration'),
   express.json({ limit: '16kb' }),
   async (req, res) => {
     // Honeypot: real visitors never see or fill the "website" field.
@@ -118,8 +132,32 @@ adminCouponsRouter.get('/events', async (_req, res) => {
   res.json({ data: await couponService.listEvents() });
 });
 
+/** Coupon types sent along with a new event: each is validated; errors are keyed `types.<n>.<field>`. */
+function checkNewTypes(input) {
+  if (input === undefined || input === null) return [];
+  if (!Array.isArray(input) || input.length > 12) throw new HttpError(422, 'VALIDATION_FAILED', 'Please check the coupon types.', { types: 'Send up to 12 coupon types.' });
+  const errors = {};
+  const types = input.map((raw, i) => {
+    const { value, errors: typeErrors } = validateCouponType(raw);
+    for (const [field, message] of Object.entries(typeErrors || {})) errors[`types.${i}.${field}`] = message;
+    return value;
+  });
+  if (Object.keys(errors).length) throw new HttpError(422, 'VALIDATION_FAILED', 'Please check the coupon types.', errors);
+  return types;
+}
+
 adminCouponsRouter.post('/events', json, async (req, res) => {
-  res.status(201).json({ data: await couponService.createEvent(check(validateCouponEvent(req.body))) });
+  const event = validateCouponEvent(req.body);
+  let types = [];
+  let typeErrors = null;
+  try {
+    types = checkNewTypes(req.body?.types);
+  } catch (error) {
+    if (!(error instanceof HttpError) || !error.details) throw error;
+    typeErrors = error.details;
+  }
+  if (event.errors || typeErrors) throw new HttpError(422, 'VALIDATION_FAILED', 'Please check the highlighted fields.', { ...event.errors, ...typeErrors });
+  res.status(201).json({ data: await couponService.createEvent(event.value, types) });
 });
 
 adminCouponsRouter.get('/events/:id', async (req, res) => {
