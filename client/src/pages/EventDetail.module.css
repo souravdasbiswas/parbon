@@ -91,3 +91,10 @@
   gap: var(--space-3);
   margin-top: var(--space-4);
 }
+
+.couponsCta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-3);
+  margin-top: var(--space-5);
+}

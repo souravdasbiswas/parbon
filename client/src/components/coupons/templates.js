@@ -4,7 +4,7 @@
  */
 const LOGO = '/brand/logo-480.png';
 
-const ticketBase = ({ stub, bgFrom, bgTo, accent, kicker, bengali, icon }) => ({
+const ticketBase = ({ stub, bgFrom, bgTo, accent, kicker, bengali, icon, countText = 'Admits {{quantity}}' }) => ({
   version: 1,
   width: 1200,
   height: 560,
@@ -18,7 +18,7 @@ const ticketBase = ({ stub, bgFrom, bgTo, accent, kicker, bengali, icon }) => ({
     { id: 'kicker', type: 'text', text: kicker, x: 230, y: 58, w: 590, h: 30, font: 'body', size: 19, weight: 700, uppercase: true, letterSpacing: 6, color: '#984520' },
     { id: 'title', type: 'text', text: '{{event}}', x: 230, y: 92, w: 590, h: 136, font: 'display', size: 62, weight: 600, lineHeight: 1.02, color: accent },
     { id: 'badge', type: 'text', text: '{{type}}', x: 230, y: 244, w: 300, h: 50, font: 'body', size: 22, weight: 700, uppercase: true, letterSpacing: 3, color: '#fffaf1', background: '#231a15', radius: 25, align: 'center', valign: 'middle' },
-    { id: 'admits', type: 'text', text: 'Admits {{quantity}}', x: 548, y: 244, w: 272, h: 50, font: 'body', size: 24, weight: 700, color: accent, valign: 'middle' },
+    { id: 'admits', type: 'text', text: countText, x: 548, y: 244, w: 272, h: 50, font: 'body', size: 24, weight: 700, color: accent, valign: 'middle' },
     { id: 'name', type: 'text', text: '{{name}}', x: 230, y: 318, w: 590, h: 52, font: 'display', size: 42, weight: 600, color: '#231a15' },
     { id: 'date', type: 'text', text: '{{date}}', x: 230, y: 382, w: 590, h: 34, font: 'body', size: 22, weight: 600, color: '#3a302b' },
     { id: 'venue', type: 'text', text: '{{venue}}', x: 230, y: 418, w: 590, h: 60, font: 'body', size: 20, weight: 400, color: '#6b5d53' },
@@ -43,9 +43,7 @@ export const TEMPLATES = [
     id: 'food',
     label: 'Food coupon — bhog gold',
     kind: 'food',
-    design: {
-      ...ticketBase({ stub: '#984520', bgFrom: '#fff7e6', bgTo: '#f6d9a8', accent: '#984520', kicker: 'Parbon · Bhog & Prasad', bengali: 'ভোগের কুপন', icon: 'bhog' }),
-    },
+    design: ticketBase({ stub: '#984520', bgFrom: '#fff7e6', bgTo: '#f6d9a8', accent: '#984520', kicker: 'Parbon · Bhog & Prasad', bengali: 'ভোগের কুপন', icon: 'bhog', countText: 'Serves {{quantity}}' }),
   },
   {
     id: 'card',

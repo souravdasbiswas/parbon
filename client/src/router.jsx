@@ -1,5 +1,5 @@
 /* eslint-disable react-refresh/only-export-components -- route table: lazy page components live alongside the router config */
-import { lazy } from 'react';
+import { Suspense, lazy } from 'react';
 import { createBrowserRouter, isRouteErrorResponse, useRouteError } from 'react-router';
 import Layout from './components/layout/Layout.jsx';
 import Button from './components/ui/Button.jsx';
@@ -20,6 +20,12 @@ const AdminAnnouncements = lazy(() => import('./pages/admin/AdminAnnouncements.j
 const AdminAnnouncementForm = lazy(() => import('./pages/admin/AdminAnnouncementForm.jsx'));
 const AdminResponses = lazy(() => import('./pages/admin/AdminResponses.jsx'));
 const AdminStorage = lazy(() => import('./pages/admin/AdminStorage.jsx'));
+const AdminCouponEvents = lazy(() => import('./pages/admin/coupons/AdminCouponEvents.jsx'));
+const AdminCouponEvent = lazy(() => import('./pages/admin/coupons/AdminCouponEvent.jsx'));
+const AdminCouponDesigner = lazy(() => import('./pages/admin/coupons/AdminCouponDesigner.jsx'));
+const Register = lazy(() => import('./pages/coupons/Register.jsx'));
+const CouponView = lazy(() => import('./pages/coupons/CouponView.jsx'));
+const Scanner = lazy(() => import('./pages/scan/Scanner.jsx'));
 const NotFound = lazy(() => import('./pages/NotFound.jsx'));
 
 function RouteError() {
@@ -58,7 +64,23 @@ export const router = createBrowserRouter([
       { path: 'admin/announcements/:id', Component: AdminAnnouncementForm },
       { path: 'admin/responses', Component: AdminResponses },
       { path: 'admin/storage', Component: AdminStorage },
+      { path: 'admin/coupons', Component: AdminCouponEvents },
+      { path: 'admin/coupons/:id', Component: AdminCouponEvent },
+      { path: 'admin/coupons/:eventId/types/:typeId/design', Component: AdminCouponDesigner },
+      { path: 'register', Component: Register },
+      { path: 'register/:slug', Component: Register },
+      { path: 'c/:token', Component: CouponView },
       { path: '*', Component: NotFound },
     ],
+  },
+  // The gate scanner is a full-screen phone tool, without the site header and footer.
+  {
+    path: '/scan',
+    errorElement: <RouteError />,
+    element: (
+      <Suspense fallback={null}>
+        <Scanner />
+      </Suspense>
+    ),
   },
 ]);

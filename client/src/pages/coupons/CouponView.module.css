@@ -1,0 +1,227 @@
+.page {
+  padding-block: clamp(1.25rem, 1rem + 2vw, 3rem) var(--space-8);
+  background:
+    radial-gradient(ellipse 80% 50% at 50% 0%, rgb(216 191 138 / 0.35), transparent 70%),
+    var(--color-ivory);
+}
+
+.inner {
+  display: grid;
+  gap: var(--space-4);
+  width: min(100% - 1.5rem, 760px);
+  margin-inline: auto;
+}
+
+.art {
+  width: 100%;
+}
+
+.status {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--space-3);
+}
+
+.admit,
+.pay {
+  display: grid;
+  gap: 0.1rem;
+  padding: var(--space-3) var(--space-4);
+  border-radius: var(--radius-md);
+  background: var(--color-paper);
+  border: 1px solid var(--color-line);
+}
+
+.admit strong {
+  font-family: var(--font-display);
+  font-size: var(--text-xl);
+  color: var(--color-vermilion);
+}
+
+.admit span,
+.pay span {
+  font-size: var(--text-sm);
+  color: var(--color-muted);
+}
+
+.admitDone strong {
+  color: var(--color-success);
+}
+
+.pay strong {
+  font-weight: 700;
+}
+
+.tone_ok {
+  border-color: #b9d3b1;
+  background: #eef5ea;
+}
+
+.tone_ok strong {
+  color: var(--color-success);
+}
+
+.tone_wait {
+  border-color: var(--color-gold-soft);
+  background: #fbf3e2;
+}
+
+.tone_wait strong {
+  color: var(--color-brown);
+}
+
+.tone_bad {
+  border-color: #eeb8b0;
+  background: #fbe9e6;
+}
+
+.tone_bad strong {
+  color: var(--color-vermilion-deep);
+}
+
+.showQr {
+  width: 100%;
+  justify-content: center;
+}
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: var(--space-2);
+}
+
+.pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  min-height: 44px;
+  padding: 0.35rem 1rem;
+  border: 1px solid var(--color-sand);
+  border-radius: var(--radius-pill);
+  background: #fff;
+  color: var(--color-charcoal);
+  font-size: var(--text-sm);
+  font-weight: 700;
+  text-decoration: none;
+}
+
+.pill:hover {
+  border-color: var(--color-gold);
+  color: var(--color-vermilion);
+}
+
+.facts {
+  display: grid;
+  gap: var(--space-3);
+  padding: var(--space-4);
+  border-radius: var(--radius-md);
+  background: var(--color-paper);
+  border: 1px solid var(--color-line);
+}
+
+@media (min-width: 640px) {
+  .facts {
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  }
+}
+
+.facts dt {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-size: var(--text-xs);
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--color-gold);
+}
+
+.facts dd {
+  display: grid;
+  margin: 0.2rem 0 0;
+  font-weight: 600;
+}
+
+.facts dd span {
+  font-weight: 400;
+  font-size: var(--text-sm);
+  color: var(--color-muted);
+}
+
+.small {
+  font-size: var(--text-sm);
+  color: var(--color-muted);
+  text-align: center;
+}
+
+.message {
+  display: grid;
+  gap: var(--space-3);
+  justify-items: center;
+  padding: var(--space-7) var(--space-5);
+  border: 1px solid var(--color-line);
+  border-radius: var(--radius-lg);
+  background: var(--color-paper);
+  text-align: center;
+}
+
+.message svg {
+  color: var(--color-gold);
+}
+
+.message h1 {
+  font-size: var(--text-2xl);
+}
+
+.bn {
+  font-family: var(--font-bengali-display);
+  font-size: var(--text-xl);
+  color: var(--color-vermilion);
+}
+
+/* ── Big QR for the gate ── */
+.overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  display: grid;
+  place-items: center;
+  padding: 1rem;
+  background: rgb(35 26 21 / 0.82);
+}
+
+.overlayCard {
+  display: grid;
+  gap: var(--space-3);
+  justify-items: center;
+  width: min(100%, 460px);
+  padding: var(--space-5);
+  border-radius: var(--radius-lg);
+  background: #fff;
+  text-align: center;
+}
+
+.overlayTitle {
+  font-family: var(--font-display);
+  font-size: var(--text-xl);
+  font-weight: 600;
+  color: var(--color-vermilion);
+}
+
+.bigQr {
+  width: min(78vw, 380px);
+  aspect-ratio: 1;
+}
+
+.bigCode {
+  font-family: ui-monospace, Consolas, monospace;
+  font-size: 1.8rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+}
+
+.overlayName {
+  font-weight: 600;
+  color: var(--color-muted);
+}
