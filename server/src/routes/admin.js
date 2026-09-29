@@ -5,11 +5,13 @@ import { storageReport } from '../db/index.js';
 import { requireAdmin, sameOrigin } from '../middleware/auth.js';
 import { HttpError } from '../middleware/errorHandler.js';
 import { announcementService } from '../services/announcementService.js';
+import { eventService } from '../services/eventService.js';
 import { SESSION_COOKIE, adminConfigured, checkCredentials, createSessionToken } from '../services/authService.js';
 import { queryResponses } from '../services/responsesService.js';
 import { saveAnnouncementImage } from '../services/uploadService.js';
 import { toCsv } from '../utils/csv.js';
 import { validateAnnouncement } from '../utils/validateAnnouncement.js';
+import { validateEvent } from '../utils/validateEvent.js';
 import { adminCouponsRouter, scanRouter } from './coupons.js';
 
 export const adminRouter = Router();
@@ -93,6 +95,39 @@ adminRouter.put('/announcements/:id', requireAdmin, express.json({ limit: '64kb'
 
 adminRouter.delete('/announcements/:id', requireAdmin, async (req, res) => {
   if (!(await announcementService.remove(req.params.id))) throw new HttpError(404, 'NOT_FOUND', 'Announcement not found.');
+  res.status(204).end();
+});
+
+// ── Website events (Admin → Events) ──
+
+const parseEvent = (req) => {
+  const { value, errors } = validateEvent(req.body);
+  if (errors) throw new HttpError(422, 'VALIDATION_FAILED', 'Please check the highlighted fields.', errors);
+  return value;
+};
+
+adminRouter.get('/events', requireAdmin, async (_req, res) => {
+  res.json({ data: await eventService.listAll() });
+});
+
+adminRouter.get('/events/:id', requireAdmin, async (req, res) => {
+  const event = await eventService.getById(req.params.id);
+  if (!event) throw new HttpError(404, 'NOT_FOUND', 'Event not found.');
+  res.json({ data: event });
+});
+
+adminRouter.post('/events', requireAdmin, express.json({ limit: '256kb' }), async (req, res) => {
+  res.status(201).json({ data: await eventService.create(parseEvent(req), req.admin.username) });
+});
+
+adminRouter.put('/events/:id', requireAdmin, express.json({ limit: '256kb' }), async (req, res) => {
+  const updated = await eventService.update(req.params.id, parseEvent(req));
+  if (!updated) throw new HttpError(404, 'NOT_FOUND', 'Event not found.');
+  res.json({ data: updated });
+});
+
+adminRouter.delete('/events/:id', requireAdmin, async (req, res) => {
+  if (!(await eventService.remove(req.params.id))) throw new HttpError(404, 'NOT_FOUND', 'Event not found.');
   res.status(204).end();
 });
 

@@ -185,6 +185,11 @@
   }
 }
 
+/* No event has a countdown switched on: give the space back. */
+.countdownWrap.countdownNone {
+  min-height: 0;
+}
+
 .countdownCard {
   display: flex;
   flex-wrap: wrap;

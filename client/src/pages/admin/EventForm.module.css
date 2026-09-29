@@ -1,0 +1,191 @@
+.crumb {
+  margin-bottom: var(--space-3);
+  font-size: var(--text-sm);
+  font-weight: 600;
+}
+
+.titleBadge {
+  margin-left: var(--space-3);
+  vertical-align: middle;
+  font-family: var(--font-body);
+}
+
+/* Keep the form inside its column: fieldsets and grid tracks otherwise
+   grow to their widest content and slide under the preview. */
+.form {
+  grid-template-columns: minmax(0, 1fr);
+}
+
+.form fieldset,
+.form input,
+.form textarea,
+.form select {
+  min-width: 0;
+  max-width: 100%;
+}
+
+.biLabel {
+  font-weight: 600;
+  font-size: var(--text-sm);
+}
+
+.biLabel span {
+  color: var(--color-vermilion);
+}
+
+.biRow {
+  display: grid;
+  gap: var(--space-2);
+}
+
+@media (min-width: 640px) {
+  .biRow {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  }
+}
+
+.repeat {
+  position: relative;
+  display: grid;
+  gap: var(--space-3);
+  padding: var(--space-3);
+  padding-right: 3rem;
+  border: 1px dashed var(--color-sand);
+  border-radius: var(--radius-sm);
+  background: var(--color-ivory);
+}
+
+.day {
+  border-style: solid;
+  border-left: 4px solid var(--color-gold);
+}
+
+/* Day names (English + Bengali) get more room than the date picker. */
+@media (min-width: 640px) {
+  .dayRow {
+    grid-template-columns: minmax(0, 2fr) minmax(9.5rem, 1fr);
+  }
+}
+
+.listTools {
+  position: absolute;
+  top: var(--space-2);
+  right: var(--space-2);
+  display: grid;
+  gap: 4px;
+}
+
+.listTools button,
+.remove {
+  width: 30px;
+  height: 30px;
+  border: 1px solid var(--color-sand);
+  border-radius: var(--radius-sm);
+  background: #fff;
+  color: var(--color-charcoal);
+  font-size: 0.9rem;
+  line-height: 1;
+}
+
+.listTools .remove,
+.remove {
+  color: var(--color-danger);
+}
+
+.add {
+  justify-self: start;
+  padding: 0.4rem 0.9rem;
+  border: 1px dashed var(--color-gold);
+  border-radius: var(--radius-pill);
+  background: var(--color-paper);
+  color: var(--color-vermilion);
+  font-size: var(--text-sm);
+  font-weight: 700;
+}
+
+.iconPick {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.iconPick button {
+  display: grid;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  border: 1px solid var(--color-sand);
+  border-radius: var(--radius-sm);
+  background: #fff;
+  color: var(--color-charcoal);
+}
+
+.iconOn {
+  border-color: var(--color-vermilion) !important;
+  background: #fbe9e6 !important;
+  color: var(--color-vermilion) !important;
+}
+
+.items {
+  display: grid;
+  gap: var(--space-2);
+}
+
+.item {
+  display: grid;
+  grid-template-columns: 7rem minmax(0, 1fr) minmax(0, 1fr) auto;
+  gap: var(--space-2);
+  align-items: center;
+}
+
+.item input {
+  min-height: 40px;
+  padding: 0.4rem 0.6rem;
+  border: 1px solid var(--color-sand);
+  border-radius: var(--radius-sm);
+  background: #fff;
+}
+
+.item p {
+  grid-column: 1 / -1;
+}
+
+@media (max-width: 640px) {
+  .item {
+    grid-template-columns: minmax(0, 1fr) auto;
+  }
+  .item input:not(.time) {
+    grid-column: 1 / -1;
+  }
+}
+
+.actions {
+  align-items: center;
+}
+
+.coupons {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-3) var(--space-4);
+  border-radius: var(--radius-md);
+  background: var(--color-gold-pale);
+  color: var(--color-brown);
+  font-size: var(--text-sm);
+}
+
+.coupons a {
+  font-weight: 700;
+}
+
+.timerLabel {
+  margin-top: var(--space-6);
+}
+
+.timer {
+  padding: var(--space-5);
+  border: 1px solid var(--color-line);
+  border-radius: var(--radius-lg);
+  background: rgb(255 253 249 / 0.85);
+  box-shadow: var(--shadow-md);
+}

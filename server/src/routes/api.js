@@ -5,6 +5,7 @@ import { databaseStatus } from '../db/index.js';
 import { HttpError } from '../middleware/errorHandler.js';
 import { announcementService } from '../services/announcementService.js';
 import { contentService } from '../services/contentService.js';
+import { eventService } from '../services/eventService.js';
 import { INQUIRY_TYPES, submitInquiry } from '../services/inquiryService.js';
 import { validateInquiry } from '../utils/validate.js';
 import { adminRouter } from './admin.js';
@@ -15,6 +16,12 @@ export const apiRouter = Router();
 // Content changes rarely: let browsers reuse it briefly, and revalidate in the background.
 const cacheable = (_req, res, next) => {
   res.setHeader('Cache-Control', 'public, max-age=60, stale-while-revalidate=600');
+  next();
+};
+
+// Events and announcements are edited in the admin, so browsers only reuse them briefly.
+const shortCacheEvents = (_req, res, next) => {
+  res.setHeader('Cache-Control', 'public, max-age=30, stale-while-revalidate=60');
   next();
 };
 
@@ -31,13 +38,13 @@ apiRouter.get('/site', cacheable, async (_req, res) => {
   res.json({ data: await contentService.getSite() });
 });
 
-apiRouter.get('/events', cacheable, async (req, res) => {
+apiRouter.get('/events', shortCacheEvents, async (req, res) => {
   const status = typeof req.query.status === 'string' ? req.query.status : undefined;
-  res.json({ data: await contentService.listEvents({ status }) });
+  res.json({ data: await eventService.listPublished({ status }) });
 });
 
-apiRouter.get('/events/:slug', cacheable, async (req, res) => {
-  const event = await contentService.getEvent(req.params.slug);
+apiRouter.get('/events/:slug', shortCacheEvents, async (req, res) => {
+  const event = await eventService.getPublishedBySlug(req.params.slug);
   if (!event) throw new HttpError(404, 'EVENT_NOT_FOUND', 'Event not found.');
   res.json({ data: event });
 });

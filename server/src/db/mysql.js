@@ -132,6 +132,23 @@ const SCHEMA = [
     updated_at VARCHAR(32) NOT NULL,
     UNIQUE KEY uq_gate_users_username (username)
   ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci`,
+  // Website events (Admin → Events). The whole event is JSON in `data`; the columns are for sorting and lookups.
+  `CREATE TABLE IF NOT EXISTS site_events (
+    id VARCHAR(64) NOT NULL PRIMARY KEY,
+    slug VARCHAR(100) NOT NULL,
+    state VARCHAR(16) NOT NULL,
+    published_at VARCHAR(32) NOT NULL,
+    start_date VARCHAR(10) NULL,
+    created_at VARCHAR(32) NOT NULL,
+    updated_at VARCHAR(32) NOT NULL,
+    data LONGTEXT NOT NULL,
+    UNIQUE KEY uq_site_events_slug (slug)
+  ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci`,
+  // Seed events (server/data/events.json) already merged once — so an event an admin deletes stays deleted.
+  `CREATE TABLE IF NOT EXISTS event_seeds (
+    id VARCHAR(64) NOT NULL PRIMARY KEY,
+    seeded_at VARCHAR(32) NOT NULL
+  ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci`,
   // Legacy files already imported (by content hash), so they are not imported again.
   `CREATE TABLE IF NOT EXISTS data_imports (
     source VARCHAR(191) NOT NULL PRIMARY KEY,

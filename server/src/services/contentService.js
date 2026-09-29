@@ -26,26 +26,10 @@ export class JsonContentRepository {
   }
 }
 
-const byStartDate = (a, b) => String(a.startDate || '9999').localeCompare(String(b.startDate || '9999'));
-
+// Events are managed in the admin now (see eventService); server/data/events.json is only their seed.
 export function createContentService(repository) {
   return {
     getSite: () => repository.read('site'),
-
-    async listEvents({ status } = {}) {
-      const { events } = await repository.read('events');
-      const filtered = status ? events.filter((e) => e.status === status) : events;
-      return [...filtered].sort(byStartDate).map(({ schedule, ...summary }) => ({
-        ...summary,
-        hasSchedule: Array.isArray(schedule) && schedule.length > 0,
-      }));
-    },
-
-    async getEvent(slug) {
-      const { events } = await repository.read('events');
-      return events.find((e) => e.slug === slug) || null;
-    },
-
     getGallery: () => repository.read('gallery'),
     getCommittee: () => repository.read('committee'),
     getSupport: () => repository.read('support'),

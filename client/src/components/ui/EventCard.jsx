@@ -1,5 +1,5 @@
 import { Link } from 'react-router';
-import { formatDate, formatDateRange, parseDate, toBengaliDigits } from '../../i18n/format.js';
+import { formatDate, formatDateRange, formatTimeRange, parseDate, toBengaliDigits } from '../../i18n/format.js';
 import { useLocale } from '../../i18n/LocaleContext.jsx';
 import Icon from '../motifs/Icon.jsx';
 import styles from './EventCard.module.css';
@@ -32,9 +32,10 @@ function DateBadge({ start, end }) {
 export default function EventCard({ event, featured = false, headingLevel: H = 'h3' }) {
   const { t } = useLocale();
   const when = event.startDate ? formatDateRange(event.startDate, event.endDate, 'en') : t(event.dateLabel);
+  const time = event.startDate ? formatTimeRange(event.startTime, event.endTime) : '';
 
   return (
-    <article className={`${styles.card} ${featured ? styles.featured : ''} reveal`}>
+    <article className={`${styles.card} ${featured ? styles.featured : ''} ${event.image?.src ? styles.withImage : ''} reveal`}>
       <DateBadge start={event.startDate} end={event.endDate} />
       <div className={styles.body}>
         {event.category && <p className={styles.category}>{t(event.category)}</p>}
@@ -48,7 +49,10 @@ export default function EventCard({ event, featured = false, headingLevel: H = '
         </H>
         <p className={styles.meta}>
           <Icon name="calendar" size={16} />
-          <span>{when}</span>
+          <span>
+            {when}
+            {time && <> · {time}</>}
+          </span>
         </p>
         {event.venue?.name && (
           <p className={styles.meta}>
@@ -70,6 +74,7 @@ export default function EventCard({ event, featured = false, headingLevel: H = '
           Details <Icon name="arrow" size={16} />
         </span>
       </div>
+      {event.image?.src && <img className={styles.cover} src={event.image.src} alt="" loading="lazy" decoding="async" width={event.image.width || undefined} height={event.image.height || undefined} />}
     </article>
   );
 }

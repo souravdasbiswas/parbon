@@ -20,8 +20,6 @@
     { "platform": "youtube", "label": "YouTube", "url": "" }
   ],
   "featuredEvent": {
-    "slug": "durga-puja-2026",
-    "countdownTo": "2026-10-16T07:00:00+05:30",
-    "label": { "en": "Maa arrives in", "bn": "মা আসছেন" }
+    "slug": "durga-puja-2026"
   }
 }
