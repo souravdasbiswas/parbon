@@ -1,0 +1,401 @@
+.shell {
+  min-height: 100dvh;
+  background: #1c1410;
+  color: #f4ebdd;
+  font-family: var(--font-body);
+}
+
+.shell a {
+  color: var(--color-gold-soft);
+}
+
+.muted {
+  color: #b9a58e;
+  font-size: var(--text-sm);
+}
+
+.err {
+  color: #ffb4a8;
+  font-weight: 600;
+}
+
+.primary,
+.secondary,
+.ghost,
+.admitAll,
+.payBtn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+  min-height: 52px;
+  padding: 0.5rem 1.2rem;
+  border: 0;
+  border-radius: 14px;
+  font-size: 1.05rem;
+  font-weight: 700;
+  text-decoration: none;
+}
+
+.primary {
+  background: var(--color-vermilion-bright);
+  color: #fff;
+}
+
+.secondary {
+  background: #efe4d6;
+  color: #231a15;
+}
+
+.ghost {
+  min-height: 40px;
+  padding: 0.3rem 0.8rem;
+  border: 1px solid rgb(255 255 255 / 0.25);
+  background: none;
+  color: #f4ebdd !important;
+  font-size: var(--text-sm);
+}
+
+button:disabled {
+  opacity: 0.5;
+}
+
+/* ── Login & event picker ── */
+.login,
+.picker {
+  display: grid;
+  gap: var(--space-3);
+  width: min(100% - 2rem, 380px);
+  margin: 0 auto;
+  padding-block: 12vh 2rem;
+}
+
+.logo {
+  justify-self: center;
+  border-radius: 16px;
+}
+
+.login h1,
+.picker h1 {
+  display: grid;
+  text-align: center;
+  font-size: var(--text-xl);
+  color: #fff;
+}
+
+.login h1 span {
+  font-family: var(--font-bengali-display);
+  color: var(--color-gold-soft);
+}
+
+.login label {
+  font-weight: 700;
+}
+
+.pin,
+.userInput {
+  min-height: 60px;
+  padding: 0.5rem 1rem;
+  border: 2px solid #5a4538;
+  border-radius: 14px;
+  background: #2b201a;
+  color: #fff;
+  font-size: 1.8rem;
+  letter-spacing: 0.4em;
+  text-align: center;
+}
+
+.userInput {
+  font-size: 1.3rem;
+  letter-spacing: 0.02em;
+}
+
+.eventBtn {
+  display: grid;
+  gap: 0.1rem;
+  padding: 1rem 1.2rem;
+  border: 1px solid #5a4538;
+  border-radius: 14px;
+  background: #2b201a;
+  color: #fff;
+  text-align: left;
+}
+
+.eventBtn span {
+  color: #b9a58e;
+  font-size: var(--text-sm);
+}
+
+/* ── Scanner ── */
+.top {
+  position: sticky;
+  top: 0;
+  z-index: 5;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  padding: 0.7rem 1rem;
+  background: #120c09;
+  border-bottom: 1px solid #3a2c24;
+}
+
+.eventName {
+  font-weight: 700;
+  color: #fff;
+}
+
+.stats {
+  font-size: var(--text-sm);
+  color: #b9a58e;
+}
+
+.stats strong {
+  color: #9fd89a;
+  font-size: 1.1rem;
+}
+
+.topActions {
+  display: flex;
+  gap: 0.4rem;
+}
+
+.main {
+  display: grid;
+  gap: var(--space-4);
+  width: min(100% - 1.5rem, 560px);
+  margin: 0 auto;
+  padding-block: var(--space-4) var(--space-7);
+}
+
+.cameraBox {
+  position: relative;
+  overflow: hidden;
+  aspect-ratio: 1;
+  border-radius: 20px;
+  background: #000;
+}
+
+.cameraBox[hidden] {
+  display: none;
+}
+
+.video {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.frame {
+  position: absolute;
+  inset: 14%;
+  border: 4px solid rgb(255 255 255 / 0.85);
+  border-radius: 24px;
+  box-shadow: 0 0 0 999px rgb(0 0 0 / 0.35);
+  pointer-events: none;
+}
+
+.cameraOff,
+.busy {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-content: center;
+  gap: var(--space-3);
+  padding: 1.5rem;
+  text-align: center;
+  background: rgb(18 12 9 / 0.85);
+}
+
+.busy {
+  font-size: 1.3rem;
+  font-weight: 700;
+}
+
+.result {
+  display: grid;
+  gap: var(--space-3);
+  padding: 1.2rem;
+  border-radius: 20px;
+  color: #fff;
+}
+
+.tone_ok {
+  background: #1f6b35;
+}
+
+.tone_warn {
+  background: #9a5b0f;
+}
+
+.tone_bad {
+  background: #8f1a14;
+}
+
+.verdict {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 1.6rem;
+  font-weight: 800;
+  line-height: 1.2;
+}
+
+.reason {
+  font-weight: 600;
+}
+
+.who {
+  display: grid;
+  gap: 0.2rem;
+  padding: 0.9rem 1rem;
+  border-radius: 14px;
+  background: rgb(0 0 0 / 0.22);
+}
+
+.who code {
+  font-size: 1rem;
+  letter-spacing: 0.05em;
+}
+
+.name {
+  font-size: 1.35rem;
+  font-weight: 800;
+}
+
+.remaining {
+  font-weight: 700;
+}
+
+.payBadge {
+  justify-self: start;
+  margin-top: 0.3rem;
+  padding: 0.2rem 0.7rem;
+  border-radius: 999px;
+  background: rgb(255 255 255 / 0.18);
+  font-size: var(--text-sm);
+  font-weight: 700;
+}
+
+.payDue {
+  background: #ffd98a;
+  color: #3a2400;
+}
+
+.admitBox {
+  display: grid;
+  gap: var(--space-3);
+}
+
+.admitAll {
+  min-height: 68px;
+  background: #fff;
+  color: #1f6b35;
+  font-size: 1.4rem;
+}
+
+.payBtn {
+  background: #ffd98a;
+  color: #3a2400;
+}
+
+.partial {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.6rem;
+}
+
+.stepper {
+  display: inline-flex;
+  align-items: center;
+  border-radius: 12px;
+  background: rgb(0 0 0 / 0.25);
+}
+
+.stepper button {
+  width: 48px;
+  height: 48px;
+  border: 0;
+  background: none;
+  color: #fff;
+  font-size: 1.6rem;
+  font-weight: 700;
+}
+
+.stepper output {
+  min-width: 2rem;
+  font-size: 1.3rem;
+  font-weight: 800;
+  text-align: center;
+}
+
+.resultActions {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: var(--space-2);
+}
+
+.manual {
+  display: grid;
+  gap: 0.4rem;
+}
+
+.manual label {
+  font-weight: 700;
+  color: #d8c8b3;
+}
+
+.manualRow {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.manualRow input {
+  flex: 1;
+  min-width: 0;
+  min-height: 52px;
+  padding: 0.4rem 0.9rem;
+  border: 2px solid #5a4538;
+  border-radius: 14px;
+  background: #2b201a;
+  color: #fff;
+  font-family: ui-monospace, Consolas, monospace;
+  font-size: 1.3rem;
+  letter-spacing: 0.1em;
+}
+
+.history h2 {
+  margin-bottom: 0.4rem;
+  font-family: var(--font-body);
+  font-size: var(--text-xs);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: #b9a58e;
+}
+
+.history ul {
+  display: grid;
+  gap: 0.3rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.history li {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  gap: 0.6rem;
+  padding: 0.5rem 0.7rem;
+  border-radius: 10px;
+  background: #2b201a;
+  font-size: var(--text-sm);
+}
+
+.hOk {
+  color: #9fd89a;
+}
+
+.hUndo {
+  color: #ffb4a8;
+}

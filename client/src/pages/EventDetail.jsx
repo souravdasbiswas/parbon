@@ -1,4 +1,5 @@
 import { useParams } from 'react-router';
+import CouponsCta from '../components/coupons/CouponsCta.jsx';
 import Button from '../components/ui/Button.jsx';
 import FeatureCard, { FeatureGrid } from '../components/ui/FeatureCard.jsx';
 import PageHero from '../components/ui/PageHero.jsx';
@@ -70,6 +71,7 @@ export default function EventDetail() {
             </div>
           )}
         </dl>
+        <CouponsCta siteEventSlug={event.slug} className={styles.couponsCta} />
       </PageHero>
 
       {event.description?.length > 0 && (

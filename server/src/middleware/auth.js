@@ -1,6 +1,7 @@
 import { config } from '../config.js';
 import { HttpError } from './errorHandler.js';
-import { SESSION_COOKIE, verifySessionToken } from '../services/authService.js';
+import { SCANNER_COOKIE, SESSION_COOKIE, verifyGateToken, verifySessionToken } from '../services/authService.js';
+import { gateUserService } from '../services/gateUserService.js';
 
 export function readCookie(req, name) {
   const header = req.headers.cookie || '';
@@ -18,6 +19,31 @@ export function requireAdmin(req, _res, next) {
   req.admin = session;
   next();
 }
+
+/**
+ * For the gate scanner: a website admin (always allowed, every event and permission) or a gate
+ * volunteer whose account is still active and hasn't been reset since they signed in.
+ * Attaches req.scanner = { role, username, name, canMarkPaid, canUndo, eventIds }.
+ */
+export async function requireScanner(req, _res, next) {
+  try {
+    const admin = verifySessionToken(readCookie(req, SESSION_COOKIE));
+    if (admin) {
+      req.scanner = { role: 'admin', username: admin.username, name: 'Admin', canMarkPaid: true, canUndo: true, eventIds: [] };
+      return next();
+    }
+    const token = verifyGateToken(readCookie(req, SCANNER_COOKIE));
+    const user = token && (await gateUserService.forSession(token.uid, token.version));
+    if (!user) return next(new HttpError(401, 'UNAUTHENTICATED', 'Please sign in to the scanner.'));
+    req.scanner = { role: 'gate', id: user.id, username: user.username, name: user.name, canMarkPaid: user.canMarkPaid, canUndo: user.canUndo, eventIds: user.eventIds };
+    next();
+  } catch (error) {
+    next(error);
+  }
+}
+
+/** True when this scanner session may work on the event (admins and unrestricted volunteers: any). */
+export const canScanEvent = (scanner, eventId) => scanner.role === 'admin' || !scanner.eventIds.length || scanner.eventIds.includes(eventId);
 
 /**
  * CSRF defence for cookie-authenticated, state-changing requests: the browser's

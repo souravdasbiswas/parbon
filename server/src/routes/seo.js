@@ -20,7 +20,7 @@ const escapeXml = (s) => String(s).replace(/[<>&'"]/g, (c) => ({ '<': '&lt;', '>
 
 seoRouter.get('/robots.txt', (_req, res) => {
   res.type('text/plain').setHeader('Cache-Control', 'public, max-age=3600');
-  res.send(`User-agent: *\nAllow: /\nDisallow: /api/\nDisallow: /admin\n\nSitemap: ${config.siteUrl}/sitemap.xml\n`);
+  res.send(`User-agent: *\nAllow: /\nDisallow: /api/\nDisallow: /admin\nDisallow: /scan\nDisallow: /c/\n\nSitemap: ${config.siteUrl}/sitemap.xml\n`);
 });
 
 seoRouter.get('/sitemap.xml', async (_req, res) => {

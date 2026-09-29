@@ -1,6 +1,7 @@
 import Alpana from '../components/motifs/Alpana.jsx';
 import Icon from '../components/motifs/Icon.jsx';
 import Button from '../components/ui/Button.jsx';
+import CouponsCta from '../components/coupons/CouponsCta.jsx';
 import Countdown from '../components/ui/Countdown.jsx';
 import AlpanaMedallion from '../components/ui/AlpanaMedallion.jsx';
 import VenueCard from '../components/ui/VenueCard.jsx';
@@ -84,6 +85,7 @@ export default function DurgaPuja() {
               <Countdown target={featured.countdownTo} label={featured.label} />
             </div>
           )}
+          <CouponsCta siteEventSlug={SLUG} className={styles.couponsCta} />
         </div>
       </PageHero>
 

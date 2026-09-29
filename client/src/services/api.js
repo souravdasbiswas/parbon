@@ -74,3 +74,51 @@ export const adminApi = {
   responsesCsvUrl: (params) => `${BASE_URL}/api/admin/responses/export.csv?${new URLSearchParams(params)}`,
   storage: () => api.get('/admin/storage'),
 };
+
+const enc = encodeURIComponent;
+
+export const couponsApi = {
+  status: () => api.get('/coupons/status'),
+  openEvents: (linked) => api.get(linked ? `/coupons/events?linked=${enc(linked)}` : '/coupons/events'),
+  event: (slug) => api.get(`/coupons/events/${enc(slug)}`),
+  register: (slug, payload) => api.post(`/coupons/events/${enc(slug)}/register`, payload),
+  coupon: (token) => api.get(`/coupons/c/${enc(token)}`),
+};
+
+export const adminCouponsApi = {
+  status: () => api.get('/admin/coupons/status'),
+  events: () => api.get('/admin/coupons/events'),
+  event: (id) => api.get(`/admin/coupons/events/${enc(id)}`),
+  createEvent: (data) => api.post('/admin/coupons/events', data),
+  updateEvent: (id, data) => api.put(`/admin/coupons/events/${enc(id)}`, data),
+  deleteEvent: (id) => api.delete(`/admin/coupons/events/${enc(id)}`),
+  createType: (eventId, data) => api.post(`/admin/coupons/events/${enc(eventId)}/types`, data),
+  updateType: (id, data) => api.put(`/admin/coupons/types/${enc(id)}`, data),
+  saveDesign: (id, design) => api.put(`/admin/coupons/types/${enc(id)}/design`, design),
+  deleteType: (id) => api.delete(`/admin/coupons/types/${enc(id)}`),
+  registrations: (eventId) => api.get(`/admin/coupons/events/${enc(eventId)}/registrations`),
+  addRegistration: (eventId, data) => api.post(`/admin/coupons/events/${enc(eventId)}/registrations`, data),
+  setPayment: (id, status, note) => api.put(`/admin/coupons/registrations/${enc(id)}/payment`, { status, note }),
+  cancelRegistration: (id, reason) => api.post(`/admin/coupons/registrations/${enc(id)}/cancel`, { reason }),
+  resend: (id) => api.post(`/admin/coupons/registrations/${enc(id)}/resend`),
+  cancelCoupon: (id, reason) => api.post(`/admin/coupons/coupons/${enc(id)}/cancel`, { reason }),
+  reissueCoupon: (id) => api.post(`/admin/coupons/coupons/${enc(id)}/reissue`),
+  csvUrl: (eventId) => `${BASE_URL}/api/admin/coupons/events/${enc(eventId)}/export.csv`,
+  gateUsers: () => api.get('/admin/coupons/gate-users'),
+  createGateUser: (data) => api.post('/admin/coupons/gate-users', data),
+  updateGateUser: (id, data) => api.put(`/admin/coupons/gate-users/${enc(id)}`, data),
+  resetGatePin: (id, pin) => api.post(`/admin/coupons/gate-users/${enc(id)}/reset-pin`, { pin }),
+  deleteGateUser: (id) => api.delete(`/admin/coupons/gate-users/${enc(id)}`),
+};
+
+export const scanApi = {
+  login: (username, pin) => api.post('/admin/scan/login', { username, pin }),
+  logout: () => api.post('/admin/scan/logout'),
+  me: () => api.get('/admin/scan/me'),
+  events: () => api.get('/admin/scan/events'),
+  stats: (eventId) => api.get(`/admin/scan/events/${enc(eventId)}/stats`),
+  lookup: (eventId, input) => api.post('/admin/scan/lookup', { eventId, input }),
+  checkIn: (eventId, couponId, count) => api.post('/admin/scan/checkin', { eventId, couponId, count }),
+  undo: (eventId, checkinId) => api.post('/admin/scan/undo', { eventId, checkinId }),
+  markPaid: (eventId, couponId) => api.post('/admin/scan/mark-paid', { eventId, couponId }),
+};

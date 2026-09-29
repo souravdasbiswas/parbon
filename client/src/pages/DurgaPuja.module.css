@@ -230,3 +230,9 @@
   font-size: var(--text-xl);
   color: #fbe6d3;
 }
+
+.couponsCta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-3);
+}

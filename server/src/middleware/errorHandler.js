@@ -21,7 +21,7 @@ export function errorHandler(err, req, res, _next) {
   const upstreamStatus = Number(err?.status || err?.statusCode);
   const status =
     err instanceof HttpError ? err.status : upstreamStatus >= 400 && upstreamStatus < 500 ? upstreamStatus : 500;
-  if (status >= 500) console.error('[parbon] unhandled error:', err);
+  if (status >= 500 && !(err instanceof HttpError)) console.error('[parbon] unhandled error:', err);
 
   const body = {
     error: {

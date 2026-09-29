@@ -55,6 +55,10 @@ export const config = Object.freeze({
     sessionSecret: env.SESSION_SECRET || '',
     sessionHours: Number(env.SESSION_HOURS) || 8,
   },
+  // How long a gate volunteer stays signed in to the coupon scanner.
+  scanner: {
+    sessionHours: Number(env.SCANNER_SESSION_HOURS) || 16,
+  },
   // MySQL/MariaDB (e.g. Hostinger hPanel → Databases). When DB_NAME and DB_USER are set,
   // announcements, form responses and uploaded images live in the database; otherwise in files.
   // The host defaults to 127.0.0.1 (not "localhost", which Node may resolve to IPv6 ::1).

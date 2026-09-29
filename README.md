@@ -14,7 +14,7 @@ The site is a **React (Vite) frontend** served by a small **Node.js / Express ba
 2. [Project structure](#2-project-structure)
 3. [Architecture](#3-architecture)
 4. [Bilingual content model](#4-bilingual-content-model)
-5. [Editing content (no code needed)](#5-editing-content-no-code-needed)
+5. [Editing content (no code needed)](#5-editing-content-no-code-needed) · [Coupons](#coupons-event-registration-digital-coupons-and-gate-check-in)
 6. [Content checklist before launch](#6-content-checklist-before-launch)
 7. [REST API](#7-rest-api)
 8. [Environment variables](#8-environment-variables)
@@ -83,8 +83,10 @@ Parbon/
 │       │   ├── layout/        # Header, Footer, Layout
 │       │   ├── ui/            # Button, SectionHeading, PageHero, EventCard, Schedule, …
 │       │   ├── motifs/        # Original SVG artwork: Alpana, PaarBorder, ArchOutline, Icon
+│       │   ├── coupons/       # CouponArt (renders a coupon design), QrCode, templates, designSpec
 │       │   └── forms/         # InquiryForm
 │       └── pages/             # Home, About, DurgaPuja, Events, EventDetail, Gallery, …
+│                              # coupons/ (Register, CouponView), scan/ (gate scanner), admin/coupons/ (events, designer)
 │
 └── server/                    # Node.js backend (Express 5)
     ├── data/                  # ★ Site content as JSON — edit these files to update the site
@@ -95,8 +97,8 @@ Parbon/
     │   ├── app.js             # Express app: security, compression, API, static files, SPA fallback
     │   ├── config.js          # All environment configuration in one place
     │   ├── db/                # MySQL: connection + schema, announcements table, one-time import of old files
-    │   ├── routes/            # api.js (REST), admin.js, seo.js (robots.txt, sitemap.xml)
-    │   ├── services/          # content, announcements, inquiries, responses, uploads, mail
+    │   ├── routes/            # api.js (REST), admin.js, coupons.js (registration, admin, scanner), seo.js
+    │   ├── services/          # content, announcements, inquiries, responses, uploads, mail, coupons
     │   ├── middleware/        # cors, errorHandler, auth
     │   └── utils/             # validation, CSV
     └── test/                  # node:test suites (MySQL suite runs when TEST_DB_HOST is set)
@@ -272,6 +274,80 @@ Signed-in admins can open **Responses** in the admin bar (`/admin/responses`). T
 
 The file is the only copy of these messages, apart from any notification emails. Download a backup now and then, and set `STORAGE_DIR` outside the app folder (see [Deploying to Hostinger](#9-deploying-to-hostinger)).
 
+### Coupons: event registration, digital coupons and gate check-in
+
+Admins can sell or give out digital coupons for an event (entry passes, bhog coupons and so on), and volunteers scan them at the gate with a phone. **Coupons need the MySQL database** (`DB_*` variables). Without it the feature switches itself off, and the rest of the site keeps working.
+
+**1. Set up the event** (**Admin → Coupons → New event**)
+- **Quickest:** pick a **ready-made event**: Durga Puja, Bijoya Sammilani, Kojagori Lakshmi Puja, Kali Puja & Diwali, Saraswati Puja, Poila Boishakh, Cultural evening / concert or Meet-up / adda.
+  - The form fills itself in, and its coupon types (e.g. *Entry pass*, *Ashtami bhog*, *Navami bhog*, *Cultural night pass*) are created already designed.
+  - Untick any you don’t need, or change the prices.
+  - The venue, help contact and payment details are copied from your most recent event.
+  - Check the dates, then **Create**. Or choose *Start from scratch*.
+- Fill in the name, dates, venue, the **total number of coupons** (e.g. 500) and the most people per registration.
+- The **link name** becomes the public page, e.g. `/register/durga-puja-2026`.
+- *Show a “Get your coupons” button on* adds a button to that website event page (and to `/durga-puja` for Durga Puja 2026).
+- **Payment**: there is no payment gateway. Choose whether people can pay by UPI and enter the transaction ID, choose “I’ll pay at the counter”, or allow both. The UPI ID starts out as the site’s donation UPI.
+- **Coupon links stop working** at the time you set; if you leave it empty, that’s when the event ends. After that, coupon links show “This event is over” and the scanner refuses them.
+
+**2. Add coupon types** (tab *Coupon types & designs*)
+- Each type has a name (English and Bengali), a kind (*Entry pass*, *Food / bhog*, *Other*), a price (0 = free), an optional limit of its own and a most-per-registration.
+- When adding a type, pick its look from the design gallery.
+
+**3. Design each coupon** (*Design coupon*)
+- *Browse ready-made designs* offers 18 designs grouped by occasion:
+  - **Durga Puja:** sindoor red ticket, Sharat sky & kash phool, Dhaker taal at night, lal-paar sari card, Shiuli morning
+  - **Bhog & food:** banana leaf, marigold prasad, bhog gold
+  - **Cultural night:** stage night, concert poster, festive red card
+  - **Bijoya:** sindoor khela
+  - **Lakshmi & Kali Puja:** Kojagori full moon, diya glow
+  - **Saraswati Puja:** basanti yellow
+  - **Poila Boishakh:** mango toran
+  - **VIP & donors:** black & gold
+  - **Any event:** simple & clean
+- Their artwork (kash phool, dhak, lal paar, marigold, diya, moon…) is in `client/public/brand/coupon-*.png`. It is drawn by `scripts/generate-coupon-art.mjs`: run `npm i --no-save sharp && node scripts/generate-coupon-art.mjs` to redraw it.
+- It’s a visual editor. Drag things to move them and drag the white squares to resize; it snaps to the centre and edges (hold Alt to turn that off).
+- Change text, fonts (including Bengali), size, colour, alignment, backgrounds (colour, gradient or an uploaded picture), the border and the icons.
+- Add text, fields (`{{name}}`, `{{event}}`, `{{type}}`, `{{quantity}}`, `{{date}}`, `{{time}}`, `{{venue}}`, `{{price}}`), the QR code, the coupon code, the Parbon logo, pictures and shapes.
+- Undo/redo (Ctrl+Z / Ctrl+Y), arrow keys to nudge, Delete to remove. *Sample data* shows how a real coupon will look, and *PNG* downloads a preview.
+- Every design must keep a visible QR code. Saving updates coupons already issued as well.
+
+**4. Open registrations**: set *Registrations* to **Open** and share the link from the *Overview* tab (Copy or WhatsApp).
+- People enter their name, mobile, email and number of people, choose how many of each coupon they want, then pay by UPI (a QR code with the amount filled in, plus a transaction ID box) or choose “pay at the counter”.
+- They get **one coupon per type with a quantity**, e.g. *Entry pass ×4* is one QR code that lets 4 people in, and they don’t have to arrive together.
+- Each coupon has a short code (e.g. `PQ7K-M3XD`) and its own private link (`/c/…`), with buttons to share on WhatsApp or copy.
+- If email is set up (see below), they can also get the links by email. The same phone remembers them on the registration page.
+- Limits are checked at the moment coupons are issued, so they can never be oversold.
+
+**5. At the gate**: open **`/scan`** on a phone.
+- **Website admins can always scan**: sign in at `/admin` and open `/scan`. They can do everything, for every event.
+- **Gate volunteers** sign in with the **username and PIN** the admin gave them (see *Gate team* below).
+- Scan the QR code with the camera or type the code. The screen turns **green** (valid), **amber** (already used) or **red** (cancelled, replaced, wrong event, event over).
+- Tap *Let 4 in* or let only some in. *Mark paid* records money collected at the counter, and *Undo* reverses a mistaken check-in. Volunteers only see these two buttons if the admin allowed them.
+
+**6. Follow up** (tab *Attendees & coupons*)
+- Filter by *Not in yet*, *Partly in*, *All in* or *Cancelled*, and by payment status. You can search by name, phone, email, code or transaction ID.
+- Change a payment status (To verify, Pay at counter, Paid, Rejected).
+- For a single coupon: **Cancel** it, or **Reissue** it (new code and link; the old link stops working at once and check-ins carry over). Reissuing a cancelled coupon brings it back.
+- *+ Walk-in* records a booking made at the counter or over the phone. *Download CSV* exports everyone.
+
+**Email (optional)**: Hostinger mailboxes can send to anyone. Set `SMTP_HOST=smtp.hostinger.com`, `SMTP_PORT=465`, `SMTP_SECURE=true`, `SMTP_USER=mail@parbon.in`, `SMTP_PASS=…` and `MAIL_FROM="Parbon Sanskritik Samity <mail@parbon.in>"`. The registration form then offers “Also email me my coupons”, and admins get *Email coupons*. Hostinger limits how many emails a mailbox sends per day, which is plenty for one email per registration.
+- **Anti-abuse:** coupon emails contain only the committee’s own text (event, venue, coupon names) plus the coupon codes and links, never what the registrant typed. The public form sends at most 3 coupon emails per address and 10 per network each day; above that, people still get their links on screen. Public registrations accept plain names only: letters in any script, spaces and `. ' - &`.
+
+**Gate team** (**Admin → Gate team**, or *Coupons → Gate team*): people who check coupons at the entrance and the bhog counter, without being website admins.
+- **Add volunteer**: enter a name. A username is suggested from it, e.g. `rahul.das`. Type a 4–6 digit PIN or leave it empty to get one.
+- Choose what they may do:
+  - Scanning and letting people in is always allowed.
+  - Tick *Take payments* to let them mark coupons as paid at the counter.
+  - Tick *Undo* to let them undo a check-in made by mistake.
+- Choose which events: all events, or only the ones you pick.
+- The PIN is shown **once**, with *Send on WhatsApp* and *Copy details* (scanner link, username and PIN). It can’t be viewed again; use **Reset PIN** to give a new one.
+- **Turn off**, **Reset PIN** and **Delete** sign the volunteer out on their phone straight away. Changes to their permissions apply straight away too.
+- Volunteers can only use the scanner. They can’t open any admin page.
+- After 5 wrong PINs in a row, that account is locked for 15 minutes; after 20 in a day, for the rest of the day. A PIN reset unlocks it. Usernames must match exactly, so look-alike spellings can’t get round the lock.
+- The list shows each volunteer’s last sign-in and how many people they checked in. Check-in history records who let people in.
+- Volunteer accounts are stored in the database, so there’s no server setting to change.
+
 ---
 
 ## 6. Content checklist before launch
@@ -316,6 +392,20 @@ Admin endpoints (require the admin session cookie, and reject cross-site request
 
 Returns `201`, or `422` with per-field errors. The endpoint is rate-limited (5 per 15 minutes per IP), capped at 16 KB, validated and normalised on the server, and protected by a honeypot field against spam bots.
 
+**Coupons** (need MySQL; see [Coupons](#coupons-event-registration-digital-coupons-and-gate-check-in)):
+
+| Method | Path | Description |
+| ------ | ---- | ----------- |
+| GET | `/api/coupons/status` | `{ enabled, mailEnabled }` |
+| GET | `/api/coupons/events` | Events open for registration; `?linked=<site-event-slug>` |
+| GET | `/api/coupons/events/:slug` | Event, coupon types, prices and places left |
+| POST | `/api/coupons/events/:slug/register` | Register and get coupons (rate-limited, honeypot). `422` per-field errors, `409` sold out or closed |
+| GET | `/api/coupons/c/:token` | A coupon for its page; `410` once the event's links have expired |
+
+Admin coupon endpoints live under `/api/admin/coupons/…`: events, types, designs, registrations, walk-ins, payment status, cancel and reissue, resend email, `events/:id/export.csv`, and gate volunteers (`gate-users`, `gate-users/:id`, `gate-users/:id/reset-pin`).
+
+The gate scanner uses `/api/admin/scan/…`: `login` (username + PIN), `logout`, `me`, `events`, `events/:id/stats`, `lookup`, `checkin`, `undo` and `mark-paid`. These accept an admin session (every permission) or a gate volunteer session. The server checks a volunteer's permissions and allowed events on every request.
+
 ---
 
 ## 8. Environment variables
@@ -329,7 +419,7 @@ Copy `.env.example` to `.env` for local use. On Hostinger, set these in hPanel. 
 | `SITE_URL`      | `http://localhost:5173`  | Public URL, e.g. `https://parbon.org` (sitemap, robots.txt)    |
 | `TRUST_PROXY`   | `1`                      | Trust Hostinger's reverse proxy, so rate limiting sees real client IPs |
 | `CORS_ORIGINS`  | *(empty)*                | Comma-separated origins, only needed if the frontend is hosted elsewhere |
-| `SMTP_HOST` …   | *(empty)*                | Optional email notifications. Hostinger: `smtp.hostinger.com`, `465`, `SMTP_SECURE=true` |
+| `SMTP_HOST` …   | *(empty)*                | Optional email: enquiry notifications, and coupon emails to people who register. Hostinger: `smtp.hostinger.com`, `465`, `SMTP_SECURE=true` |
 | `SMTP_USER` / `SMTP_PASS` | *(empty)*      | Mailbox credentials (never commit these)                      |
 | `MAIL_FROM` / `MAIL_TO`   | —              | Sender, and the committee inbox that receives enquiries       |
 | `DATA_DIR` / `MEDIA_DIR` / `STORAGE_DIR` | `server/…` | Optional overrides for content, media and runtime storage (announcements, enquiries) |
@@ -340,6 +430,7 @@ Copy `.env.example` to `.env` for local use. On Hostinger, set these in hPanel. 
 | `ADMIN_PASSWORD_HASH` | *(empty)*       | scrypt hash from `npm run admin:hash -- "password"` (never the plain password) |
 | `SESSION_SECRET` | *(empty)*            | 32+ random characters for signing admin sessions (printed by `admin:hash`) |
 | `SESSION_HOURS`  | `8`                  | How long an admin stays signed in                               |
+| `SCANNER_SESSION_HOURS` | `16`          | How long a gate volunteer stays signed in to the scanner (volunteers are managed under *Gate team*) |
 | `VITE_API_BASE_URL` | *(empty)*            | **Build-time** (client). Only for split deployments           |
 
 ---
@@ -386,8 +477,13 @@ With `DB_NAME` and `DB_USER` set, the app stores these in MySQL/MariaDB:
 | `announcements` | Admin-created announcements (whole record as JSON in `data`) |
 | `announcement_seeds` | Seed entries already merged once, so a seed an admin deletes stays deleted |
 | `inquiries` | Contact-form submissions (shown on `/admin/responses`) |
-| `media` | Uploaded announcement images, served from `/media/announcements/<name>` |
+| `media` | Uploaded announcement images and coupon pictures, served from `/media/announcements/<name>` |
 | `data_imports` | Old files already imported (by content hash) |
+| `coupon_events`, `coupon_types` | Coupon events and their coupon types, including each type's design (JSON in `data`) |
+| `coupon_registrations` | Who registered: name, email, phone, number of people, payment method, transaction ID, payment status |
+| `coupons` | Issued coupons: code, private link token, quantity, how many used, status (active/cancelled/replaced) |
+| `coupon_checkins` | Every gate check-in (and undo), with time and who scanned |
+| `gate_users` | Gate volunteers: username, name, PIN hash (never the PIN), permissions, allowed events, last sign-in |
 
 The tables are created automatically on start, so no SQL needs to be run by hand. `https://your-domain/api/health` shows `"storage": "mysql"` and `"database": "connected"` when the database is in use. The admin **Storage** page (`/admin/storage`) shows row counts, the old folders checked and what was imported.
 

@@ -67,3 +67,31 @@ export async function checkCredentials(username, password) {
   const passwordOk = await verifyPassword(password, config.admin.passwordHash);
   return passwordOk && safeEqual(username, config.admin.username);
 }
+
+// ── Coupon gate scanner: sessions for gate volunteers (accounts the admin creates) ──
+
+export const SCANNER_COOKIE = 'parbon_scanner';
+
+// A separate prefix keeps gate and admin signatures from ever being interchangeable.
+const signGate = (payload) => sign(`gate:${payload}`);
+
+/** Signed token naming the volunteer and their account's session version (bumped to sign them out). */
+export function createGateToken(user) {
+  const payload = Buffer.from(
+    JSON.stringify({ r: 'gate', uid: user.id, v: user.sessionVersion, exp: Date.now() + config.scanner.sessionHours * 3600 * 1000 }),
+  ).toString('base64url');
+  return `${payload}.${signGate(payload)}`;
+}
+
+export function verifyGateToken(token) {
+  if (!token || config.admin.sessionSecret.length < 32) return null;
+  const [payload, signature] = String(token).split('.');
+  if (!payload || !signature || !safeEqual(signGate(payload), signature)) return null;
+  try {
+    const data = JSON.parse(Buffer.from(payload, 'base64url').toString('utf8'));
+    if (data.r !== 'gate' || typeof data.exp !== 'number' || data.exp < Date.now() || !data.uid) return null;
+    return { uid: data.uid, version: data.v, expiresAt: data.exp };
+  } catch {
+    return null;
+  }
+}

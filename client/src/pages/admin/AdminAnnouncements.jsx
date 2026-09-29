@@ -28,8 +28,11 @@ export function AdminBar({ session }) {
         </p>
         <nav className={styles.barNav} aria-label="Admin">
           <Link to="/admin/announcements">Announcements</Link>
+          <Link to="/admin/coupons">Coupons</Link>
+          <Link to="/admin/coupons/gate-team">Gate team</Link>
           <Link to="/admin/responses">Responses</Link>
           <Link to="/admin/storage">Storage</Link>
+          <Link to="/scan">Scanner</Link>
           <Link to="/announcements" target="_blank">
             View site ↗
           </Link>

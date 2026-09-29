@@ -10,6 +10,7 @@ import { apiRouter } from './routes/api.js';
 import { seoRouter } from './routes/seo.js';
 import { announcementService } from './services/announcementService.js';
 import { contentService } from './services/contentService.js';
+import { couponService, couponsEnabled } from './services/couponService.js';
 import { renderWithMeta, summarise } from './services/htmlMeta.js';
 import { findStoredImage } from './services/uploadService.js';
 
@@ -19,11 +20,46 @@ async function isKnownClientRoute(pathname) {
   const clean = pathname.replace(/\/+$/, '') || '/';
   if (STATIC_ROUTES.has(clean)) return true;
   if (clean === '/admin' || clean.startsWith('/admin/')) return true;
+  if (clean === '/scan' || clean === '/register') return true;
+  // Coupon links and registration pages render their own "not found / ended" states.
+  if (/^\/c\/[\w-]{22}$/.test(clean) || /^\/register\/[a-z0-9-]+$/.test(clean)) return true;
   const match = clean.match(/^\/events\/([a-z0-9-]+)$/);
   if (match) return Boolean(await contentService.getEvent(match[1]));
   const ann = clean.match(/^\/announcements\/([a-z0-9-]+)$/);
   if (ann) return Boolean(await announcementService.getPublishedBySlug(ann[1]));
   return false;
+}
+
+/** Link previews (WhatsApp etc.) for registration pages and coupon links; null when not applicable. */
+async function couponPreview(pathname) {
+  if (!couponsEnabled()) return null;
+  try {
+    const reg = pathname.match(/^\/register\/([a-z0-9-]+)\/?$/);
+    if (reg) {
+      const event = await couponService.getPublicEvent(reg[1]);
+      if (!event) return null;
+      return {
+        title: `Register — ${event.title.en}`,
+        description: summarise(event.tagline?.en || event.description?.en || 'Register and get your coupons online.'),
+        url: `/register/${event.slug}`,
+        type: 'website',
+      };
+    }
+    const c = pathname.match(/^\/c\/([\w-]{22})\/?$/);
+    if (c) {
+      const coupon = await couponService.getCouponByToken(c[1]);
+      if (!coupon) return null;
+      return {
+        title: `${coupon.type.name?.en || 'Coupon'} — ${coupon.event.title.en}`,
+        description: 'Your digital coupon. Show the QR code at the entrance.',
+        url: `/c/${c[1]}`,
+        type: 'website',
+      };
+    }
+  } catch {
+    // Expired coupons (410) or a database hiccup: fall back to the plain page.
+  }
+  return null;
 }
 
 export function createApp() {
@@ -102,8 +138,11 @@ export function createApp() {
       try {
         if (!req.accepts('html')) return next();
         const known = await isKnownClientRoute(req.path);
-        if (req.path.startsWith('/admin')) res.setHeader('X-Robots-Tag', 'noindex, nofollow');
+        if (/^\/(admin|scan|c\/)/.test(req.path)) res.setHeader('X-Robots-Tag', 'noindex, nofollow');
         res.status(known ? 200 : 404).setHeader('Cache-Control', 'no-cache');
+
+        const preview = await couponPreview(req.path);
+        if (preview) return res.type('html').send(await renderWithMeta(indexHtml, preview));
 
         // Shared announcement links get a rich preview (poster, title, text) in WhatsApp etc.
         const ann = req.path.match(/^\/announcements\/([a-z0-9-]+)\/?$/);
