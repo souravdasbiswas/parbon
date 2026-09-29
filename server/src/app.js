@@ -9,8 +9,8 @@ import { errorHandler } from './middleware/errorHandler.js';
 import { apiRouter } from './routes/api.js';
 import { seoRouter } from './routes/seo.js';
 import { announcementService } from './services/announcementService.js';
-import { contentService } from './services/contentService.js';
 import { couponService, couponsEnabled } from './services/couponService.js';
+import { eventService } from './services/eventService.js';
 import { renderWithMeta, summarise } from './services/htmlMeta.js';
 import { findStoredImage } from './services/uploadService.js';
 
@@ -24,10 +24,23 @@ async function isKnownClientRoute(pathname) {
   // Coupon links and registration pages render their own "not found / ended" states.
   if (/^\/c\/[\w-]{22}$/.test(clean) || /^\/register\/[a-z0-9-]+$/.test(clean)) return true;
   const match = clean.match(/^\/events\/([a-z0-9-]+)$/);
-  if (match) return Boolean(await contentService.getEvent(match[1]));
+  if (match) return Boolean(await eventService.getPublishedBySlug(match[1]));
   const ann = clean.match(/^\/announcements\/([a-z0-9-]+)$/);
   if (ann) return Boolean(await announcementService.getPublishedBySlug(ann[1]));
   return false;
+}
+
+/** Link previews (WhatsApp etc.) for event pages: name, summary and cover picture. */
+async function eventPreview(pathname) {
+  const m = pathname.match(/^\/events\/([a-z0-9-]+)\/?$/);
+  if (!m) return null;
+  try {
+    const event = await eventService.getPublishedBySlug(m[1]);
+    if (!event) return null;
+    return { title: event.title.en, description: summarise(event.summary?.en || event.summary?.bn), image: event.image?.src, url: `/events/${event.slug}` };
+  } catch {
+    return null;
+  }
 }
 
 /** Link previews (WhatsApp etc.) for registration pages and coupon links; null when not applicable. */
@@ -141,7 +154,7 @@ export function createApp() {
         if (/^\/(admin|scan|c\/)/.test(req.path)) res.setHeader('X-Robots-Tag', 'noindex, nofollow');
         res.status(known ? 200 : 404).setHeader('Cache-Control', 'no-cache');
 
-        const preview = await couponPreview(req.path);
+        const preview = (await couponPreview(req.path)) || (await eventPreview(req.path));
         if (preview) return res.type('html').send(await renderWithMeta(indexHtml, preview));
 
         // Shared announcement links get a rich preview (poster, title, text) in WhatsApp etc.

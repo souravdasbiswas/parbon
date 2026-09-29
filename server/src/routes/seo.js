@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import { config } from '../config.js';
 import { announcementService } from '../services/announcementService.js';
-import { contentService } from '../services/contentService.js';
+import { eventService } from '../services/eventService.js';
 
 export const seoRouter = Router();
 
@@ -24,7 +24,7 @@ seoRouter.get('/robots.txt', (_req, res) => {
 });
 
 seoRouter.get('/sitemap.xml', async (_req, res) => {
-  const events = await contentService.listEvents();
+  const events = await eventService.listPublished();
   const announcements = await announcementService.listPublished();
   const urls = [
     ...STATIC_PAGES,
