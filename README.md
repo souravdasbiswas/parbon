@@ -331,7 +331,11 @@ Admins can sell or give out digital coupons for an event (entry passes, bhog cou
 - Fill in the name, dates, venue, the **total number of coupons** (e.g. 500) and the most people per registration.
 - The **link name** becomes the public page, e.g. `/register/durga-puja-2026`.
 - **Website event** (at the top of the form, also under *Event details* later) sets or changes the linked website event.
-- **Payment**: there is no payment gateway. Choose whether people can pay by UPI and enter the transaction ID, choose “I’ll pay at the counter”, or allow both. The UPI ID starts out as the site’s donation UPI.
+- **Payment**: there is no payment gateway. Tick whether people can pay by UPI and enter the transaction ID, choose “I’ll pay at the counter”, or both. The UPI ID starts out as the site’s donation UPI.
+  - **Free events:** leave both unticked. Registration then has no payment step: people get their passes straight away, recorded as *Free*.
+  - Every coupon of a free event must be ₹0, and a priced coupon type is refused with a clear message.
+  - To make a paid event free, set its coupon prices to 0 first.
+  - Coupons that cost ₹0 never ask for payment, even when payment is ticked.
 - **Coupon links stop working** at the time you set; if you leave it empty, that’s when the event ends. After that, coupon links show “This event is over” and the scanner refuses them.
 
 **2. Add coupon types** (tab *Coupon types & designs*)

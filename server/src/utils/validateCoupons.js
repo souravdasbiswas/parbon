@@ -15,6 +15,10 @@ export const COUPON_KINDS = Object.freeze(['entry', 'food', 'other']);
 export const PAYMENT_METHODS = Object.freeze(['txn', 'pledge', 'free']);
 export const PAYMENT_STATUSES = Object.freeze(['to_verify', 'pledged', 'paid', 'rejected', 'free']);
 
+/** An event with neither UPI nor "pay at the counter" ticked is free: all its coupons must cost ₹0. */
+export const takesPayments = (payment) => payment?.allowTxn !== false || payment?.allowPledge !== false;
+export const FREE_EVENT_PRICE_ERROR = 'This event is free (no way to pay is ticked under Payment), so coupons must cost ₹0. Set the price to 0, or tick a way to pay.';
+
 /** Keep in sync with client/src/components/coupons/designSpec.js. */
 export const DESIGN_FONTS = Object.freeze(['display', 'body', 'bengali', 'bengaliSans', 'serif', 'mono']);
 export const DESIGN_ICONS = Object.freeze([
@@ -120,8 +124,7 @@ export function validateCouponEvent(body) {
   if (value.maxAttendees === undefined) errors.maxAttendees = 'Enter a number between 1 and 100.';
   if (value.venue.mapUrl && !isHttpUrl(value.venue.mapUrl)) errors['venue.mapUrl'] = 'Map link must start with https://';
   if (value.linkedEventSlug && !SLUG_RE.test(value.linkedEventSlug)) errors.linkedEventSlug = 'Choose an event from the list.';
-  if (value.payment.upiId && !UPI_RE.test(value.payment.upiId)) errors['payment.upiId'] = 'Enter a UPI ID like name@bank.';
-  if (!value.payment.allowTxn && !value.payment.allowPledge) errors['payment.allowPledge'] = 'Allow at least one way to pay.';
+  if (value.payment.allowTxn && value.payment.upiId && !UPI_RE.test(value.payment.upiId)) errors['payment.upiId'] = 'Enter a UPI ID like name@bank.';
   if (value.contact.phone && !PHONE_RE.test(value.contact.phone)) errors['contact.phone'] = 'Please enter a valid phone number.';
 
   if (!value.linksExpireAt) value.linksExpireAt = value.endsAt;
