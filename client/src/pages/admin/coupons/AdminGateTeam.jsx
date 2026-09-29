@@ -145,7 +145,7 @@ function VolunteerForm({ initial, events, onSave, onCancel }) {
           />
         </Field>
         {!editing && (
-          <Field label="PIN" id={`${uid}-pin`} error={errors.pin} hint="4–6 digits. Leave empty and we’ll make one up.">
+          <Field label="PIN" id={`${uid}-pin`} error={errors.pin} hint="4–6 digits (6 is safest). Leave empty and we’ll make up a 6-digit one.">
             <div className={g.pinRow}>
               <input
                 id={`${uid}-pin`}

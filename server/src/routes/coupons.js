@@ -4,7 +4,7 @@ import { config } from '../config.js';
 import { canScanEvent, requireAdmin, requireScanner } from '../middleware/auth.js';
 import { HttpError } from '../middleware/errorHandler.js';
 import { SCANNER_COOKIE, createGateToken } from '../services/authService.js';
-import { sendCouponEmail } from '../services/couponMail.js';
+import { allowPublicCouponEmail, sendCouponEmail } from '../services/couponMail.js';
 import { couponService, couponsEnabled } from '../services/couponService.js';
 import { gateUserService, validateGateUser } from '../services/gateUserService.js';
 import { mailConfigured } from '../services/mailService.js';
@@ -91,7 +91,8 @@ publicCouponsRouter.post(
     if (req.body?.website) throw new HttpError(422, 'VALIDATION_FAILED', 'Please check the form and try again.');
     const value = check(validateRegistration(req.body));
     const result = await couponService.register(req.params.slug, value, { ip: req.ip, userAgent: req.get('user-agent') });
-    const emailed = value.sendEmail ? await emailCoupons(result) : false;
+    // Limited per recipient and per network, so the form can't be used to flood someone's inbox.
+    const emailed = value.sendEmail && allowPublicCouponEmail(value.email, req.ip) ? await emailCoupons(result) : false;
     res.status(201).json({ data: issuedResponse(result, emailed) });
   },
 );

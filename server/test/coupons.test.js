@@ -28,7 +28,8 @@ Object.assign(process.env, {
 const { createApp } = await import('../src/app.js');
 const { validateCouponEvent, validateCouponType, validateDesign, validateRegistration } = await import('../src/utils/validateCoupons.js');
 const { parseScanInput, normaliseCode, formatCode, newCode, registrationState, attendanceOf } = await import('../src/services/couponService.js');
-const { validateGateUser, usernameFromName, generatePin } = await import('../src/services/gateUserService.js');
+const { validateGateUser, usernameFromName, generatePin, lockoutForTests } = await import('../src/services/gateUserService.js');
+const { buildCouponEmail, allowPublicCouponEmail } = await import('../src/services/couponMail.js');
 
 let server;
 let base;
@@ -129,6 +130,14 @@ describe('coupon validation', () => {
     // Admins entering walk-ins may leave out email and phone.
     const walkIn = validateRegistration({ name: 'Walk-in guest', attendees: 2, items: [{ typeId: 't1', quantity: 2 }], paymentMethod: 'pledge' }, { admin: true });
     assert.equal(walkIn.errors, undefined);
+
+    // Public names are plain names in any script — no links or digits.
+    const person = { email: 'a@example.com', phone: '+91 98765 43210', attendees: 1, items: [{ typeId: 't1', quantity: 1 }], paymentMethod: 'pledge' };
+    assert.equal(validateRegistration({ ...person, name: 'অনন্যা সেন' }).errors, undefined);
+    assert.equal(validateRegistration({ ...person, name: "Mr. & Mrs. D'Souza-Kar" }).errors, undefined);
+    assert.ok(validateRegistration({ ...person, name: 'Renew at https://evil.example' }).errors.name);
+    assert.ok(validateRegistration({ ...person, name: 'Call 98765 43210' }).errors.name);
+    assert.equal(validateRegistration({ ...person, name: 'Das family (walk-in) 2' }, { admin: true }).errors, undefined);
   });
 });
 
@@ -179,6 +188,46 @@ describe('gate volunteer accounts', () => {
     assert.ok(validateGateUser({ name: 'Admin', username: 'admin' }).errors.username);
     assert.equal(usernameFromName('Śubhojit Ghosh'), 'subhojit.ghosh');
     assert.match(generatePin(4), /^\d{4}$/);
+  });
+
+  it('locks an account after 5 wrong PINs in a row, and for the day after 20', () => {
+    const { recordFailure, lockedUntil } = lockoutForTests;
+    const t0 = Date.parse('2026-10-16T10:00:00Z');
+    const min = 60_000;
+    for (let i = 0; i < 4; i += 1) recordFailure('acct-1', t0 + i);
+    assert.equal(lockedUntil('acct-1', t0 + 5), 0);
+    recordFailure('acct-1', t0 + 5);
+    assert.equal(lockedUntil('acct-1', t0 + 6), t0 + 5 + 15 * min);
+    // Keep guessing in 15-minute steps: the daily cap (20) kicks in and locks until the day ends.
+    let at = t0 + 16 * min;
+    for (let round = 0; round < 3; round += 1) {
+      for (let i = 0; i < 5; i += 1) recordFailure('acct-1', at + i);
+      at += 16 * min;
+    }
+    assert.equal(lockedUntil('acct-1', at), t0 + 24 * 60 * min, 'locked for the rest of the day after 20 wrong PINs');
+  });
+});
+
+describe('coupon emails', () => {
+  const event = { title: { en: 'Durga Puja 2026' }, startsAt: '2026-10-16T01:30:00Z', endsAt: '2026-10-21T16:30:00Z', venue: { name: 'Nirusa' } };
+  const coupons = [{ status: 'active', type: { name: { en: 'Entry pass' } }, quantity: 2, code: 'ABCD-2345', url: 'http://localhost/c/x' }];
+
+  it('never puts what a registrant typed into the email', () => {
+    const registration = { name: 'Renew now at https://evil.example/pay', email: 'victim@example.com', amountDue: 0, paymentStatus: 'free' };
+    const mail = buildCouponEmail({ event, registration, coupons });
+    assert.equal(mail.to, 'victim@example.com');
+    assert.ok(!mail.text.includes('evil.example') && !mail.html.includes('evil.example'));
+    assert.match(mail.text, /^Nomoshkar,/);
+    assert.match(mail.text, /If that wasn't you, you can ignore this email/);
+  });
+
+  it('limits public coupon emails per recipient and per network', () => {
+    const t = Date.now();
+    assert.ok([1, 2, 3].every((i) => allowPublicCouponEmail('flood@example.com', `10.0.0.${i}`, t)));
+    assert.equal(allowPublicCouponEmail('FLOOD@example.com', '10.0.0.9', t), false, '4th email to the same address is refused');
+    assert.equal(allowPublicCouponEmail('flood@example.com', '10.0.0.9', t + 25 * 3600 * 1000), true, 'allowed again the next day');
+    const ok = Array.from({ length: 12 }, (_, i) => allowPublicCouponEmail(`p${i}@example.com`, '192.0.2.7', t));
+    assert.equal(ok.filter(Boolean).length, 10, 'at most 10 emails per network per day');
   });
 });
 

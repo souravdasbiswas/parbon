@@ -80,10 +80,45 @@ function fromRow(r) {
   };
 }
 
-// Wrong-PIN counters per username (memory is fine: a restart only resets the count).
+// Wrong-PIN counters, keyed by account id (or by the typed name when no such account exists).
+// Memory is fine: a restart only resets the counts. Each entry: { fails, until, day, dayStart }.
 const failures = new Map();
+const DAY_MS = 24 * 3600 * 1000;
+const MAX_FAILS_PER_DAY = 20;
+const MAX_TRACKED = 10000;
 // Compared against when the username doesn't exist, so timing doesn't reveal which names are real.
 let dummyHash;
+
+const lockedUntil = (key, at = Date.now()) => {
+  const f = failures.get(key);
+  return f && f.until > at ? f.until : 0;
+};
+
+/** Records a wrong PIN: 5 in a row lock for 15 minutes, and 20 in a day lock until the day is over. */
+function recordFailure(key, at = Date.now()) {
+  const f = failures.get(key) || { fails: 0, until: 0, day: 0, dayStart: at };
+  if (at - f.dayStart >= DAY_MS) {
+    f.day = 0;
+    f.dayStart = at;
+  }
+  f.fails += 1;
+  f.day += 1;
+  if (f.day >= MAX_FAILS_PER_DAY) {
+    f.until = f.dayStart + DAY_MS;
+    f.fails = 0;
+  } else if (f.fails >= MAX_FAILS) {
+    f.until = at + LOCK_MS;
+    f.fails = 0;
+  }
+  failures.set(key, f);
+  // Keep memory bounded if someone sprays made-up usernames.
+  if (failures.size > MAX_TRACKED) {
+    for (const [k, v] of failures) {
+      if (v.until <= at && at - v.dayStart >= LOCK_MS) failures.delete(k);
+      if (failures.size <= MAX_TRACKED * 0.9) break;
+    }
+  }
+}
 
 export const gateUserService = {
   async list() {
@@ -93,10 +128,12 @@ export const gateUserService = {
       'SELECT scanned_by, COALESCE(SUM(count), 0) AS n, MAX(scanned_at) AS last FROM coupon_checkins WHERE undone_at IS NULL GROUP BY scanned_by',
     );
     const byUser = Object.fromEntries(counts.map((c) => [c.scanned_by, { checkIns: Number(c.n), lastCheckInAt: c.last }]));
-    return rows.map(fromRow).map((u) => {
-      const lock = failures.get(u.username);
-      return { ...u, checkIns: byUser[u.username]?.checkIns || 0, lastCheckInAt: byUser[u.username]?.lastCheckInAt || null, locked: Boolean(lock?.until > Date.now()) };
-    });
+    return rows.map(fromRow).map((u) => ({
+      ...u,
+      checkIns: byUser[u.username]?.checkIns || 0,
+      lastCheckInAt: byUser[u.username]?.lastCheckInAt || null,
+      locked: Boolean(lockedUntil(u.id)),
+    }));
   },
 
   async get(id) {
@@ -138,7 +175,6 @@ export const gateUserService = {
       if (error.code === 'ER_DUP_ENTRY') throw invalid({ username: 'This username is already taken.' });
       throw error;
     }
-    failures.delete(current.username);
     return this.get(id);
   },
 
@@ -150,7 +186,7 @@ export const gateUserService = {
     if (!user) throw new HttpError(404, 'NOT_FOUND', 'Volunteer not found.');
     const next = pin || generatePin();
     await pool.query('UPDATE gate_users SET pin_hash = ?, session_version = session_version + 1, updated_at = ? WHERE id = ?', [await hashPassword(next), now(), id]);
-    failures.delete(user.username);
+    failures.delete(user.id);
     return { user: await this.get(id), pin: next };
   },
 
@@ -160,24 +196,38 @@ export const gateUserService = {
     return result.affectedRows > 0;
   },
 
-  /** Checks a username + PIN. Five wrong PINs lock that username for 15 minutes. */
+  /**
+   * Checks a username + PIN. Usernames must match exactly (plain a–z, 0–9, . _ -), so look-alike
+   * spellings can't reach an account. Wrong PINs are counted per account: 5 in a row lock it for
+   * 15 minutes, 20 in a day lock it for the rest of the day (a PIN reset by the admin unlocks it).
+   */
   async authenticate(username, pin) {
     const name = clean(username, 40).toLowerCase();
-    const lock = failures.get(name);
-    if (lock?.until > Date.now()) {
-      const minutes = Math.ceil((lock.until - Date.now()) / 60000);
-      throw new HttpError(429, 'LOCKED', `Too many wrong PINs. Try again in ${minutes} minute${minutes === 1 ? '' : 's'}, or ask the admin to reset your PIN.`);
-    }
-    const pool = await db();
-    const [[row]] = await pool.query('SELECT * FROM gate_users WHERE username = ?', [name]);
     dummyHash ??= await hashPassword(generatePin(8));
-    const ok = await verifyPassword(String(pin || ''), row ? row.pin_hash : dummyHash);
-    if (!row || !ok) {
-      const fails = (lock && lock.until > Date.now() ? 0 : lock?.fails || 0) + 1;
-      failures.set(name, fails >= MAX_FAILS ? { fails: 0, until: Date.now() + LOCK_MS } : { fails, until: 0 });
+    if (!USERNAME_RE.test(name)) {
+      // Same work as a real check, so the response time gives nothing away.
+      await verifyPassword(String(pin || ''), dummyHash);
       throw new HttpError(401, 'INVALID_CREDENTIALS', 'Incorrect username or PIN.');
     }
-    failures.delete(name);
+    const pool = await db();
+    // Binary comparison: the table's case/accent-insensitive collation must not match variants.
+    const [[row]] = await pool.query('SELECT * FROM gate_users WHERE username = ? COLLATE utf8mb4_bin', [name]);
+    const key = row ? row.id : `name:${name}`;
+    const until = lockedUntil(key);
+    if (until) {
+      const minutes = Math.ceil((until - Date.now()) / 60000);
+      const wait = minutes > 90 ? `${Math.ceil(minutes / 60)} hours` : `${minutes} minute${minutes === 1 ? '' : 's'}`;
+      throw new HttpError(429, 'LOCKED', `Too many wrong PINs. Try again in ${wait}, or ask the admin to reset your PIN.`);
+    }
+    const ok = await verifyPassword(String(pin || ''), row ? row.pin_hash : dummyHash);
+    if (!row || !ok) {
+      recordFailure(key);
+      throw new HttpError(401, 'INVALID_CREDENTIALS', 'Incorrect username or PIN.');
+    }
+    // A correct PIN clears the "in a row" count but not the daily total, so an attacker's guesses
+    // keep counting even if the real volunteer signs in meanwhile.
+    const f = failures.get(key);
+    if (f) f.fails = 0;
     if (!row.active) throw new HttpError(403, 'DISABLED', 'This gate account has been turned off. Please ask the admin.');
     await pool.query('UPDATE gate_users SET last_login_at = ? WHERE id = ?', [now(), row.id]);
     return fromRow(row);
@@ -194,3 +244,6 @@ export const gateUserService = {
 
 /** For tests: forget wrong-PIN counters. */
 export const resetGateLockouts = () => failures.clear();
+
+/** For tests: drive the wrong-PIN counter with a chosen clock. */
+export const lockoutForTests = { recordFailure, lockedUntil };

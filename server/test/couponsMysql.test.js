@@ -191,7 +191,7 @@ describe('coupons (MySQL)', { skip: !enabled && 'set TEST_DB_HOST to run the MyS
       Array.from({ length: 6 }, (_, i) =>
         call(`/coupons/events/${event.slug}/register`, {
           method: 'POST',
-          body: registration({ name: `Guest ${i}`, attendees: 1, items: [{ typeId: other.id, quantity: 1 }], paymentMethod: 'pledge', txnRef: '' }),
+          body: registration({ name: `Guest ${String.fromCharCode(65 + i)}`, attendees: 1, items: [{ typeId: other.id, quantity: 1 }], paymentMethod: 'pledge', txnRef: '' }),
         }),
       ),
     );

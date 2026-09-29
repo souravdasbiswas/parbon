@@ -301,6 +301,8 @@ export function validateRegistration(body, { admin = false } = {}) {
   };
 
   if (value.name.length < 2) errors.name = 'Please tell us your name.';
+  // Public names are plain words (any script) — no links or digits that could be passed off as a message.
+  else if (!admin && !/^[\p{L}\p{M}][\p{L}\p{M} .'’&-]*$/u.test(value.name)) errors.name = 'Please use letters only for your name.';
   if (!admin || value.email) {
     if (!EMAIL_RE.test(value.email)) errors.email = 'Please enter a valid email address.';
   }

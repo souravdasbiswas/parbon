@@ -169,6 +169,23 @@ describe('gate volunteers (MySQL)', { skip: !enabled && 'set TEST_DB_HOST to run
     assert.equal((await scan(adminCookie, '/events')).data.length, 2);
   });
 
+  it('only exact usernames reach an account, so look-alike spellings can’t dodge the lockout', async () => {
+    resetGateLockouts();
+    const pin = (await admin(`/gate-users/${rahul.id}/reset-pin`, { method: 'POST', body: { pin: '8642' } })).data.pin;
+    // The database collation treats these as "rahul", but sign-in must not.
+    for (const variant of ['rähul', 'ｒａｈｕｌ', 'rahul\u200b', 'ra\u0301hul']) {
+      assert.equal((await signIn(variant, pin)).status, 401, `variant ${JSON.stringify(variant)} must not sign in`);
+    }
+    // Wrong PINs through any spelling can't be spread across counters: 5 on the real name lock it.
+    for (let i = 0; i < 5; i += 1) await signIn('rahul', '0000');
+    assert.equal((await signIn('rahul', pin)).status, 429);
+    assert.equal((await signIn('Rahul', pin)).status, 429, 'upper-case is the same account and shares the lock');
+    const fresh = (await admin(`/gate-users/${rahul.id}/reset-pin`, { method: 'POST', body: { pin: '4821' } })).data.pin;
+    const ok = await signIn('rahul', fresh);
+    assert.equal(ok.status, 200);
+    rahulCookie = ok.cookie;
+  });
+
   it('locks a username after 5 wrong PINs; a PIN reset unlocks it and ends old sessions', async () => {
     resetGateLockouts();
     for (let i = 0; i < 5; i += 1) assert.equal((await signIn('rahul', '9999')).status, 401);

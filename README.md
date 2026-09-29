@@ -332,6 +332,7 @@ Admins can sell or give out digital coupons for an event (entry passes, bhog cou
 - *+ Walk-in* records a booking made at the counter or over the phone. *Download CSV* exports everyone.
 
 **Email (optional)**: Hostinger mailboxes can send to anyone. Set `SMTP_HOST=smtp.hostinger.com`, `SMTP_PORT=465`, `SMTP_SECURE=true`, `SMTP_USER=mail@parbon.in`, `SMTP_PASS=…` and `MAIL_FROM="Parbon Sanskritik Samity <mail@parbon.in>"`. The registration form then offers “Also email me my coupons”, and admins get *Email coupons*. Hostinger limits how many emails a mailbox sends per day, which is plenty for one email per registration.
+- **Anti-abuse:** coupon emails contain only the committee’s own text (event, venue, coupon names) plus the coupon codes and links, never what the registrant typed. The public form sends at most 3 coupon emails per address and 10 per network each day; above that, people still get their links on screen. Public registrations accept plain names only: letters in any script, spaces and `. ' - &`.
 
 **Gate team** (**Admin → Gate team**, or *Coupons → Gate team*): people who check coupons at the entrance and the bhog counter, without being website admins.
 - **Add volunteer**: enter a name. A username is suggested from it, e.g. `rahul.das`. Type a 4–6 digit PIN or leave it empty to get one.
@@ -343,7 +344,7 @@ Admins can sell or give out digital coupons for an event (entry passes, bhog cou
 - The PIN is shown **once**, with *Send on WhatsApp* and *Copy details* (scanner link, username and PIN). It can’t be viewed again; use **Reset PIN** to give a new one.
 - **Turn off**, **Reset PIN** and **Delete** sign the volunteer out on their phone straight away. Changes to their permissions apply straight away too.
 - Volunteers can only use the scanner. They can’t open any admin page.
-- After 5 wrong PINs, that username is locked for 15 minutes; a PIN reset unlocks it.
+- After 5 wrong PINs in a row, that account is locked for 15 minutes; after 20 in a day, for the rest of the day. A PIN reset unlocks it. Usernames must match exactly, so look-alike spellings can’t get round the lock.
 - The list shows each volunteer’s last sign-in and how many people they checked in. Check-in history records who let people in.
 - Volunteer accounts are stored in the database, so there’s no server setting to change.
 
