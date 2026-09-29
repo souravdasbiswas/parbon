@@ -2,6 +2,7 @@ import { randomBytes, randomInt, randomUUID } from 'node:crypto';
 import { config } from '../config.js';
 import { databaseReady } from '../db/index.js';
 import { HttpError } from '../middleware/errorHandler.js';
+import { FREE_EVENT_PRICE_ERROR, takesPayments } from '../utils/validateCoupons.js';
 
 /**
  * Coupons for events: admins define events and coupon types (entry pass, food coupon…), people
@@ -309,6 +310,8 @@ export const couponService = {
         paymentStatus = 'to_verify';
       } else if (paymentMethod === 'pledge' && (admin || event.payment?.allowPledge !== false)) {
         paymentStatus = 'pledged';
+      } else if (!admin && !takesPayments(event.payment)) {
+        throw invalid({ paymentMethod: 'These coupons have a price, but this event isn’t taking payments online. Please contact the organisers.' });
       } else {
         throw invalid({ paymentMethod: 'Please choose one of the payment options shown.' });
       }
@@ -437,6 +440,10 @@ export const couponService = {
     const at = now();
     const id = randomUUID();
     const { slug, status, startsAt, endsAt, ...data } = value;
+    if (!takesPayments(value.payment)) {
+      const priced = Object.fromEntries(types.map((t, i) => [i, t]).filter(([, t]) => t.price > 0).map(([i]) => [`types.${i}.price`, FREE_EVENT_PRICE_ERROR]));
+      if (Object.keys(priced).length) throw invalid(priced);
+    }
     await withTransaction(async (conn) => {
       try {
         await conn.query(
@@ -463,6 +470,16 @@ export const couponService = {
       if (!current) throw new HttpError(404, 'NOT_FOUND', 'Event not found.');
       const use = await usage(conn, id);
       if (value.totalQuota < use.issued) throw invalid({ totalQuota: `${use.issued} coupons are already issued — the limit can't be lower.` });
+      if (!takesPayments(value.payment)) {
+        // Turning payments off makes the event free: no coupon on sale may still have a price.
+        const [rows] = await conn.query('SELECT * FROM coupon_types WHERE event_id = ?', [id]);
+        const priced = rows.map(typeFromRow).filter((t) => t.active !== false && t.price > 0);
+        if (priced.length) {
+          throw invalid({
+            'payment.allowPledge': `Some coupons still have a price (${priced.map((t) => `${t.name?.en} ₹${t.price}`).join(', ')}). Make them free (₹0) in “Coupon types & designs” first, or keep a way to pay ticked.`,
+          });
+        }
+      }
       const { slug, status, startsAt, endsAt, ...data } = value;
       try {
         await conn.query(
@@ -496,6 +513,7 @@ export const couponService = {
     const pool = await db();
     const event = await loadEvent(pool, 'id', eventId);
     if (!event) throw new HttpError(404, 'NOT_FOUND', 'Event not found.');
+    if (value.price > 0 && value.active !== false && !takesPayments(event.payment)) throw invalid({ price: FREE_EVENT_PRICE_ERROR });
     const at = now();
     const id = randomUUID();
     const { sortOrder, ...data } = value;
@@ -516,6 +534,10 @@ export const couponService = {
       const [[row]] = await conn.query('SELECT * FROM coupon_types WHERE id = ? FOR UPDATE', [id]);
       if (!row) throw new HttpError(404, 'NOT_FOUND', 'Coupon type not found.');
       const current = typeFromRow(row);
+      if (value.price > 0 && value.active !== false) {
+        const event = await loadEvent(conn, 'id', current.eventId);
+        if (event && !takesPayments(event.payment)) throw invalid({ price: FREE_EVENT_PRICE_ERROR });
+      }
       const issued = (await usage(conn, current.eventId)).byType[id]?.issued || 0;
       if (value.quota && value.quota < issued) throw invalid({ quota: `${issued} are already issued — the limit can't be lower.` });
       const { sortOrder, ...data } = value;

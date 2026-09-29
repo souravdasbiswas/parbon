@@ -20,6 +20,7 @@ const FIELD_LABELS = {
   'venue.mapUrl': 'Google Maps link',
   'payment.upiId': 'UPI ID',
   'payment.allowPledge': 'Payment',
+  'payment.allowTxn': 'Payment',
   'contact.phone': 'Help contact phone',
 };
 
@@ -222,24 +223,38 @@ export default function CouponEventForm({ event, preset, onSaved, onDelete, save
 
       <fieldset className={styles.group}>
         <legend>Payment</legend>
+        <p className={styles.hint}>
+          Only for coupons with a price. Leave both unticked for a <strong>free event</strong>: nobody is asked to pay, and every coupon must be free (₹0).
+        </p>
         <label className={styles.check}>
           <input type="checkbox" {...check('payment.allowTxn')} /> People can pay online (UPI) and enter the transaction ID
         </label>
         <label className={styles.check}>
-          <input type="checkbox" {...check('payment.allowPledge')} /> People can choose “I’ll pay at the counter”
+          <input type="checkbox" {...check('payment.allowPledge')} aria-invalid={errors['payment.allowPledge'] ? 'true' : undefined} /> People can choose “I’ll pay at the
+          counter”
         </label>
         {errors['payment.allowPledge'] && <p className={styles.fieldError}>{errors['payment.allowPledge']}</p>}
-        <div className={styles.row2}>
-          <Field label="UPI ID" id={bind('payment.upiId').id} error={errors['payment.upiId']}>
-            <input {...bind('payment.upiId')} maxLength={130} placeholder="name@bank" />
-          </Field>
-          <Field label="Payee name" id={bind('payment.payeeName').id}>
-            <input {...bind('payment.payeeName')} maxLength={100} />
-          </Field>
-        </div>
-        <Field label="Payment note" id={bind('payment.note').id} hint="Optional, shown with the payment options — e.g. “Mention your name in the UPI note”.">
-          <textarea {...bind('payment.note')} rows={2} maxLength={600} />
-        </Field>
+        {form.payment.allowTxn === false && form.payment.allowPledge === false ? (
+          <p className={styles.notice}>
+            <strong>Free event</strong> — people register and get their coupons straight away, with no payment step.
+          </p>
+        ) : (
+          <>
+            {form.payment.allowTxn !== false && (
+              <div className={styles.row2}>
+                <Field label="UPI ID" id={bind('payment.upiId').id} error={errors['payment.upiId']}>
+                  <input {...bind('payment.upiId')} maxLength={130} placeholder="name@bank" />
+                </Field>
+                <Field label="Payee name" id={bind('payment.payeeName').id}>
+                  <input {...bind('payment.payeeName')} maxLength={100} />
+                </Field>
+              </div>
+            )}
+            <Field label="Payment note" id={bind('payment.note').id} hint="Optional, shown with the payment options — e.g. “Mention your name in the UPI note”.">
+              <textarea {...bind('payment.note')} rows={2} maxLength={600} />
+            </Field>
+          </>
+        )}
       </fieldset>
 
       <fieldset className={styles.group}>

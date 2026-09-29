@@ -26,7 +26,7 @@ Object.assign(process.env, {
 });
 
 const { createApp } = await import('../src/app.js');
-const { validateCouponEvent, validateCouponType, validateDesign, validateRegistration } = await import('../src/utils/validateCoupons.js');
+const { takesPayments, validateCouponEvent, validateCouponType, validateDesign, validateRegistration } = await import('../src/utils/validateCoupons.js');
 const { parseScanInput, normaliseCode, formatCode, newCode, registrationState, attendanceOf } = await import('../src/services/couponService.js');
 const { validateGateUser, usernameFromName, generatePin, lockoutForTests } = await import('../src/services/gateUserService.js');
 const { buildCouponEmail, allowPublicCouponEmail } = await import('../src/services/couponMail.js');
@@ -74,11 +74,19 @@ describe('coupon validation', () => {
   });
 
   it('rejects impossible events', () => {
-    const { errors } = validateCouponEvent({ ...event, endsAt: event.startsAt, totalQuota: 0, payment: { allowTxn: false, allowPledge: false, upiId: 'nope' } });
+    const { errors } = validateCouponEvent({ ...event, endsAt: event.startsAt, totalQuota: 0, payment: { allowTxn: true, allowPledge: false, upiId: 'nope' } });
     assert.ok(errors.endsAt);
     assert.ok(errors.totalQuota);
-    assert.ok(errors['payment.allowPledge']);
     assert.ok(errors['payment.upiId']);
+  });
+
+  it('allows a free event: no way to pay ticked, and no UPI ID needed', () => {
+    const free = validateCouponEvent({ ...event, payment: { allowTxn: false, allowPledge: false, upiId: 'not-checked-when-unused' } });
+    assert.equal(free.errors, undefined, JSON.stringify(free.errors));
+    assert.deepEqual([free.value.payment.allowTxn, free.value.payment.allowPledge], [false, false]);
+    assert.equal(takesPayments(free.value.payment), false);
+    assert.equal(takesPayments({ allowTxn: false, allowPledge: true }), true);
+    assert.equal(takesPayments({}), true, 'older events without the setting take payments');
   });
 
   it('validates coupon types', () => {

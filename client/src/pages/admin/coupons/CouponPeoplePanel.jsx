@@ -42,9 +42,9 @@ function WalkInForm({ event, mailEnabled, onDone, onCancel }) {
         email: form.email,
         attendees: Number(form.attendees),
         items: types.map((t) => ({ typeId: t.id, quantity: Number(form.items[t.id]) || 0 })),
-        paymentMethod: form.payment === 'txn' ? 'txn' : 'pledge',
-        txnRef: form.txnRef,
-        markPaid: form.payment === 'paid',
+        paymentMethod: total === 0 ? 'free' : form.payment === 'txn' ? 'txn' : 'pledge',
+        txnRef: total > 0 ? form.txnRef : '',
+        markPaid: total > 0 && form.payment === 'paid',
         sendEmail: form.sendEmail,
       });
       onDone(result);
@@ -88,18 +88,22 @@ function WalkInForm({ event, mailEnabled, onDone, onCancel }) {
       </div>
       {errors.items && <p className={styles.fieldError}>{errors.items}</p>}
       <div className={c.inlineRow}>
-        <strong>Total {rupees(total)}</strong>
-        <label className={styles.check}>
-          <input type="radio" name={`${uid}-pay`} checked={form.payment === 'paid'} onChange={() => setForm((f) => ({ ...f, payment: 'paid' }))} /> Paid now
-        </label>
-        <label className={styles.check}>
-          <input type="radio" name={`${uid}-pay`} checked={form.payment === 'pledge'} onChange={() => setForm((f) => ({ ...f, payment: 'pledge' }))} /> Will pay later
-        </label>
-        <label className={styles.check}>
-          <input type="radio" name={`${uid}-pay`} checked={form.payment === 'txn'} onChange={() => setForm((f) => ({ ...f, payment: 'txn' }))} /> Paid by UPI
-        </label>
+        <strong>Total {total > 0 ? rupees(total) : 'Free'}</strong>
+        {total > 0 && (
+          <>
+            <label className={styles.check}>
+              <input type="radio" name={`${uid}-pay`} checked={form.payment === 'paid'} onChange={() => setForm((f) => ({ ...f, payment: 'paid' }))} /> Paid now
+            </label>
+            <label className={styles.check}>
+              <input type="radio" name={`${uid}-pay`} checked={form.payment === 'pledge'} onChange={() => setForm((f) => ({ ...f, payment: 'pledge' }))} /> Will pay later
+            </label>
+            <label className={styles.check}>
+              <input type="radio" name={`${uid}-pay`} checked={form.payment === 'txn'} onChange={() => setForm((f) => ({ ...f, payment: 'txn' }))} /> Paid by UPI
+            </label>
+          </>
+        )}
       </div>
-      {form.payment === 'txn' && (
+      {total > 0 && form.payment === 'txn' && (
         <Field label="Transaction ID" id={`${uid}-txn`} error={errors.txnRef}>
           <input id={`${uid}-txn`} value={form.txnRef} onChange={set('txnRef')} maxLength={100} />
         </Field>

@@ -189,6 +189,58 @@ describe('coupons (MySQL)', { skip: !enabled && 'set TEST_DB_HOST to run the MyS
     for (const e of (await admin('/events')).data) if (e.id !== event.id) assert.equal((await admin(`/events/${e.id}`, { method: 'DELETE' })).status, 204);
   });
 
+  it('runs a free event: no way to pay, free passes only, and registration needs no payment', async () => {
+    const free = { allowTxn: false, allowPledge: false, upiId: '', payeeName: '' };
+    const base = { title: { en: 'Meet & Greet (free)' }, slug: 'free-meet', status: 'open', startsAt: inHours(6), endsAt: inHours(9), totalQuota: 50, payment: free };
+
+    // A priced coupon can't be added to a free event, whether created together or later.
+    const priced = await admin('/events', { method: 'POST', body: { ...base, types: [{ name: { en: 'Entry' }, price: 0 }, { name: { en: 'Snacks' }, price: 50 }] } });
+    assert.equal(priced.status, 422);
+    assert.match(priced.error.fields['types.1.price'], /free/);
+    assert.ok(!priced.error.fields['types.0.price']);
+
+    const created = await admin('/events', { method: 'POST', body: { ...base, types: [{ name: { en: 'Entry' }, kind: 'entry', price: 0 }, { name: { en: 'Cha & snacks' }, kind: 'food', price: 0 }] } });
+    assert.equal(created.status, 201, created.text);
+    const ev = (await admin(`/events/${created.data.id}`)).data;
+    assert.deepEqual([ev.payment.allowTxn, ev.payment.allowPledge], [false, false]);
+    const [entryType, snackType] = ev.types;
+    assert.equal((await admin(`/events/${ev.id}/types`, { method: 'POST', body: { name: { en: 'VIP' }, price: 100 } })).status, 422);
+    const raise = await admin(`/types/${snackType.id}`, { method: 'PUT', body: { name: { en: 'Cha & snacks' }, kind: 'food', price: 20 } });
+    assert.equal(raise.status, 422);
+    assert.match(raise.error.fields.price, /free/);
+
+    // The public form shows no payment options; registering issues the passes straight away.
+    const pub = await call('/coupons/events/free-meet');
+    assert.equal(pub.status, 200);
+    assert.deepEqual([pub.data.payment.allowTxn, pub.data.payment.allowPledge], [false, false]);
+    const reg = await call('/coupons/events/free-meet/register', {
+      method: 'POST',
+      body: { name: 'Rupa Ghosh', email: 'rupa@example.com', phone: '+91 90000 11111', attendees: 3, items: [{ typeId: entryType.id, quantity: 3 }, { typeId: snackType.id, quantity: 3 }], paymentMethod: 'free' },
+    });
+    assert.equal(reg.status, 201, reg.text);
+    assert.equal(reg.data.registration.paymentStatus, 'free');
+    assert.equal(reg.data.registration.amountDue, 0);
+    assert.equal(reg.data.coupons.length, 2);
+    // Walk-ins at the counter too.
+    const walkIn = await admin(`/events/${ev.id}/registrations`, { method: 'POST', body: { name: 'Das family', attendees: 2, items: [{ typeId: entryType.id, quantity: 2 }], paymentMethod: 'free' } });
+    assert.equal(walkIn.status, 201, walkIn.text);
+    assert.equal(walkIn.data.registration.paymentStatus, 'free');
+
+    // A paid event can't be switched to free while a coupon still has a price; once they're free it can.
+    const paid = await admin('/events', { method: 'POST', body: { ...base, slug: 'was-paid', status: 'draft', payment: { allowTxn: true, allowPledge: true }, types: [{ name: { en: 'Dinner' }, price: 300 }] } });
+    assert.equal(paid.status, 201, paid.text);
+    const dinner = (await admin(`/events/${paid.data.id}`)).data.types[0];
+    const toFree = await admin(`/events/${paid.data.id}`, { method: 'PUT', body: { ...base, slug: 'was-paid', status: 'draft', payment: free } });
+    assert.equal(toFree.status, 422);
+    assert.match(toFree.error.fields['payment.allowPledge'], /Dinner ₹300/);
+    assert.equal((await admin(`/types/${dinner.id}`, { method: 'PUT', body: { name: { en: 'Dinner' }, price: 0 } })).status, 200);
+    assert.equal((await admin(`/events/${paid.data.id}`, { method: 'PUT', body: { ...base, slug: 'was-paid', status: 'draft', payment: free } })).status, 200);
+
+    // Close the free event so later tests only see their own open events; remove the unused one.
+    assert.equal((await admin(`/events/${ev.id}`, { method: 'PUT', body: { ...base, status: 'closed' } })).status, 200);
+    assert.equal((await admin(`/events/${paid.data.id}`, { method: 'DELETE' })).status, 204);
+  });
+
   it('shows open events publicly, including from the linked site event', async () => {
     const list = await call('/coupons/events?linked=durga-puja-2026');
     assert.equal(list.data.length, 1);
