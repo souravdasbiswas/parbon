@@ -244,7 +244,7 @@ export default function AdminEventForm() {
 
           <FormKit.Provider value={{ bind, errors }}>
           <div className={styles.editor}>
-            <form className={styles.form} onSubmit={(ev) => { ev.preventDefault(); save(); }} noValidate>
+            <form className={`${styles.form} ${e.form}`} onSubmit={(ev) => { ev.preventDefault(); save(); }} noValidate>
               <fieldset className={styles.group}>
                 <legend>Basics</legend>
                 <Bi path="title" label="Event name" required max={140} />
@@ -400,7 +400,7 @@ export default function AdminEventForm() {
                 <p className={styles.hint}>Day by day, e.g. Maha Shashthi → Bodhon 7:00 AM.</p>
                 {form.schedule.map((d, i) => (
                   <div key={i} className={`${e.repeat} ${e.day}`}>
-                    <div className={styles.row2}>
+                    <div className={`${styles.row2} ${e.dayRow}`}>
                       <Bi path={`schedule.${i}.day`} label={`Day ${i + 1}`} max={60} />
                       <div className={styles.field}>
                         <label htmlFor={fid(`schedule.${i}.date`)}>Date</label>
