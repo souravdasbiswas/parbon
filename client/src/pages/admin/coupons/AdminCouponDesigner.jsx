@@ -2,7 +2,8 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useParams } from 'react-router';
 import CouponArt from '../../../components/coupons/CouponArt.jsx';
 import { FIELDS, FONTS, ICONS, SIZE_PRESETS, WEIGHTS, newElementId, sampleFieldData } from '../../../components/coupons/designSpec.js';
-import { TEMPLATES, designOrTemplate } from '../../../components/coupons/templates.js';
+import { TemplateGalleryDialog } from '../../../components/coupons/TemplateGallery.jsx';
+import { designOrTemplate } from '../../../components/coupons/templates.js';
 import Icon from '../../../components/motifs/Icon.jsx';
 import Button from '../../../components/ui/Button.jsx';
 import Seo from '../../../components/ui/Seo.jsx';
@@ -124,6 +125,7 @@ export default function AdminCouponDesigner() {
   const [status, setStatus] = useState({ saving: false, message: '', ok: '' });
   const [showSample, setShowSample] = useState(true);
   const [busyUpload, setBusyUpload] = useState(false);
+  const [showTemplates, setShowTemplates] = useState(false);
   const lastEdit = useRef({ key: '', t: 0 });
   const artRef = useRef(null);
   const fileRef = useRef(null);
@@ -625,26 +627,9 @@ export default function AdminCouponDesigner() {
             ) : (
               <>
                 <h2 className={d.h2}>Coupon</h2>
-                <label className={d.prop}>
-                  <span className={d.propLabel}>Start from a template</span>
-                  <select
-                    value=""
-                    onChange={(e) => {
-                      const t = TEMPLATES.find((x) => x.id === e.target.value);
-                      if (t && window.confirm(`Replace the current design with “${t.label}”? (You can undo.)`)) {
-                        commit(() => clone(t.design));
-                        setSelectedId(null);
-                      }
-                    }}
-                  >
-                    <option value="">Choose…</option>
-                    {TEMPLATES.map((t) => (
-                      <option key={t.id} value={t.id}>
-                        {t.label}
-                      </option>
-                    ))}
-                  </select>
-                </label>
+                <button type="button" className={`${d.tool} ${d.bigTool}`} onClick={() => setShowTemplates(true)}>
+                  ✦ Browse ready-made designs…
+                </button>
                 <label className={d.prop}>
                   <span className={d.propLabel}>Size</span>
                   <select
@@ -725,6 +710,21 @@ export default function AdminCouponDesigner() {
           </aside>
         </div>
       </div>
+      {showTemplates && (
+        <TemplateGalleryDialog
+          event={event}
+          type={type}
+          suggestKind={type.kind}
+          onClose={() => setShowTemplates(false)}
+          onPick={(t) => {
+            if (!dirty || window.confirm(`Replace the current design with “${t.label}”? You can undo this.`)) {
+              commit(() => clone(t.design));
+              setSelectedId(null);
+              setShowTemplates(false);
+            }
+          }}
+        />
+      )}
     </>
   );
 }

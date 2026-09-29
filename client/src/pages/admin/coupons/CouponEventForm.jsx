@@ -51,9 +51,9 @@ function toPayload(form) {
   return payload;
 }
 
-export default function CouponEventForm({ event, onSaved, onDelete, save }) {
+export default function CouponEventForm({ event, preset, onSaved, onDelete, save, submitLabel }) {
   const uid = useId();
-  const [form, setForm] = useState(() => (event ? fromEvent(event) : EMPTY));
+  const [form, setForm] = useState(() => (event ? fromEvent(event) : preset ? fromEvent({ ...EMPTY, ...preset }) : EMPTY));
   const [errors, setErrors] = useState({});
   const [state, setState] = useState({ busy: false, message: '', ok: '' });
   const [siteEvents, setSiteEvents] = useState([]);
@@ -220,7 +220,7 @@ export default function CouponEventForm({ event, onSaved, onDelete, save }) {
       )}
       <div className={styles.formActions}>
         <Button type="submit" disabled={state.busy}>
-          {state.busy ? 'Saving…' : event ? 'Save changes' : 'Create event'}
+          {state.busy ? 'Saving…' : event ? 'Save changes' : submitLabel || 'Create event'}
         </Button>
         {onDelete && (
           <Button variant="secondary" onClick={onDelete}>

@@ -133,6 +133,39 @@ describe('coupon validation', () => {
   });
 });
 
+describe('ready-made coupon templates and events', () => {
+  it('every template passes the server design rules unchanged and keeps a QR code', async () => {
+    const { TEMPLATES } = await import('../../client/src/components/coupons/templates.js');
+    assert.ok(TEMPLATES.length >= 15);
+    for (const t of TEMPLATES) {
+      const { value, errors } = validateDesign(t.design);
+      assert.equal(errors, undefined, `${t.id}: ${JSON.stringify(errors)}`);
+      assert.equal(value.elements.length, t.design.elements.length, `${t.id} lost elements`);
+      assert.equal(new Set(value.elements.map((e) => e.id)).size, value.elements.length, `${t.id} has duplicate ids`);
+      // Rounded corners must stay inside the padding, or they clip the QR's corner squares.
+      for (const q of value.elements.filter((e) => e.type === 'qr')) {
+        assert.ok(q.radius * (1 - Math.SQRT1_2) <= q.padding, `${t.id}: QR corner radius ${q.radius} clips the code (padding ${q.padding})`);
+        assert.ok(q.w >= 200, `${t.id}: QR too small to scan (${q.w}px)`);
+      }
+    }
+  });
+
+  it('every ready-made event and its coupon types are valid, with existing templates', async () => {
+    const { EVENT_PRESETS } = await import('../../client/src/components/coupons/eventPresets.js');
+    const { templateById } = await import('../../client/src/components/coupons/templates.js');
+    for (const p of EVENT_PRESETS) {
+      const e = validateCouponEvent({ ...p.event, startsAt: '2027-01-01T10:00:00Z', endsAt: '2027-01-01T20:00:00Z', ...(p.event.startsAt ? { startsAt: p.event.startsAt, endsAt: p.event.endsAt } : {}) });
+      assert.equal(e.errors, undefined, `${p.id}: ${JSON.stringify(e.errors)}`);
+      for (const t of p.types) {
+        assert.ok(templateById(t.template), `${p.id}: unknown template ${t.template}`);
+        const { template, ...type } = t;
+        const v = validateCouponType({ ...type, design: templateById(template).design });
+        assert.equal(v.errors, undefined, `${p.id}/${t.name.en}: ${JSON.stringify(v.errors)}`);
+      }
+    }
+  });
+});
+
 describe('coupon codes and states', () => {
   it('makes readable codes and understands scans, links and typed codes', () => {
     const code = newCode();

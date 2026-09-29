@@ -56,6 +56,13 @@
   opacity: 0.45;
 }
 
+.bigTool {
+  justify-content: center;
+  min-height: 46px;
+  border-color: var(--color-vermilion);
+  color: var(--color-vermilion);
+}
+
 .danger {
   color: var(--color-danger);
 }

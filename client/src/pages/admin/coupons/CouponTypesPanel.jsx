@@ -3,7 +3,8 @@ import { Link } from 'react-router';
 import CouponArt from '../../../components/coupons/CouponArt.jsx';
 import { rupees } from '../../../components/coupons/couponUtils.js';
 import { sampleFieldData } from '../../../components/coupons/designSpec.js';
-import { designOrTemplate, templateFor } from '../../../components/coupons/templates.js';
+import TemplateGallery from '../../../components/coupons/TemplateGallery.jsx';
+import { TEMPLATES, designOrTemplate, templateById } from '../../../components/coupons/templates.js';
 import Button from '../../../components/ui/Button.jsx';
 import { adminCouponsApi } from '../../../services/api.js';
 import styles from '../Admin.module.css';
@@ -14,12 +15,16 @@ import c from './Coupons.module.css';
 const KINDS = { entry: 'Entry pass', food: 'Food / bhog coupon', other: 'Other' };
 const EMPTY = { name: { en: '', bn: '' }, description: { en: '', bn: '' }, kind: 'entry', price: 0, quota: '', maxPerRegistration: 10, active: true, sortOrder: 0 };
 
-function TypeForm({ initial, onSubmit, onCancel, submitLabel }) {
+function TypeForm({ initial, onSubmit, onCancel, submitLabel, event, pickDesign = false }) {
   const uid = useId();
   const [form, setForm] = useState(() => ({ ...EMPTY, ...initial, name: { ...EMPTY.name, ...initial?.name }, description: { ...EMPTY.description, ...initial?.description }, quota: initial?.quota ?? '' }));
   const [errors, setErrors] = useState({});
   const [state, setState] = useState({ busy: false, message: '' });
+  const [templateId, setTemplateId] = useState(null);
+  const [browsing, setBrowsing] = useState(false);
   const bind = makeBinder(form, setForm, errors, uid);
+  // Until a design is picked, the look follows the kind (entry pass, food…).
+  const chosen = templateById(templateId) || TEMPLATES.find((t) => t.kind === form.kind) || TEMPLATES[0];
 
   const submit = async (e) => {
     e.preventDefault();
@@ -32,6 +37,7 @@ function TypeForm({ initial, onSubmit, onCancel, submitLabel }) {
         quota: form.quota === '' ? null : Number(form.quota),
         maxPerRegistration: Number(form.maxPerRegistration) || 10,
         sortOrder: Number(form.sortOrder) || 0,
+        ...(pickDesign ? { design: structuredClone(chosen.design) } : {}),
       });
       setErrors({});
       setState({ busy: false, message: '' });
@@ -72,6 +78,36 @@ function TypeForm({ initial, onSubmit, onCancel, submitLabel }) {
       <Field label="Short description" id={bind('description.en').id} hint="Optional, shown on the registration form — e.g. “Includes Ashtami bhog”.">
         <input {...bind('description.en')} maxLength={300} />
       </Field>
+      {pickDesign && (
+        <div className={c.lookField}>
+          <div className={c.lookRow}>
+            <span className={c.lookThumb} style={{ width: chosen.design.height > chosen.design.width ? 70 : 170 }}>
+              <CouponArt design={chosen.design} data={sampleFieldData(event, { name: form.name, price: Number(form.price) || 0 })} label={`${chosen.label} preview`} />
+            </span>
+            <div>
+              <p className={c.lookLabel}>
+                Design: <strong>{chosen.label}</strong>
+              </p>
+              <button type="button" className={styles.linkBtn} onClick={() => setBrowsing((b) => !b)} aria-expanded={browsing}>
+                {browsing ? 'Hide designs' : 'Choose another design…'}
+              </button>
+            </div>
+          </div>
+          {browsing && (
+            <TemplateGallery
+              compact
+              selectedId={chosen.id}
+              event={event}
+              type={{ name: form.name, price: Number(form.price) || 0 }}
+              suggestKind={form.kind}
+              onPick={(t) => {
+                setTemplateId(t.id);
+                setBrowsing(false);
+              }}
+            />
+          )}
+        </div>
+      )}
       <div className={c.inlineRow}>
         <label className={styles.check}>
           <input type="checkbox" checked={form.active} onChange={(e) => setForm((f) => ({ ...f, active: e.target.checked }))} /> Available for registration
@@ -100,8 +136,7 @@ export default function CouponTypesPanel({ event, onChange }) {
   const [adding, setAdding] = useState(event.types.length === 0);
 
   const create = async (data) => {
-    // New types start from the ready-made design for their kind.
-    await adminCouponsApi.createType(event.id, { ...data, design: templateFor(data.kind) });
+    await adminCouponsApi.createType(event.id, data);
     setAdding(false);
     onChange();
   };
@@ -166,7 +201,7 @@ export default function CouponTypesPanel({ event, onChange }) {
       {adding ? (
         <div className={styles.group}>
           <h3 className={c.h3}>Add a coupon type</h3>
-          <TypeForm onSubmit={create} onCancel={event.types.length ? () => setAdding(false) : null} submitLabel="Add coupon type" />
+          <TypeForm onSubmit={create} onCancel={event.types.length ? () => setAdding(false) : null} submitLabel="Add coupon type" event={event} pickDesign />
         </div>
       ) : (
         <Button variant="secondary" onClick={() => setAdding(true)}>

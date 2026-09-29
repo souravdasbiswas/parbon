@@ -13,6 +13,8 @@ import { CouponsDisabled } from './AdminCouponEvents.jsx';
 import CouponEventForm from './CouponEventForm.jsx';
 import CouponPeoplePanel from './CouponPeoplePanel.jsx';
 import CouponTypesPanel from './CouponTypesPanel.jsx';
+import { PresetPicker, PresetTypes } from './QuickStart.jsx';
+import { templateById } from '../../../components/coupons/templates.js';
 import c from './Coupons.module.css';
 
 const TABS = [
@@ -147,6 +149,77 @@ function Overview({ event, onTab }) {
   );
 }
 
+/** A new event: pick a ready-made event (or blank), then check the details and create everything. */
+function NewEvent({ onCreated }) {
+  const [step, setStep] = useState('pick');
+  const [preset, setPreset] = useState(null);
+  const [types, setTypes] = useState([]);
+  const [previous, setPrevious] = useState(null);
+
+  // Reuse the venue, contact and payment details of the latest event, so they needn't be typed again.
+  useEffect(() => {
+    adminCouponsApi.events().then((list) => setPrevious(list?.[0] || null), () => {});
+  }, []);
+
+  const pick = (p) => {
+    setPreset(
+      p && {
+        ...p,
+        event: {
+          ...(previous ? { venue: previous.venue, contact: previous.contact, payment: previous.payment } : {}),
+          ...p.event,
+        },
+      },
+    );
+    setTypes(p ? p.types.map((t) => ({ ...t, enabled: true })) : []);
+    setStep('form');
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  const save = async (data) => {
+    const created = await adminCouponsApi.createEvent(data);
+    let order = 0;
+    for (const { template, enabled, ...type } of types) {
+      if (!enabled) continue;
+      await adminCouponsApi.createType(created.id, {
+        ...type,
+        price: Number(type.price) || 0,
+        sortOrder: order++,
+        design: structuredClone(templateById(template).design),
+      });
+    }
+    return created;
+  };
+
+  if (step === 'pick') return <PresetPicker onPick={pick} />;
+  const count = types.filter((t) => t.enabled).length;
+  return (
+    <div className={c.narrow}>
+      <p className={c.crumb}>
+        <button type="button" className={styles.linkBtn} onClick={() => setStep('pick')}>
+          ← Choose a different starting point
+        </button>
+      </p>
+      {preset && (
+        <p className={styles.notice}>
+          Starting from <strong>{preset.label}</strong>. Check the dates, venue and payment details below, then create — the coupons are ready to use
+          straight away.
+        </p>
+      )}
+      <div className={c.panel}>
+        {preset && <PresetTypes preset={preset} event={preset.event} value={types} onChange={setTypes} />}
+        <CouponEventForm
+          key={preset?.id || 'blank'}
+          preset={preset?.event}
+          save={save}
+          onSaved={onCreated}
+          submitLabel={preset && count ? `Create event & ${count} coupon type${count === 1 ? '' : 's'}` : 'Create event'}
+        />
+      </div>
+    </div>
+  );
+}
+
 export default function AdminCouponEvent() {
   const { id } = useParams();
   const isNew = id === 'new';
@@ -204,9 +277,7 @@ export default function AdminCouponEvent() {
               <h1 id="page-title" className={styles.h1}>
                 New coupon event
               </h1>
-              <div className={c.narrow}>
-                <CouponEventForm save={(data) => adminCouponsApi.createEvent(data)} onSaved={(saved) => navigate(`/admin/coupons/${saved.id}?tab=types`, { replace: true })} />
-              </div>
+              <NewEvent onCreated={(saved) => navigate(`/admin/coupons/${saved.id}?tab=types`, { replace: true })} />
             </>
           )}
           {event && (

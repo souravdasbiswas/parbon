@@ -279,6 +279,11 @@ The file is the only copy of these messages, apart from any notification emails.
 Admins can sell or give out digital coupons for an event (entry passes, bhog coupons and so on), and volunteers scan them at the gate with a phone. **Coupons need the MySQL database** (`DB_*` variables). Without it the feature switches itself off, and the rest of the site keeps working.
 
 **1. Set up the event** (**Admin → Coupons → New event**)
+- **Quickest:** pick a **ready-made event**: Durga Puja, Bijoya Sammilani, Kojagori Lakshmi Puja, Kali Puja & Diwali, Saraswati Puja, Poila Boishakh, Cultural evening / concert or Meet-up / adda.
+  - The form fills itself in, and its coupon types (e.g. *Entry pass*, *Ashtami bhog*, *Navami bhog*, *Cultural night pass*) are created already designed.
+  - Untick any you don’t need, or change the prices.
+  - The venue, help contact and payment details are copied from your most recent event.
+  - Check the dates, then **Create**. Or choose *Start from scratch*.
 - Fill in the name, dates, venue, the **total number of coupons** (e.g. 500) and the most people per registration.
 - The **link name** becomes the public page, e.g. `/register/durga-puja-2026`.
 - *Show a “Get your coupons” button on* adds a button to that website event page (and to `/durga-puja` for Durga Puja 2026).
@@ -287,9 +292,20 @@ Admins can sell or give out digital coupons for an event (entry passes, bhog cou
 
 **2. Add coupon types** (tab *Coupon types & designs*)
 - Each type has a name (English and Bengali), a kind (*Entry pass*, *Food / bhog*, *Other*), a price (0 = free), an optional limit of its own and a most-per-registration.
-- New types start from a ready-made Parbon design.
+- When adding a type, pick its look from the design gallery.
 
 **3. Design each coupon** (*Design coupon*)
+- *Browse ready-made designs* offers 18 designs grouped by occasion:
+  - **Durga Puja:** sindoor red ticket, Sharat sky & kash phool, Dhaker taal at night, lal-paar sari card, Shiuli morning
+  - **Bhog & food:** banana leaf, marigold prasad, bhog gold
+  - **Cultural night:** stage night, concert poster, festive red card
+  - **Bijoya:** sindoor khela
+  - **Lakshmi & Kali Puja:** Kojagori full moon, diya glow
+  - **Saraswati Puja:** basanti yellow
+  - **Poila Boishakh:** mango toran
+  - **VIP & donors:** black & gold
+  - **Any event:** simple & clean
+- Their artwork (kash phool, dhak, lal paar, marigold, diya, moon…) is in `client/public/brand/coupon-*.png`. It is drawn by `scripts/generate-coupon-art.mjs`: run `npm i --no-save sharp && node scripts/generate-coupon-art.mjs` to redraw it.
 - It’s a visual editor. Drag things to move them and drag the white squares to resize; it snaps to the centre and edges (hold Alt to turn that off).
 - Change text, fonts (including Bengali), size, colour, alignment, backgrounds (colour, gradient or an uploaded picture), the border and the icons.
 - Add text, fields (`{{name}}`, `{{event}}`, `{{type}}`, `{{quantity}}`, `{{date}}`, `{{time}}`, `{{venue}}`, `{{price}}`), the QR code, the coupon code, the Parbon logo, pictures and shapes.
