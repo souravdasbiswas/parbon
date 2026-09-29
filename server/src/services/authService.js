@@ -62,10 +62,26 @@ export function verifySessionToken(token) {
 }
 
 export async function checkCredentials(username, password) {
-  if (!adminConfigured()) return false;
+  return (await verifyAdminLogin(username, password)).ok;
+}
+
+/**
+ * Checks the admin username + password. `reason` (and `hint`) are for the server log only —
+ * the response to the browser stays a generic "Incorrect username or password".
+ */
+export async function verifyAdminLogin(username, password) {
+  if (!adminConfigured()) return { ok: false, reason: 'not_configured' };
   // Always run the (slow) hash check so timing doesn't reveal whether the username exists.
   const passwordOk = await verifyPassword(password, config.admin.passwordHash);
-  return passwordOk && safeEqual(username, config.admin.username);
+  const userOk = safeEqual(username, config.admin.username);
+  if (passwordOk && userOk) return { ok: true, knownUser: true };
+  const hashValid = String(config.admin.passwordHash).split('$').length === 6 && config.admin.passwordHash.startsWith('scrypt$');
+  return {
+    ok: false,
+    knownUser: userOk,
+    reason: userOk ? 'wrong_password' : 'unknown_username',
+    ...(!hashValid && { hint: 'ADMIN_PASSWORD_HASH_is_not_a_scrypt_hash' }),
+  };
 }
 
 // ── Coupon gate scanner: sessions for gate volunteers (accounts the admin creates) ──

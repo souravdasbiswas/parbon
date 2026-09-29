@@ -36,7 +36,9 @@ export function databaseReady() {
     return db;
   })().catch((error) => {
     ready = undefined;
-    console.error('[parbon] database is not available:', error.message);
+    console.error(
+      `[parbon][config] database connection FAILED code=${error.code || error.name} host=${config.db.host}:${config.db.port} database=${config.db.name} user=${config.db.user}: ${error.message}`,
+    );
     throw error;
   });
   return ready;

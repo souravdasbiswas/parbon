@@ -4,9 +4,11 @@ import { config } from '../config.js';
 import { databaseStatus } from '../db/index.js';
 import { HttpError } from '../middleware/errorHandler.js';
 import { announcementService } from '../services/announcementService.js';
+import { adminConfigured } from '../services/authService.js';
 import { contentService } from '../services/contentService.js';
 import { eventService } from '../services/eventService.js';
 import { INQUIRY_TYPES, submitInquiry } from '../services/inquiryService.js';
+import { mailConfigured } from '../services/mailService.js';
 import { validateInquiry } from '../utils/validate.js';
 import { adminRouter } from './admin.js';
 import { publicCouponsRouter } from './coupons.js';
@@ -28,8 +30,15 @@ const shortCacheEvents = (_req, res, next) => {
 apiRouter.get('/health', async (_req, res) => {
   res.setHeader('Cache-Control', 'no-store');
   // `storage` shows where announcements and form responses are kept: "mysql" or "file";
-  // `database` whether MySQL is reachable right now.
-  const body = { status: 'ok', uptime: Math.round(process.uptime()), storage: config.db.enabled ? 'mysql' : 'file' };
+  // `database` whether MySQL is reachable right now. `admin` and `email` say whether those features
+  // are set up (the host's logs show which settings are missing — never listed here).
+  const body = {
+    status: 'ok',
+    uptime: Math.round(process.uptime()),
+    storage: config.db.enabled ? 'mysql' : 'file',
+    admin: adminConfigured() ? 'ready' : 'not_configured',
+    email: mailConfigured() ? 'on' : 'off',
+  };
   if (config.db.enabled) body.database = await databaseStatus();
   res.json(body);
 });

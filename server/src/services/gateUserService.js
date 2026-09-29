@@ -204,10 +204,12 @@ export const gateUserService = {
   async authenticate(username, pin) {
     const name = clean(username, 40).toLowerCase();
     dummyHash ??= await hashPassword(generatePin(8));
+    // `logReason` / `knownUser` are read by the sign-in log only; the response stays generic.
+    const fail = (status, code, message, logReason, knownUser = false) => Object.assign(new HttpError(status, code, message), { logReason, knownUser });
     if (!USERNAME_RE.test(name)) {
       // Same work as a real check, so the response time gives nothing away.
       await verifyPassword(String(pin || ''), dummyHash);
-      throw new HttpError(401, 'INVALID_CREDENTIALS', 'Incorrect username or PIN.');
+      throw fail(401, 'INVALID_CREDENTIALS', 'Incorrect username or PIN.', 'unknown_username');
     }
     const pool = await db();
     // Binary comparison: the table's case/accent-insensitive collation must not match variants.
@@ -217,18 +219,18 @@ export const gateUserService = {
     if (until) {
       const minutes = Math.ceil((until - Date.now()) / 60000);
       const wait = minutes > 90 ? `${Math.ceil(minutes / 60)} hours` : `${minutes} minute${minutes === 1 ? '' : 's'}`;
-      throw new HttpError(429, 'LOCKED', `Too many wrong PINs. Try again in ${wait}, or ask the admin to reset your PIN.`);
+      throw fail(429, 'LOCKED', `Too many wrong PINs. Try again in ${wait}, or ask the admin to reset your PIN.`, 'locked', Boolean(row));
     }
     const ok = await verifyPassword(String(pin || ''), row ? row.pin_hash : dummyHash);
     if (!row || !ok) {
       recordFailure(key);
-      throw new HttpError(401, 'INVALID_CREDENTIALS', 'Incorrect username or PIN.');
+      throw fail(401, 'INVALID_CREDENTIALS', 'Incorrect username or PIN.', row ? 'wrong_pin' : 'unknown_username', Boolean(row));
     }
     // A correct PIN clears the "in a row" count but not the daily total, so an attacker's guesses
     // keep counting even if the real volunteer signs in meanwhile.
     const f = failures.get(key);
     if (f) f.fails = 0;
-    if (!row.active) throw new HttpError(403, 'DISABLED', 'This gate account has been turned off. Please ask the admin.');
+    if (!row.active) throw fail(403, 'DISABLED', 'This gate account has been turned off. Please ask the admin.', 'account_disabled', true);
     await pool.query('UPDATE gate_users SET last_login_at = ? WHERE id = ?', [now(), row.id]);
     return fromRow(row);
   },

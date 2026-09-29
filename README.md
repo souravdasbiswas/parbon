@@ -410,7 +410,7 @@ All responses are JSON: `{ "data": … }` on success, `{ "error": { "code", "mes
 
 | Method | Path                  | Description                                                   |
 | ------ | --------------------- | ------------------------------------------------------------- |
-| GET    | `/api/health`         | Liveness check `{ status, uptime }`                            |
+| GET    | `/api/health`         | Liveness check `{ status, uptime, storage, admin, email }` (plus `database` with MySQL) |
 | GET    | `/api/site`           | Organisation details, contact, social links, featured event   |
 | GET    | `/api/events`         | Published event summaries: upcoming soonest first, then date TBA, then past most recent first; `?status=upcoming\|planned\|past`. Events with a countdown timer include `countdown` and `countdownTo` (ISO, India time) |
 | GET    | `/api/events/:slug`   | Full published event including schedule and highlights (404 if unknown or a draft) |
@@ -575,6 +575,54 @@ The error appears in the runtime log.
 **Without a database**, data lives in files: `server/storage/announcements.json`, `server/storage/inquiries.ndjson` and `server/media/announcements/`. Set **`STORAGE_DIR`** and **`MEDIA_DIR`** to folders outside the deployment directory (e.g. `/home/<user>/parbon-data/storage` and `/home/<user>/parbon-data/media`) so a redeploy doesn't replace them.
 
 **Admin on Hostinger:** run `npm run admin:hash -- "your-strong-password"` locally, then add `ADMIN_USERNAME`, `ADMIN_PASSWORD_HASH` and `SESSION_SECRET` as environment variables in hPanel. Sign in at `https://your-domain/admin`. The site must be served over HTTPS in production, because the session cookie is `Secure`.
+
+#### Diagnosing sign-in and settings (runtime logs)
+
+Open **hPanel → Websites → your site → Node.js → Logs** (runtime logs). Each start writes a `[parbon][config]` block. It lists setting **names**, counts and yes/no checks, and never a value:
+
+```
+[parbon][config] node=v22.x env=production pid=1234
+[parbon][config] cwd=/home/…/nodejs appRoot=/home/…/hbuilds/versions/<id>/…
+[parbon][config] .env files: <appRoot>/.env=absent  <cwd>/.env=loaded(16 keys, 16 used)
+[parbon][config] variables in this process: 23 (npm_*: 0; others not used by Parbon: HOME, PATH, …)
+[parbon][config] settings present: NODE_ENV, PORT, SITE_URL, ADMIN_USERNAME, …
+[parbon][config] settings missing: none
+[parbon][config] admin sign-in=ON  storage=mysql  email=ON  site_url=set
+[parbon][config] database connection OK: MySQL database "u123_parbon" on 127.0.0.1:3306
+```
+
+- `settings missing` lists expected settings the process didn't receive.
+  - If everything you entered in hPanel appears there, Hostinger didn't pass the variables to the app. Click **Apply changes** or redeploy, and if that doesn't help, send these lines to Hostinger support.
+- `names that look like Parbon settings…` flags typos such as `admin_username` or `SITE_URL ` (trailing space).
+- `problems:` flags values that break sign-in without revealing them:
+  - spaces around a value;
+  - a value wrapped in quotes;
+  - `SESSION_SECRET` shorter than 32 characters;
+  - `ADMIN_PASSWORD_HASH` that isn't a hash from `npm run admin:hash`.
+- `database connection FAILED code=…` gives MySQL's error code, e.g. `ER_ACCESS_DENIED_ERROR` (wrong user or password) or `ECONNREFUSED` (wrong host).
+- `.env` files are read from the app folder and from the working folder. Variables set in hPanel always take precedence.
+
+Every sign-in attempt (admin and gate volunteers) writes one `[parbon][auth]` line:
+
+```
+[parbon][auth] admin sign-in FAILED reason=not_configured user=a***(5) ip=… missing=ADMIN_USERNAME_missing,SESSION_SECRET_too_short
+[parbon][auth] admin sign-in FAILED reason=wrong_password user=admin ip=…
+[parbon][auth] admin sign-in OK user=admin ip=…
+[parbon][auth] gate sign-in FAILED reason=locked user=rahul ip=…
+```
+
+| Reason | Meaning |
+| --- | --- |
+| `not_configured` | Admin settings missing or too short (listed in `missing=`); the login page says sign-in isn't available |
+| `wrong_password` / `wrong_pin` | Right username, wrong password or PIN. `hint=ADMIN_PASSWORD_HASH_is_not_a_scrypt_hash` means the setting holds something other than a hash |
+| `unknown_username` | No such account. The typed name is masked (`ad***(7)`), in case a password was typed there |
+| `missing_fields` | Username or password left empty |
+| `rate_limited` | Too many failed attempts from this network (admin 10, gate 20 per 15 minutes) |
+| `locked` / `account_disabled` | Gate volunteer locked after wrong PINs, or turned off by the admin |
+| `database_not_configured` | The gate scanner needs MySQL (`DB_NAME`, `DB_USER`) |
+| `bad_origin` | The request didn't come from this site; `expected=` shows the allowed addresses (check `SITE_URL`) |
+
+Passwords, PINs, hashes, tokens and setting values are never written to the log. Replies to the browser stay generic, so they don't reveal which part was wrong. `/api/health` also shows `"admin": "ready" | "not_configured"` and `"email": "on" | "off"`.
 
 ### Option B — Hostinger VPS (Ubuntu)
 

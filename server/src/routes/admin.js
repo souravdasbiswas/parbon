@@ -6,7 +6,9 @@ import { requireAdmin, sameOrigin } from '../middleware/auth.js';
 import { HttpError } from '../middleware/errorHandler.js';
 import { announcementService } from '../services/announcementService.js';
 import { eventService } from '../services/eventService.js';
-import { SESSION_COOKIE, adminConfigured, checkCredentials, createSessionToken } from '../services/authService.js';
+import { SESSION_COOKIE, adminConfigured, createSessionToken, verifyAdminLogin } from '../services/authService.js';
+import { logSignIn } from '../services/authLog.js';
+import { adminProblems } from '../utils/configReport.js';
 import { queryResponses } from '../services/responsesService.js';
 import { saveAnnouncementImage } from '../services/uploadService.js';
 import { toCsv } from '../utils/csv.js';
@@ -38,18 +40,29 @@ const loginLimiter = rateLimit({
   standardHeaders: 'draft-8',
   legacyHeaders: false,
   skipSuccessfulRequests: true,
-  handler: (_req, res) =>
-    res.status(429).json({ error: { code: 'RATE_LIMITED', message: 'Too many sign-in attempts. Please wait 15 minutes.' } }),
+  handler: (req, res) => {
+    logSignIn({ who: 'admin', ok: false, reason: 'rate_limited', ip: req.ip, details: { limit: '10_per_15min' }, throttle: true });
+    res.status(429).json({ error: { code: 'RATE_LIMITED', message: 'Too many sign-in attempts. Please wait 15 minutes.' } });
+  },
 });
 
 adminRouter.post('/login', loginLimiter, express.json({ limit: '4kb' }), async (req, res) => {
+  const { username = '', password = '' } = req.body || {};
+  const name = String(username).trim();
   if (!adminConfigured()) {
+    logSignIn({ who: 'admin', ok: false, reason: 'not_configured', username: name, ip: req.ip, details: { missing: adminProblems().join(',').replace(/ /g, '_') } });
     throw new HttpError(503, 'ADMIN_DISABLED', 'Admin sign-in is not configured on this server.');
   }
-  const { username = '', password = '' } = req.body || {};
-  if (!(await checkCredentials(String(username).trim(), String(password)))) {
+  if (!name || !password) {
+    logSignIn({ who: 'admin', ok: false, reason: 'missing_fields', username: name, knownUser: Boolean(name) && name === config.admin.username, ip: req.ip });
     throw new HttpError(401, 'INVALID_CREDENTIALS', 'Incorrect username or password.');
   }
+  const result = await verifyAdminLogin(name, String(password));
+  if (!result.ok) {
+    logSignIn({ who: 'admin', ok: false, reason: result.reason, username: name, knownUser: result.knownUser, ip: req.ip, details: { hint: result.hint } });
+    throw new HttpError(401, 'INVALID_CREDENTIALS', 'Incorrect username or password.');
+  }
+  logSignIn({ who: 'admin', ok: true, username: name, knownUser: true, ip: req.ip });
   res.cookie(SESSION_COOKIE, createSessionToken(config.admin.username), {
     ...cookieOptions(),
     maxAge: config.admin.sessionHours * 3600 * 1000,
