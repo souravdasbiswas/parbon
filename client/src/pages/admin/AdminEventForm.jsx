@@ -2,6 +2,8 @@ import { createContext, useContext, useEffect, useId, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router';
 import Icon from '../../components/motifs/Icon.jsx';
 import Button from '../../components/ui/Button.jsx';
+import Countdown from '../../components/ui/Countdown.jsx';
+import { countdownProps } from '../../components/ui/countdownEvent.js';
 import EventCard from '../../components/ui/EventCard.jsx';
 import Seo from '../../components/ui/Seo.jsx';
 import { ErrorState, LoadingState } from '../../components/ui/States.jsx';
@@ -38,6 +40,7 @@ const EMPTY = {
   highlights: [],
   schedule: [],
   scheduleNote: bi(),
+  countdown: { enabled: false, date: '', time: '', label: bi(), doneMessage: bi() },
 };
 
 const toLocalInput = (iso) => {
@@ -70,11 +73,14 @@ function fromEvent(ev) {
     highlights: (ev.highlights || []).map((h) => ({ icon: h.icon || 'lotus', title: b(h.title), text: b(h.text) })),
     schedule: (ev.schedule || []).map((d) => ({ date: d.date || '', day: b(d.day), note: b(d.note), main: Boolean(d.main), items: (d.items || []).map((i) => ({ time: i.time || '', title: b(i.title) })) })),
     publishedAt: toLocalInput(ev.publishedAt),
+    countdown: ev.countdown
+      ? { enabled: true, date: ev.countdown.date || '', time: ev.countdown.time || '', label: b(ev.countdown.label), doneMessage: b(ev.countdown.doneMessage) }
+      : EMPTY.countdown,
   };
 }
 
 function toPayload(form, state) {
-  const { status: _s, id: _i, createdAt: _c, updatedAt: _u, author: _a, ...rest } = form;
+  const { status: _s, id: _i, createdAt: _c, updatedAt: _u, author: _a, countdownTo: _t, ...rest } = form;
   return { ...rest, state: state || form.state, publishedAt: form.publishedAt ? new Date(form.publishedAt).toISOString() : '' };
 }
 
@@ -227,6 +233,19 @@ export default function AdminEventForm() {
   };
 
   const couponsLink = `/admin/coupons/new?from=${encodeURIComponent(form.slug)}`;
+  // Switching the countdown on starts it at the event's own date and time.
+  const toggleCountdown = (on) =>
+    setForm((f) => ({ ...f, countdown: { ...f.countdown, enabled: on, date: f.countdown.date || (f.dateTba ? '' : f.startDate), time: f.countdown.time || (f.dateTba ? '' : f.startTime) } }));
+  const timerPreview = form.countdown.enabled && /^\d{4}-\d{2}-\d{2}$/.test(form.countdown.date)
+    ? countdownProps({
+        title: { en: form.title.en || 'Event name', bn: form.title.bn },
+        countdownTo: `${form.countdown.date}T${form.countdown.time || '00:00'}:00+05:30`,
+        countdown: {
+          label: form.countdown.label.en || form.countdown.label.bn ? form.countdown.label : null,
+          doneMessage: form.countdown.doneMessage.en || form.countdown.doneMessage.bn ? form.countdown.doneMessage : null,
+        },
+      })
+    : null;
 
   return (
     <>
@@ -295,6 +314,38 @@ export default function AdminEventForm() {
                   </div>
                 )}
                 <p className={styles.hint}>Upcoming and Past follow these dates automatically (India time).</p>
+              </fieldset>
+
+              <fieldset className={styles.group}>
+                <legend>Countdown timer</legend>
+                <label className={styles.check}>
+                  <input type="checkbox" checked={form.countdown.enabled} onChange={(ev) => toggleCountdown(ev.target.checked)} /> Show a countdown timer for this event
+                </label>
+                <p className={styles.hint}>
+                  It appears on this event’s page and in the banner at the top of the home page. If several events have one, the home page shows the event
+                  that’s under way, otherwise the next one. It disappears once the event is over.
+                </p>
+                {form.countdown.enabled && (
+                  <>
+                    <div className={styles.row2}>
+                      <div className={styles.field}>
+                        <label htmlFor={fid('countdown.date')}>
+                          Count down to (date) <span aria-hidden="true">*</span>
+                        </label>
+                        <input type="date" {...bind('countdown.date')} />
+                        {err('countdown.date')}
+                      </div>
+                      <div className={styles.field}>
+                        <label htmlFor={fid('countdown.time')}>Time</label>
+                        <input type="time" {...bind('countdown.time')} />
+                        <p className={styles.hint}>India time. Empty means midnight.</p>
+                        {err('countdown.time')}
+                      </div>
+                    </div>
+                    <Bi path="countdown.label" label="Text above the timer" hint="Optional, e.g. Maa arrives in · মা আসছেন. Empty shows the event name on the home page and “Starts in” on the event page." max={80} />
+                    <Bi path="countdown.doneMessage" label="Message once it starts" hint="Shown until the event ends. Empty shows “It’s today — see you there!”" max={120} />
+                  </>
+                )}
               </fieldset>
 
               <fieldset className={styles.group}>
@@ -506,6 +557,14 @@ export default function AdminEventForm() {
             <aside className={styles.preview} aria-label="Preview">
               <p className={styles.previewLabel}>Event card preview</p>
               <EventCard event={previewOf(form)} featured={form.featured} headingLevel="p" />
+              {timerPreview && (
+                <>
+                  <p className={`${styles.previewLabel} ${e.timerLabel}`}>Countdown preview</p>
+                  <div className={e.timer}>
+                    <Countdown {...timerPreview} />
+                  </div>
+                </>
+              )}
             </aside>
           </div>
           </FormKit.Provider>

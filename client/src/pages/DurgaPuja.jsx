@@ -3,6 +3,7 @@ import Icon from '../components/motifs/Icon.jsx';
 import Button from '../components/ui/Button.jsx';
 import CouponsCta from '../components/coupons/CouponsCta.jsx';
 import Countdown from '../components/ui/Countdown.jsx';
+import { countdownProps } from '../components/ui/countdownEvent.js';
 import AlpanaMedallion from '../components/ui/AlpanaMedallion.jsx';
 import VenueCard from '../components/ui/VenueCard.jsx';
 import FeatureCard, { FeatureGrid } from '../components/ui/FeatureCard.jsx';
@@ -51,8 +52,6 @@ function EventJsonLd({ event }) {
 export default function DurgaPuja() {
   const { t } = useLocale();
   const { data: event, loading, error, retry } = useApi(`event:${SLUG}`, () => contentApi.event(SLUG));
-  const site = useApi('site', contentApi.site);
-  const featured = site.data?.featuredEvent;
   useScrollToHash(Boolean(event));
 
   return (
@@ -80,9 +79,9 @@ export default function DurgaPuja() {
               {event.venue.area && <span className={styles.venueArea}>{t(event.venue.area)}</span>}
             </p>
           )}
-          {featured && (
+          {event?.countdownTo && event.status !== 'past' && (
             <div className={styles.countdown}>
-              <Countdown target={featured.countdownTo} label={featured.label} />
+              <Countdown {...countdownProps(event, { onEventPage: true })} />
             </div>
           )}
           <CouponsCta siteEventSlug={SLUG} className={styles.couponsCta} />

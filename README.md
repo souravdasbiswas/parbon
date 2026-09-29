@@ -167,7 +167,7 @@ All dynamic content is in **`server/data/`**. Edit the JSON (for example with Ho
 
 | File             | Controls                                                                             |
 | ---------------- | ------------------------------------------------------------------------------------ |
-| `site.json`      | Organisation name, contact email/phone/WhatsApp/address, map embed, social links, countdown target |
+| `site.json`      | Organisation name, contact email/phone/WhatsApp/address, map embed, social links, featured event (`featuredEvent.slug`, used for the Contact page venue) |
 | `events.json`    | **Starting events only.** Events are managed in **Admin → Events** (see below). This file seeds them the first time the site starts |
 | `gallery.json`   | Albums and photos                                                                    |
 | `committee.json` | Committee members (the section shows "introduced soon" until you add people)        |
@@ -210,6 +210,16 @@ Once an event has been published, its web address (`/events/<slug>`) is locked, 
 - **Past:** the event has ended. These are listed most recent first.
 
 The home page shows the next 3 upcoming events.
+
+**Countdown timer:** tick **Show a countdown timer for this event** in the event's **Countdown timer** section. It starts from the event's own date and time, and you can change it (for Durga Puja it counts down to Bodhon, 16 Oct 7:00 AM). Optionally add:
+- **Text above the timer**, e.g. "Maa arrives in · মা আসছেন". If you leave it empty, the home page shows the event name and the event page shows "Starts in".
+- **Message once it starts**, e.g. "Subho Sharadiya!". If you leave it empty, the site shows "It's today — see you there!".
+
+The timer appears:
+- on the event's own page (and on `/durga-puja` for the Puja);
+- in the banner at the top of the home page. If several published events have a timer, the home page shows the one under way (its message), otherwise the next timer to finish.
+
+It disappears once the event is over, and the home page banner is hidden when no event has a timer. The admin list shows a **Countdown** badge on events that have one. Public pages can take up to 30 seconds to show a change.
 
 **Set up registration & coupons** (on a saved event) opens a new coupon event pre-filled with the event's name, date and venue, and linked to it, so its page shows a **Register** button.
 
@@ -386,7 +396,7 @@ These values are placeholders on purpose. Fill them in rather than publish inven
 - [ ] `site.json → contact` — email, phone, WhatsApp, address, `mapEmbedUrl` (Google Maps "Embed a map" URL)
 - [ ] `site.json → social` — Facebook / Instagram / YouTube URLs
 - [x] `events.json → durga-puja-2026.venue` — Nirusa Banquets & Caterers (on the terrace), Serilingampally, Hyderabad. The venue object has `name`, `spot`, `area`, `address`, `mapUrl` (Google Maps share link), `mapEmbedUrl` (`https://maps.google.com/maps?q=LAT,LNG&z=17&output=embed`) and `geo`. It's shown in the Durga Puja hero, the "Plan your visit" venue card with map, event cards, the event page, the home page Puja band, the Contact page and the Event structured data.
-- [x] `events.json → schedule` — Puja timings from the committee's nirghonto: Shashthi 16 Oct (Bodhon 7:00 AM), Saptami 17, Ashtami Bihita 18, Maha Ashtami & Sandhi Puja 19 (7:26–8:14 AM), Navami 20, Dashami 21 Oct 2026. `countdownTo` in `site.json` targets Bodhon. Update both if timings change.
+- [x] `events.json → schedule` — Puja timings from the committee's nirghonto: Shashthi 16 Oct (Bodhon 7:00 AM), Saptami 17, Ashtami Bihita 18, Maha Ashtami & Sandhi Puja 19 (7:26–8:14 AM), Navami 20, Dashami 21 Oct 2026. The Durga Puja countdown targets Bodhon (**Admin → Events → Durga Puja 2026 → Countdown timer**). Update both if timings change.
 - [ ] `committee.json → members`
 - [ ] `support.json → donation.methods` (bank/UPI), and review sponsorship tier benefits
 - [ ] `SITE_URL` environment variable = your real domain (used by canonical links, sitemap, robots.txt)
@@ -402,7 +412,7 @@ All responses are JSON: `{ "data": … }` on success, `{ "error": { "code", "mes
 | ------ | --------------------- | ------------------------------------------------------------- |
 | GET    | `/api/health`         | Liveness check `{ status, uptime }`                            |
 | GET    | `/api/site`           | Organisation details, contact, social links, featured event   |
-| GET    | `/api/events`         | Published event summaries: upcoming soonest first, then date TBA, then past most recent first; `?status=upcoming\|planned\|past` |
+| GET    | `/api/events`         | Published event summaries: upcoming soonest first, then date TBA, then past most recent first; `?status=upcoming\|planned\|past`. Events with a countdown timer include `countdown` and `countdownTo` (ISO, India time) |
 | GET    | `/api/events/:slug`   | Full published event including schedule and highlights (404 if unknown or a draft) |
 | GET    | `/api/gallery`        | Albums and photos                                             |
 | GET    | `/api/committee`      | Committee members                                             |

@@ -128,8 +128,10 @@ export function sortEvents(list, now = Date.now()) {
 }
 
 const isLive = (e, now = Date.now()) => e.state === 'published' && Date.parse(e.publishedAt || 0) <= now;
-/** Adds the computed status the public pages use (upcoming / planned / past). */
-const withStatus = (e, now) => ({ ...e, status: eventTiming(e, now) });
+/** The countdown's target moment as an ISO string in IST, or null when the event has no countdown. */
+export const countdownTarget = (e) => (e.countdown?.date ? `${e.countdown.date}T${e.countdown.time || '00:00'}:00${IST}` : null);
+/** Adds the computed fields the public pages use: status (upcoming / planned / past) and countdownTo. */
+const withStatus = (e, now) => ({ ...e, status: eventTiming(e, now), countdownTo: countdownTarget(e) });
 
 export function slugify(text) {
   return (
@@ -225,6 +227,7 @@ export const eventService = {
         updatedAt: new Date().toISOString(),
       };
       delete record.status;
+      delete record.countdownTo;
       await store().update(record);
       return withStatus(record, Date.now());
     });

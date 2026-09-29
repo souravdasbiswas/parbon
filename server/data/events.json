@@ -18,6 +18,12 @@
       },
       "startDate": "2026-10-16",
       "endDate": "2026-10-21",
+      "countdown": {
+        "date": "2026-10-16",
+        "time": "07:00",
+        "label": { "en": "Maa arrives in", "bn": "মা আসছেন" },
+        "doneMessage": { "en": "Subho Sharadiya!", "bn": "শুভ শারদীয়া" }
+      },
       "venue": {
         "name": {
           "en": "Nirusa Banquets & Caterers",

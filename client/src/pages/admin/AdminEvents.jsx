@@ -87,6 +87,7 @@ export default function AdminEvents() {
                         <span className={`${styles.badge} ${visibility === 'Published' ? '' : styles.badgeDraft}`}>{visibility}</span>
                         <span className={`${styles.badge} ${styles.badgeDraft}`}>{TIMING[e.status]}</span>
                         {e.featured && <span className={`${styles.badge} ${styles.badgeTicker}`}>Featured</span>}
+                        {e.countdown && <span className={`${styles.badge} ${styles.badgeTicker}`}>Countdown</span>}
                         <span>{when}</span>
                       </p>
                     </div>

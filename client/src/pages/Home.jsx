@@ -9,6 +9,7 @@ import LotusDivider from '../components/motifs/LotusDivider.jsx';
 import PaarBorder from '../components/motifs/PaarBorder.jsx';
 import Button from '../components/ui/Button.jsx';
 import Countdown from '../components/ui/Countdown.jsx';
+import { countdownProps, pickCountdownEvent } from '../components/ui/countdownEvent.js';
 import EventCard from '../components/ui/EventCard.jsx';
 import FeatureCard, { FeatureGrid } from '../components/ui/FeatureCard.jsx';
 import Logo from '../components/ui/Logo.jsx';
@@ -59,15 +60,16 @@ function buildTickerItems({ puja, news, t }) {
 export default function Home() {
   const { t } = useLocale();
   const { open: openPronami } = usePronami();
-  const site = useApi('site', contentApi.site);
   const events = useApi('events', () => contentApi.events());
   const puja = useApi('event:durga-puja-2026', () => contentApi.event('durga-puja-2026'));
   const news = useApi('announcements:home', () => announcementsApi.list(2));
   const tickerNews = useApi('announcements:ticker', announcementsApi.ticker);
 
-  const featured = site.data?.featuredEvent;
   // Already in date order from the server: soonest upcoming first, then "date to be announced".
   const upcoming = (events.data || []).filter((e) => e.status !== 'past').slice(0, 3);
+  // The countdown shown in the hero is switched on per event in Admin → Events.
+  const timerEvent = pickCountdownEvent(events.data);
+  const timerSettled = Boolean(events.data || events.error);
   const pujaDays = (puja.data?.schedule || []).filter((d) => d.main);
   const tickerItems = buildTickerItems({ puja: puja.data, news: tickerNews.data, t });
   const latestCards = news.data || [];
@@ -128,14 +130,23 @@ export default function Home() {
           </div>
         </div>
 
-        <div className={`container ${styles.countdownWrap}`}>
-          {featured && (
+        <div className={`container ${styles.countdownWrap} ${timerSettled && !timerEvent ? styles.countdownNone : ''}`}>
+          {timerEvent && (
             <div className={styles.countdownCard}>
-              <Countdown target={featured.countdownTo} label={featured.label} />
+              <Countdown {...countdownProps(timerEvent)} />
               <div className={styles.countdownActions}>
-                <Link to={`/events/${featured.slug}`} className={styles.countdownLink}>
-                  <span lang="bn">পুজোর নির্ঘণ্ট</span>
-                  <span>View Puja schedule →</span>
+                <Link to={`/events/${timerEvent.slug}`} className={styles.countdownLink}>
+                  {timerEvent.hasSchedule ? (
+                    <>
+                      <span lang="bn">নির্ঘণ্ট দেখুন</span>
+                      <span>View the schedule →</span>
+                    </>
+                  ) : (
+                    <>
+                      <span lang="bn">বিস্তারিত</span>
+                      <span>Event details →</span>
+                    </>
+                  )}
                 </Link>
                 <button type="button" className={styles.pronamiPill} onClick={openPronami}>
                   <Icon name="lamp" size={18} />

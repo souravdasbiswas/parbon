@@ -1,6 +1,8 @@
 import { useParams } from 'react-router';
 import CouponsCta from '../components/coupons/CouponsCta.jsx';
 import Button from '../components/ui/Button.jsx';
+import Countdown from '../components/ui/Countdown.jsx';
+import { countdownProps } from '../components/ui/countdownEvent.js';
 import FeatureCard, { FeatureGrid } from '../components/ui/FeatureCard.jsx';
 import PageHero from '../components/ui/PageHero.jsx';
 import Schedule from '../components/ui/Schedule.jsx';
@@ -76,6 +78,11 @@ export default function EventDetail() {
             </div>
           )}
         </dl>
+        {event.countdownTo && event.status !== 'past' && (
+          <div className={styles.countdown}>
+            <Countdown {...countdownProps(event, { onEventPage: true })} />
+          </div>
+        )}
         <CouponsCta siteEventSlug={event.slug} className={styles.couponsCta} />
       </PageHero>
 

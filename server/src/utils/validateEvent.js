@@ -83,6 +83,7 @@ export function validateEvent(body) {
     highlights: [],
     schedule: [],
     scheduleNote: optional(localized(input.scheduleNote, 300)),
+    countdown: null,
   };
 
   if (value.title.en.length < 3) errors['title.en'] = 'Please add the event name (at least 3 characters).';
@@ -174,6 +175,20 @@ export function validateEvent(body) {
     });
     value.schedule.push(day);
   });
+
+  // Countdown timer (home page + event page). The admin form sends `enabled`; stored events omit it.
+  const cd = input.countdown && typeof input.countdown === 'object' ? input.countdown : null;
+  if (cd && (cd.enabled === true || (cd.enabled === undefined && cd.date))) {
+    const countdown = {
+      date: clean(cd.date, 10),
+      time: clean(cd.time, 5) || '00:00',
+      label: optional(localized(cd.label, 80)),
+      doneMessage: optional(localized(cd.doneMessage, 120)),
+    };
+    if (!validDate(countdown.date)) errors['countdown.date'] = 'Choose the date to count down to.';
+    if (!TIME_RE.test(countdown.time)) errors['countdown.time'] = 'Use a time like 07:00.';
+    value.countdown = countdown;
+  }
 
   if (!value.publishedAt) delete value.publishedAt;
   return Object.keys(errors).length ? { errors } : { value };

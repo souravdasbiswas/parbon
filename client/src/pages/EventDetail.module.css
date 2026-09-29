@@ -92,6 +92,10 @@
   margin-top: var(--space-4);
 }
 
+.countdown {
+  margin-top: var(--space-5);
+}
+
 .couponsCta {
   display: flex;
   flex-wrap: wrap;

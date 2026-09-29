@@ -177,3 +177,15 @@
 .coupons a {
   font-weight: 700;
 }
+
+.timerLabel {
+  margin-top: var(--space-6);
+}
+
+.timer {
+  padding: var(--space-5);
+  border: 1px solid var(--color-line);
+  border-radius: var(--radius-lg);
+  background: rgb(255 253 249 / 0.85);
+  box-shadow: var(--shadow-md);
+}

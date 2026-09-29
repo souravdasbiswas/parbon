@@ -193,3 +193,35 @@ describe('events API', () => {
     assert.doesNotMatch(xml, /meet-and-greet-2026/);
   });
 });
+
+describe('event countdown timer', () => {
+  it('validates the countdown and stores it without the form-only switch', () => {
+    const on = validateEvent(basic({ countdown: { enabled: true, date: day(10), time: '', label: { en: 'Picnic in', bn: '' }, doneMessage: { en: '', bn: '' } } }));
+    assert.deepEqual(on.value.countdown, { date: day(10), time: '00:00', label: { en: 'Picnic in', bn: '' }, doneMessage: null });
+    assert.equal(validateEvent(basic({ countdown: { enabled: false, date: day(10) } })).value.countdown, null);
+    assert.equal(validateEvent(basic()).value.countdown, null);
+    // A stored event (as sent back by the admin list's Publish button) keeps its countdown.
+    assert.equal(validateEvent(basic({ countdown: on.value.countdown })).value.countdown.date, day(10));
+    const bad = validateEvent(basic({ countdown: { enabled: true, date: '', time: '25:00' } })).errors;
+    assert.ok(bad['countdown.date'] && bad['countdown.time']);
+  });
+
+  it('gives Durga Puja its Bodhon countdown and lets the admin switch timers on and off', async () => {
+    const puja = (await call('/events')).data.find((e) => e.slug === 'durga-puja-2026');
+    assert.equal(puja.countdownTo, '2026-10-16T07:00:00+05:30');
+    assert.equal(puja.countdown.label.en, 'Maa arrives in');
+
+    const created = await admin('/events', {
+      method: 'POST',
+      body: basic({ title: { en: 'Timer Test' }, state: 'published', countdown: { enabled: true, date: day(10), time: '18:30' } }),
+    });
+    assert.equal(created.status, 201);
+    assert.equal((await call('/events/timer-test')).data.countdownTo, `${day(10)}T18:30:00+05:30`);
+
+    // Round trip through the admin (the payload includes the computed countdownTo, which isn't stored).
+    const off = await admin(`/events/${created.data.id}`, { method: 'PUT', body: { ...created.data, countdown: { ...created.data.countdown, enabled: false } } });
+    assert.equal(off.data.countdown, null);
+    assert.equal((await call('/events/timer-test')).data.countdownTo, null);
+    assert.equal((await admin(`/events/${created.data.id}`, { method: 'DELETE' })).status, 204);
+  });
+});
