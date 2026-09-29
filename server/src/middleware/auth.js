@@ -1,5 +1,6 @@
 import { config } from '../config.js';
 import { HttpError } from './errorHandler.js';
+import { logSignIn } from '../services/authLog.js';
 import { SCANNER_COOKIE, SESSION_COOKIE, verifyGateToken, verifySessionToken } from '../services/authService.js';
 import { gateUserService } from '../services/gateUserService.js';
 
@@ -62,6 +63,9 @@ export function sameOrigin(req, _res, next) {
   // Behind a reverse proxy the Host header may differ, so SITE_URL is accepted as well.
   const allowed = new Set([`${req.protocol}://${req.get('host')}`, new URL(config.siteUrl).origin, ...config.corsOrigins]);
   if (origin && !allowed.has(origin)) {
+    if (/\/login$/.test(req.path)) {
+      logSignIn({ who: req.path.startsWith('/scan') ? 'gate' : 'admin', ok: false, reason: 'bad_origin', ip: req.ip, details: { origin, expected: [...allowed].join(',') }, throttle: true });
+    }
     return next(new HttpError(403, 'BAD_ORIGIN', 'Request origin not allowed.'));
   }
   next();

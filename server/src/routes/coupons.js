@@ -4,6 +4,7 @@ import { config } from '../config.js';
 import { canScanEvent, requireAdmin, requireScanner } from '../middleware/auth.js';
 import { HttpError } from '../middleware/errorHandler.js';
 import { SCANNER_COOKIE, createGateToken } from '../services/authService.js';
+import { logSignIn } from '../services/authLog.js';
 import { allowPublicCouponEmail, sendCouponEmail } from '../services/couponMail.js';
 import { couponService, couponsEnabled } from '../services/couponService.js';
 import { gateUserService, validateGateUser } from '../services/gateUserService.js';
@@ -286,12 +287,27 @@ scanRouter.post(
     standardHeaders: 'draft-8',
     legacyHeaders: false,
     skipSuccessfulRequests: true,
-    handler: (_req, res) => res.status(429).json({ error: { code: 'RATE_LIMITED', message: 'Too many sign-in attempts from this phone. Please wait 15 minutes.' } }),
+    handler: (req, res) => {
+      logSignIn({ who: 'gate', ok: false, reason: 'rate_limited', ip: req.ip, details: { limit: '20_per_15min' }, throttle: true });
+      res.status(429).json({ error: { code: 'RATE_LIMITED', message: 'Too many sign-in attempts from this phone. Please wait 15 minutes.' } });
+    },
   }),
   express.json({ limit: '2kb' }),
   async (req, res) => {
-    if (!couponsEnabled()) throw new HttpError(503, 'COUPONS_DISABLED', 'The scanner needs the database, which is not configured on this server.');
-    const user = await gateUserService.authenticate(req.body?.username, String(req.body?.pin || '').trim());
+    const typed = String(req.body?.username ?? '').trim();
+    if (!couponsEnabled()) {
+      logSignIn({ who: 'gate', ok: false, reason: 'database_not_configured', username: typed, ip: req.ip, details: { missing: 'DB_NAME_or_DB_USER' } });
+      throw new HttpError(503, 'COUPONS_DISABLED', 'The scanner needs the database, which is not configured on this server.');
+    }
+    let user;
+    try {
+      user = await gateUserService.authenticate(req.body?.username, String(req.body?.pin || '').trim());
+    } catch (error) {
+      const reason = error.logReason || (error instanceof HttpError ? error.code.toLowerCase() : `error_${error.code || error.name}`);
+      logSignIn({ who: 'gate', ok: false, reason, username: typed, knownUser: Boolean(error.knownUser), ip: req.ip });
+      throw error;
+    }
+    logSignIn({ who: 'gate', ok: true, username: user.username, knownUser: true, ip: req.ip });
     res.cookie(SCANNER_COOKIE, createGateToken(user), { ...scannerCookie(), maxAge: config.scanner.sessionHours * 3600 * 1000 });
     res.json({ data: { role: 'gate', username: user.username, name: user.name } });
   },

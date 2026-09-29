@@ -1,19 +1,34 @@
-import { existsSync } from 'node:fs';
+import { existsSync, readFileSync } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { parseEnv } from 'node:util';
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 export const SERVER_ROOT = path.resolve(here, '..');
 export const PROJECT_ROOT = path.resolve(SERVER_ROOT, '..');
 
-// Load a root-level .env if present (Node's built-in loader — no dotenv dependency).
-// Variables already set by the host (e.g. Hostinger hPanel) always take precedence.
-const envFile = path.join(PROJECT_ROOT, '.env');
-if (existsSync(envFile) && typeof process.loadEnvFile === 'function') {
-  const preset = { ...process.env };
-  process.loadEnvFile(envFile);
-  Object.assign(process.env, preset);
+/**
+ * Loads `.env` files if present: the app root first, then the working folder when it differs
+ * (some hosts write the file there). Variables already set by the host (e.g. Hostinger hPanel)
+ * always take precedence, and an earlier file wins over a later one. Returns what happened to
+ * each file — names and counts only — for the start-up diagnostics.
+ */
+export function loadEnvFiles(files = [path.join(PROJECT_ROOT, '.env'), path.resolve(process.cwd(), '.env')], target = process.env) {
+  return [...new Set(files)].map((file) => {
+    if (!existsSync(file)) return { file, status: 'absent' };
+    try {
+      const parsed = parseEnv(readFileSync(file, 'utf8'));
+      const keys = Object.keys(parsed);
+      const applied = keys.filter((k) => target[k] === undefined);
+      for (const k of applied) target[k] = parsed[k];
+      return { file, status: 'loaded', keys: keys.length, applied: applied.length };
+    } catch (error) {
+      return { file, status: 'unreadable', error: error.code || error.name };
+    }
+  });
 }
+
+export const envFiles = loadEnvFiles();
 
 const env = process.env;
 const bool = (value, fallback = false) =>

@@ -117,8 +117,25 @@ describe('gate volunteers (MySQL)', { skip: !enabled && 'set TEST_DB_HOST to run
 
   let rahulCookie;
   it('signs a volunteer in with username + PIN; the session opens only the scanner', async () => {
-    assert.equal((await signIn('rahul', '0000')).status, 401);
-    const ok = await signIn('RAHUL', '4821');
+    const logged = [];
+    const { log, warn } = console;
+    console.log = (...a) => logged.push(a.join(' '));
+    console.warn = (...a) => logged.push(a.join(' '));
+    let wrong;
+    let ok;
+    try {
+      wrong = await signIn('rahul', '0000');
+      ok = await signIn('RAHUL', '4821');
+    } finally {
+      console.log = log;
+      console.warn = warn;
+    }
+    assert.equal(wrong.status, 401);
+    // One line per attempt in the host's logs; the PIN never appears.
+    const lines = logged.filter((l) => l.startsWith('[parbon][auth] gate'));
+    assert.match(lines[0], /gate sign-in FAILED reason=wrong_pin user=rahul ip=/);
+    assert.match(lines[1], /gate sign-in OK user=rahul ip=/);
+    assert.ok(!lines.join('\n').includes('4821'));
     assert.equal(ok.status, 200, ok.text);
     rahulCookie = ok.cookie;
     const me = await scan(rahulCookie, '/me');
@@ -173,12 +190,22 @@ describe('gate volunteers (MySQL)', { skip: !enabled && 'set TEST_DB_HOST to run
     resetGateLockouts();
     const pin = (await admin(`/gate-users/${rahul.id}/reset-pin`, { method: 'POST', body: { pin: '8642' } })).data.pin;
     // The database collation treats these as "rahul", but sign-in must not.
-    for (const variant of ['rähul', 'ｒａｈｕｌ', 'rahul\u200b', 'ra\u0301hul']) {
-      assert.equal((await signIn(variant, pin)).status, 401, `variant ${JSON.stringify(variant)} must not sign in`);
+    const logged = [];
+    const warn = console.warn;
+    console.warn = (...a) => logged.push(a.join(' '));
+    try {
+      for (const variant of ['rähul', 'ｒａｈｕｌ', 'rahul\u200b', 'ra\u0301hul']) {
+        assert.equal((await signIn(variant, pin)).status, 401, `variant ${JSON.stringify(variant)} must not sign in`);
+      }
+      // Wrong PINs through any spelling can't be spread across counters: 5 on the real name lock it.
+      for (let i = 0; i < 5; i += 1) await signIn('rahul', '0000');
+      assert.equal((await signIn('rahul', pin)).status, 429);
+    } finally {
+      console.warn = warn;
     }
-    // Wrong PINs through any spelling can't be spread across counters: 5 on the real name lock it.
-    for (let i = 0; i < 5; i += 1) await signIn('rahul', '0000');
-    assert.equal((await signIn('rahul', pin)).status, 429);
+    const lines = logged.filter((l) => l.startsWith('[parbon][auth] gate'));
+    assert.ok(lines.slice(0, 4).every((l) => /reason=unknown_username user=\S+\*\*\*\(\d+\)/.test(l)), lines.join('\n'));
+    assert.match(lines.at(-1), /reason=locked user=rahul/);
     assert.equal((await signIn('Rahul', pin)).status, 429, 'upper-case is the same account and shares the lock');
     const fresh = (await admin(`/gate-users/${rahul.id}/reset-pin`, { method: 'POST', body: { pin: '4821' } })).data.pin;
     const ok = await signIn('rahul', fresh);

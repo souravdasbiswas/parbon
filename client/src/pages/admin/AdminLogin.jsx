@@ -31,7 +31,12 @@ export default function AdminLogin() {
       await adminApi.login(form.username, form.password);
       await session.refresh();
     } catch (err) {
-      setError(err.message || 'Could not sign in.');
+      // 503 = sign-in isn't set up on the server; the host's logs ([parbon][config]) say which setting is missing.
+      setError(
+        err.status === 503 || err.code === 'ADMIN_DISABLED'
+          ? 'Sign-in isn’t available on the server right now. The website logs show why.'
+          : err.message || 'Could not sign in.',
+      );
       setForm((f) => ({ ...f, password: '' }));
     } finally {
       setBusy(false);

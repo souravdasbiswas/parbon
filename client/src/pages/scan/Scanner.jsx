@@ -140,7 +140,7 @@ function Login({ onDone, note }) {
       onDone();
     } catch (err) {
       setPin('');
-      setState({ busy: false, message: err.message });
+      setState({ busy: false, message: err.status === 503 ? 'The scanner isn’t available on the server right now. Please tell the admin (the website logs show why).' : err.message });
     }
   };
   return (

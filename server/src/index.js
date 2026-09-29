@@ -1,6 +1,10 @@
 import { createApp } from './app.js';
 import { config } from './config.js';
 import { closeDatabase, databaseReady } from './db/index.js';
+import { configReportLines } from './utils/configReport.js';
+
+// What this process received from the host (setting names and checks only, never values).
+for (const line of configReportLines()) console.log(line);
 
 const app = createApp();
 
@@ -11,7 +15,7 @@ const server = app.listen(config.port, () => {
 if (config.db.enabled) {
   // Create tables and import any old files now, rather than on the first visitor's request.
   databaseReady().then(
-    () => console.log(`[parbon] storage: MySQL database "${config.db.name}" on ${config.db.host}:${config.db.port}`),
+    () => console.log(`[parbon][config] database connection OK: MySQL database "${config.db.name}" on ${config.db.host}:${config.db.port}`),
     () => {}, // already logged; retried on the next request
   );
 } else {
