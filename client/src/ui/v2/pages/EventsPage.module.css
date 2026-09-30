@@ -78,7 +78,7 @@
   min-height: 15.5rem;
 }
 
-.cover img {
+.cover > img:not(.fallbackArtImage):not(.fallbackAccent) {
   position: relative;
   z-index: 1;
   display: block;
@@ -387,4 +387,54 @@
   .grid {
     gap: var(--space-5);
   }
+}
+
+/* Featured card (wide screens): picture on the left, text with its buttons on the right. */
+@media (min-width: 760px) {
+  .heroCard {
+    grid-template-columns: minmax(0, 1.04fr) minmax(0, 0.96fr);
+    grid-template-rows: 1fr auto;
+  }
+
+  .heroCard .heroLink {
+    display: contents;
+  }
+
+  .heroCard .heroCover {
+    grid-column: 1;
+    grid-row: 1 / span 2;
+    min-height: 100%;
+  }
+
+  .heroCard .heroBody {
+    grid-column: 2;
+    grid-row: 1;
+  }
+
+  .heroCard .heroActions {
+    grid-column: 2;
+    grid-row: 2;
+    align-self: end;
+    padding: 0 var(--space-5) var(--space-5);
+  }
+
+  .heroCard:has(.heroLink:focus-visible) {
+    outline: 3px solid var(--color-focus);
+    outline-offset: 3px;
+  }
+}
+/* Featured cover: a large, centred illustration instead of a small corner one. */
+.heroCover .fallbackArtImage {
+  right: 50%;
+  bottom: 2.2rem;
+  width: min(52%, 15rem);
+  transform: translateX(50%);
+}
+
+.heroCover .fallbackPattern {
+  right: 50%;
+  top: 50%;
+  width: min(84%, 22rem);
+  transform: translate(50%, -50%);
+  color: rgb(255 255 255 / 0.12);
 }
