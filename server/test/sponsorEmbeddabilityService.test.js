@@ -53,7 +53,7 @@ describe('sponsorship embeddability cache', () => {
     assert.equal(calls, 1);
   });
 
-  it('caches network failures for a shorter window and reports not embeddable', async () => {
+  it('caches network failures for a shorter window and reports unknown', async () => {
     let calls = 0;
     let tick = 1000;
     const service = createSponsorEmbeddabilityService({
@@ -65,11 +65,23 @@ describe('sponsorship embeddability cache', () => {
       failureTtlMs: 50,
     });
 
-    assert.equal(await service.check('https://script.google.com/fail'), false);
-    assert.equal(await service.check('https://script.google.com/fail'), false);
+    assert.equal(await service.check('https://script.google.com/fail'), null);
+    assert.equal(await service.check('https://script.google.com/fail'), null);
     assert.equal(calls, 1);
     tick += 51;
-    assert.equal(await service.check('https://script.google.com/fail'), false);
+    assert.equal(await service.check('https://script.google.com/fail'), null);
     assert.equal(calls, 2);
+  });
+
+  it('reports a timed-out or non-OK probe as unknown, not blocked', async () => {
+    const slow = createSponsorEmbeddabilityService({
+      fetchImpl: (_url, { signal }) =>
+        new Promise((_resolve, reject) => signal.addEventListener('abort', () => reject(new Error('aborted')))),
+      timeoutMs: 10,
+    });
+    assert.equal(await slow.check('https://script.google.com/slow'), null);
+
+    const broken = createSponsorEmbeddabilityService({ fetchImpl: async () => new Response('', { status: 500 }) });
+    assert.equal(await broken.check('https://script.google.com/broken'), null);
   });
 });
