@@ -2,6 +2,8 @@ import { Router } from 'express';
 import { config } from '../config.js';
 import { announcementService } from '../services/announcementService.js';
 import { eventService } from '../services/eventService.js';
+import { resolveEffectiveUiVersion } from '../services/uiVersionService.js';
+import { V2_ONLY_SITEMAP_PAGES } from '../uiVersions.js';
 
 export const seoRouter = Router();
 
@@ -23,11 +25,13 @@ seoRouter.get('/robots.txt', (_req, res) => {
   res.send(`User-agent: *\nAllow: /\nDisallow: /api/\nDisallow: /admin\nDisallow: /scan\nDisallow: /c/\n\nSitemap: ${config.siteUrl}/sitemap.xml\n`);
 });
 
-seoRouter.get('/sitemap.xml', async (_req, res) => {
+seoRouter.get('/sitemap.xml', async (req, res) => {
+  const ui = resolveEffectiveUiVersion(req, res);
   const events = await eventService.listPublished();
   const announcements = await announcementService.listPublished();
   const urls = [
     ...STATIC_PAGES,
+    ...(ui.version === 'v2' ? V2_ONLY_SITEMAP_PAGES : []),
     ...events.map((e) => ({ path: `/events/${e.slug}`, priority: '0.7', changefreq: 'weekly' })),
     ...announcements.map((a) => ({ path: `/announcements/${a.slug}`, priority: '0.6', changefreq: 'monthly' })),
   ];

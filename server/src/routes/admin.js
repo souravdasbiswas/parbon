@@ -22,8 +22,10 @@ const cookieOptions = () => ({
   httpOnly: true,
   sameSite: 'strict',
   secure: config.isProduction,
-  path: '/api/admin',
+  path: '/',
 });
+
+const legacyCookieOptions = () => ({ ...cookieOptions(), path: '/api/admin' });
 
 adminRouter.use((_req, res, next) => {
   res.setHeader('Cache-Control', 'no-store');
@@ -72,6 +74,7 @@ adminRouter.post('/login', loginLimiter, express.json({ limit: '4kb' }), async (
 
 adminRouter.post('/logout', (_req, res) => {
   res.clearCookie(SESSION_COOKIE, cookieOptions());
+  res.clearCookie(SESSION_COOKIE, legacyCookieOptions());
   res.json({ data: { ok: true } });
 });
 

@@ -11,14 +11,17 @@ import { seoRouter } from './routes/seo.js';
 import { announcementService } from './services/announcementService.js';
 import { couponService, couponsEnabled } from './services/couponService.js';
 import { eventService } from './services/eventService.js';
-import { renderWithMeta, summarise } from './services/htmlMeta.js';
+import { renderShell, renderWithMeta, summarise } from './services/htmlMeta.js';
+import { resolveEffectiveUiVersion } from './services/uiVersionService.js';
 import { findStoredImage } from './services/uploadService.js';
+import { isV2OnlyClientRoute, v1RedirectForV2OnlyRoute } from './uiVersions.js';
 
 const STATIC_ROUTES = new Set(['/', '/about', '/durga-puja', '/events', '/gallery', '/get-involved', '/contact', '/announcements']);
 
-async function isKnownClientRoute(pathname) {
+export async function isKnownClientRoute(pathname, uiVersion = config.uiVersion) {
   const clean = pathname.replace(/\/+$/, '') || '/';
   if (STATIC_ROUTES.has(clean)) return true;
+  if (uiVersion === 'v2' && isV2OnlyClientRoute(clean)) return true;
   if (clean === '/admin' || clean.startsWith('/admin/')) return true;
   if (clean === '/scan' || clean === '/register') return true;
   // Coupon links and registration pages render their own "not found / ended" states.
@@ -135,6 +138,15 @@ export function createApp() {
       '/assets',
       express.static(path.join(dist, 'assets'), { immutable: true, maxAge: '1y', index: false, fallthrough: false }),
     );
+    app.get('/index.html', async (req, res, next) => {
+      try {
+        const ui = resolveEffectiveUiVersion(req, res);
+        res.status(200).type('html').setHeader('Cache-Control', 'no-cache');
+        res.send(await renderShell(indexHtml, ui));
+      } catch (err) {
+        next(err);
+      }
+    });
     app.use(
       express.static(dist, {
         index: false,
@@ -150,26 +162,34 @@ export function createApp() {
     app.get('/{*splat}', async (req, res, next) => {
       try {
         if (!req.accepts('html')) return next();
-        const known = await isKnownClientRoute(req.path);
+        const ui = resolveEffectiveUiVersion(req, res);
+        const redirect = ui.version === 'v1' && v1RedirectForV2OnlyRoute(req.path);
+        if (redirect) return res.redirect(302, redirect);
+
+        const known = await isKnownClientRoute(req.path, ui.version);
         if (/^\/(admin|scan|c\/)/.test(req.path)) res.setHeader('X-Robots-Tag', 'noindex, nofollow');
         res.status(known ? 200 : 404).setHeader('Cache-Control', 'no-cache');
 
         const preview = (await couponPreview(req.path)) || (await eventPreview(req.path));
-        if (preview) return res.type('html').send(await renderWithMeta(indexHtml, preview));
+        if (preview) return res.type('html').send(await renderWithMeta(indexHtml, preview, ui));
 
         // Shared announcement links get a rich preview (poster, title, text) in WhatsApp etc.
         const ann = req.path.match(/^\/announcements\/([a-z0-9-]+)\/?$/);
         const item = ann && (await announcementService.getPublishedBySlug(ann[1]));
         if (item) {
-          const html = await renderWithMeta(indexHtml, {
-            title: item.title.en,
-            description: summarise(item.body?.en || item.body?.bn),
-            image: item.image?.src,
-            url: `/announcements/${item.slug}`,
-          });
+          const html = await renderWithMeta(
+            indexHtml,
+            {
+              title: item.title.en,
+              description: summarise(item.body?.en || item.body?.bn),
+              image: item.image?.src,
+              url: `/announcements/${item.slug}`,
+            },
+            ui,
+          );
           return res.type('html').send(html);
         }
-        res.sendFile(indexHtml);
+        res.type('html').send(await renderShell(indexHtml, ui));
       } catch (err) {
         next(err);
       }
