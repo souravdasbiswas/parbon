@@ -1,0 +1,129 @@
+.portal {
+  position: fixed;
+  inset: 0;
+  z-index: 90;
+}
+
+.backdrop {
+  position: absolute;
+  inset: 0;
+  border: 0;
+  background: rgb(35 26 21 / 0.54);
+  cursor: default;
+}
+
+.panel {
+  position: absolute;
+  inset-inline: 0;
+  bottom: 0;
+  max-height: min(92dvh, 900px);
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr) auto;
+  border: 1px solid var(--color-line);
+  border-radius: 24px 24px 0 0;
+  background: var(--color-paper);
+  box-shadow: var(--shadow-lg);
+  transform: translateY(var(--sheet-drag, 0));
+  animation: rise var(--duration) var(--ease-out);
+  overflow: hidden;
+}
+
+.panel:focus {
+  outline: none;
+}
+
+.grab {
+  width: 44px;
+  height: 5px;
+  margin: 10px auto 2px;
+  border-radius: var(--radius-pill);
+  background: var(--color-line);
+}
+
+.top {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-3);
+  padding: var(--space-3) var(--space-4);
+  border-bottom: 1px solid var(--color-line);
+}
+
+.header {
+  min-width: 0;
+  flex: 1;
+}
+
+.title {
+  font-size: 1.25rem;
+}
+
+.close {
+  display: inline-grid;
+  width: 42px;
+  height: 42px;
+  place-items: center;
+  border: 1px solid var(--color-line);
+  border-radius: 50%;
+  background: var(--color-ivory);
+  color: var(--color-brown);
+}
+
+.content {
+  min-height: 0;
+  overflow: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+.footer {
+  border-top: 1px solid var(--color-line);
+  background: var(--color-ivory);
+  padding: var(--space-3) var(--space-4) calc(var(--space-3) + env(safe-area-inset-bottom));
+}
+
+@keyframes rise {
+  from {
+    transform: translateY(100%);
+  }
+}
+
+@media (min-width: 960px) {
+  .portal {
+    display: grid;
+    place-items: center;
+    padding: var(--space-6);
+  }
+
+  .panel {
+    position: relative;
+    inset: auto;
+    width: min(960px, 100%);
+    height: min(760px, 90dvh);
+    border-radius: 28px;
+    animation-name: pop;
+  }
+
+  .grab {
+    display: none;
+  }
+
+  .top {
+    padding-inline: var(--space-5);
+  }
+
+  .footer {
+    padding: var(--space-3) var(--space-5);
+  }
+}
+
+@keyframes pop {
+  from {
+    opacity: 0;
+    transform: translateY(18px) scale(0.98);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .panel {
+    animation: none;
+  }
+}

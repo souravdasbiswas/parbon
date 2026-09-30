@@ -2,6 +2,8 @@
 import { lazy } from 'react';
 import Home from '../../pages/Home.jsx';
 import { RouteError } from '../../router.jsx';
+import GivePage from './GivePage.jsx';
+import SponsorRedirect from './SponsorRedirect.jsx';
 import V2ComingSoon from './V2ComingSoon.jsx';
 import V2Layout from './V2Layout.jsx';
 
@@ -33,10 +35,10 @@ export const publicRoutes = [
   { path: 'register', Component: Register },
   { path: 'register/:slug', Component: Register },
   { path: 'c/:token', Component: CouponView },
-  { path: 'give', element: <V2ComingSoon kind="give" /> },
+  { path: 'give', Component: GivePage },
   { path: 'passes', element: <V2ComingSoon kind="passes" /> },
-  { path: 'sponsor', element: <V2ComingSoon kind="sponsor" /> },
-  { path: 'sponsor/:slug', element: <V2ComingSoon kind="sponsor" /> },
+  { path: 'sponsor', Component: SponsorRedirect },
+  { path: 'sponsor/:slug', Component: SponsorRedirect },
   { path: '*', Component: NotFound },
 ];
 

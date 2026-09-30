@@ -10,6 +10,7 @@ import { apiRouter } from './routes/api.js';
 import { seoRouter } from './routes/seo.js';
 import { announcementService } from './services/announcementService.js';
 import { couponService, couponsEnabled } from './services/couponService.js';
+import { contentService } from './services/contentService.js';
 import { eventService } from './services/eventService.js';
 import { renderShell, renderWithMeta, summarise } from './services/htmlMeta.js';
 import { resolveEffectiveUiVersion } from './services/uiVersionService.js';
@@ -41,6 +42,24 @@ async function eventPreview(pathname) {
     const event = await eventService.getPublishedBySlug(m[1]);
     if (!event) return null;
     return { title: event.title.en, description: summarise(event.summary?.en || event.summary?.bn), image: event.image?.src, url: `/events/${event.slug}` };
+  } catch {
+    return null;
+  }
+}
+
+/** Sponsor deep links share the event underneath the sheet, so use event preview data. */
+async function sponsorPreview(pathname) {
+  const m = pathname.match(/^\/sponsor(?:\/([a-z0-9-]+))?\/?$/);
+  if (!m) return null;
+  try {
+    const event = m[1] ? await eventService.getPublishedBySlug(m[1]) : (await eventService.getFeatured(await contentService.getSite())).event;
+    if (!event) return null;
+    return {
+      title: `Sponsor ${event.title.en}`,
+      description: summarise(event.sponsorship?.appeal?.en || event.summary?.en || event.summary?.bn),
+      image: event.image?.src,
+      url: m[1] ? `/sponsor/${event.slug}` : '/sponsor',
+    };
   } catch {
     return null;
   }
@@ -101,7 +120,7 @@ export function createApp() {
           'img-src': ["'self'", 'data:', 'blob:'],
           'font-src': ["'self'", 'data:'],
           'connect-src': ["'self'"],
-          'frame-src': ['https://www.google.com', 'https://maps.google.com'],
+          'frame-src': ['https://www.google.com', 'https://maps.google.com', 'https://script.google.com'],
           'object-src': ["'none'"],
           'upgrade-insecure-requests': config.isProduction ? [] : null,
         },
@@ -176,7 +195,7 @@ export function createApp() {
         if (/^\/(admin|scan|c\/)/.test(req.path)) res.setHeader('X-Robots-Tag', 'noindex, nofollow');
         res.status(known ? 200 : 404).setHeader('Cache-Control', 'no-cache');
 
-        const preview = (await couponPreview(req.path)) || (await eventPreview(req.path));
+        const preview = (await couponPreview(req.path)) || (await sponsorPreview(req.path)) || (await eventPreview(req.path));
         if (preview) return res.type('html').send(await renderWithMeta(indexHtml, preview, ui));
 
         // Shared announcement links get a rich preview (poster, title, text) in WhatsApp etc.

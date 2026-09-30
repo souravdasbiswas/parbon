@@ -1,0 +1,107 @@
+.sheet {
+  background:
+    radial-gradient(circle at 92% 12%, rgb(176 138 69 / 0.18), transparent 30%),
+    var(--color-paper);
+}
+
+.sheetTitle {
+  display: grid;
+  gap: 0.1rem;
+}
+
+.sheetTitle [lang='bn'] {
+  font-family: var(--font-bengali-display);
+  font-weight: 400;
+  color: var(--color-vermilion);
+  font-size: 1.55rem;
+  line-height: 1.2;
+}
+
+.sheetTitle span:last-child {
+  font-family: var(--font-display);
+  font-style: italic;
+  font-weight: 500;
+  color: var(--color-charcoal);
+}
+
+.content {
+  display: grid;
+}
+
+.frameWrap {
+  position: relative;
+  min-height: 68dvh;
+  display: grid;
+}
+
+.secure {
+  position: absolute;
+  z-index: 2;
+  top: var(--space-3);
+  right: var(--space-3);
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.25rem 0.7rem;
+  border: 1px solid var(--color-gold-soft);
+  border-radius: var(--radius-pill);
+  background: rgb(255 253 249 / 0.92);
+  color: var(--color-leaf);
+  font-weight: 700;
+  font-size: var(--text-sm);
+}
+
+.skeleton {
+  position: absolute;
+  inset: var(--space-4);
+  z-index: 1;
+  display: grid;
+  place-items: center;
+  align-content: center;
+  gap: var(--space-3);
+  border: 1px dashed var(--color-gold-soft);
+  border-radius: var(--radius-lg);
+  background:
+    linear-gradient(110deg, transparent 25%, rgb(255 255 255 / 0.65) 40%, transparent 55%),
+    var(--color-ivory);
+  background-size: 220% 100%;
+  color: var(--color-terracotta);
+  font-weight: 700;
+  animation: shimmer 1.6s linear infinite;
+}
+
+.iframe {
+  width: 100%;
+  min-height: 68dvh;
+  height: 100%;
+  border: 0;
+  background: #fff;
+}
+
+.external {
+  display: inline-flex;
+  justify-content: center;
+  width: 100%;
+  color: var(--color-vermilion);
+  font-weight: 700;
+  text-decoration: none;
+}
+
+@keyframes shimmer {
+  to {
+    background-position: -220% 0;
+  }
+}
+
+@media (min-width: 960px) {
+  .frameWrap,
+  .iframe {
+    min-height: 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .skeleton {
+    animation: none;
+  }
+}
