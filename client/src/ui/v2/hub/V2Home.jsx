@@ -302,7 +302,7 @@ function LatestUpdates({ request }) {
       )}
 
       {items.length > 0 && (
-        <div className={styles.latestGrid}>
+        <div className={`${styles.latestGrid} ${items.length === 2 ? styles.latestTwo : '} ${items.length === 1 ? styles.latestOne : '}`}>
           {items.slice(0, 3).map((announcement, index, arr) => (
             <NewsCard
               key={announcement.id}
