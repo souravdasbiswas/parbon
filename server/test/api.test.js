@@ -68,7 +68,9 @@ describe('content API', () => {
 
   it('sends security headers', async () => {
     const res = await fetch(`${base}/api/health`);
-    assert.ok(res.headers.get('content-security-policy'));
+    const csp = res.headers.get('content-security-policy');
+    assert.ok(csp);
+    assert.match(csp, /frame-src[^;]*https:\/\/script\.google\.com/);
     assert.equal(res.headers.get('x-powered-by'), null);
   });
 });

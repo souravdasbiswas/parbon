@@ -1,0 +1,57 @@
+.title {
+  display: grid;
+  gap: 0.05em;
+  color: var(--color-ink);
+  line-height: var(--leading-tight);
+}
+
+.bn {
+  font-family: var(--font-bengali-display);
+  font-weight: 400;
+  color: var(--color-vermilion);
+  line-height: 1.25;
+}
+
+.en {
+  font-family: var(--font-display);
+  font-style: italic;
+  font-weight: 500;
+  color: var(--color-charcoal);
+}
+
+.sm .bn {
+  font-size: clamp(1.45rem, 1.18rem + 1vw, 2rem);
+}
+
+.sm .en {
+  font-size: clamp(1.1rem, 1rem + 0.45vw, 1.35rem);
+}
+
+.md .bn {
+  font-size: clamp(1.85rem, 1.45rem + 1.5vw, 2.75rem);
+}
+
+.md .en {
+  font-size: clamp(1.25rem, 1.05rem + 0.8vw, 1.8rem);
+}
+
+.lg .bn {
+  font-size: clamp(2.3rem, 1.7rem + 2.4vw, 4rem);
+}
+
+.lg .en {
+  font-size: clamp(1.45rem, 1.1rem + 1.3vw, 2.25rem);
+}
+
+.light .bn,
+.light .en {
+  color: #fff8ec;
+}
+
+.gold .bn {
+  color: var(--color-gold-pale);
+}
+
+.gold .en {
+  color: #fff8ec;
+}
