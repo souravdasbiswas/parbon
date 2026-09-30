@@ -22,7 +22,7 @@
 }
 
 .section {
-  padding: var(--space-6) 0;
+  padding: var(--space-5) 0 var(--space-6);
 }
 
 .walletHeader {
@@ -32,9 +32,9 @@
 
 .wallet {
   display: grid;
-  max-width: 36rem;
+  max-width: 42rem;
   margin: var(--space-5) auto 0;
-  padding-bottom: 5rem;
+  padding-bottom: 1rem;
 }
 
 .walletCard {
@@ -79,6 +79,22 @@
   padding: var(--space-4);
   color: inherit;
   text-decoration: none;
+}
+
+.passMeta {
+  min-width: 0;
+}
+
+.bnTitle,
+.passLink small,
+.passLink p,
+.emptyIntro h2,
+.emptyIntro p,
+.openBody strong,
+.openBody span,
+.openBody small,
+.privacy p {
+  overflow-wrap: anywhere;
 }
 
 .bnTitle {
@@ -130,6 +146,152 @@
   font-weight: 800;
 }
 
+.emptyWallet {
+  display: grid;
+  gap: var(--space-4);
+  margin-top: var(--space-5);
+  padding: clamp(1rem, 2.5vw, 1.4rem);
+  border: 1px solid var(--color-gold-soft);
+  border-radius: 1.5rem;
+  background: linear-gradient(180deg, #fffdf9, #f8f1e4);
+  box-shadow: var(--shadow-md);
+}
+
+.emptyIntro {
+  display: grid;
+  gap: var(--space-4);
+  align-items: center;
+}
+
+.emptyIntro h2 {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: clamp(1.6rem, 1.3rem + 1vw, 2rem);
+}
+
+.emptyIntro p {
+  margin: 0.5rem 0 0;
+  color: var(--color-muted);
+}
+
+.ticketScene {
+  position: relative;
+  min-height: 10rem;
+}
+
+.ticketCard {
+  position: relative;
+  min-height: 100%;
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: var(--space-3);
+  align-items: center;
+  padding: var(--space-4);
+  overflow: hidden;
+  border: 1px solid var(--color-line);
+  border-radius: 1.3rem;
+  background: linear-gradient(135deg, rgb(127 22 17 / 0.96), rgb(74 51 40 / 0.98));
+  color: #fff8ec;
+}
+
+.ticketCard img {
+  width: 5rem;
+  height: 5rem;
+  object-fit: contain;
+}
+
+.ticketCard strong,
+.ticketCard span {
+  position: relative;
+  z-index: 1;
+  display: block;
+}
+
+.ticketCard strong {
+  font-family: var(--font-display);
+  font-size: 1.5rem;
+}
+
+.ticketPaar {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  left: 0;
+}
+
+.emptyHeading {
+  display: grid;
+  gap: var(--space-1);
+  margin-bottom: var(--space-3);
+}
+
+.emptyHeading p {
+  margin: 0;
+}
+
+.openGrid {
+  display: grid;
+  gap: var(--space-3);
+}
+
+.openCard {
+  min-width: 0;
+  display: grid;
+  overflow: hidden;
+  border: 1px solid var(--color-line);
+  border-radius: 1.2rem;
+  background: var(--color-paper);
+  box-shadow: var(--shadow-sm);
+}
+
+.openArt {
+  position: relative;
+  min-height: 8.5rem;
+  overflow: hidden;
+}
+
+.openBackdrop,
+.openArt img {
+  position: absolute;
+  inset: 0;
+}
+
+.openBackdrop {
+  background: var(--open-gradient);
+}
+
+.openArt img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  padding: 1rem;
+}
+
+.openPaar {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  left: 0;
+}
+
+.openBody {
+  min-width: 0;
+  display: grid;
+  gap: 0.35rem;
+  padding: var(--space-4);
+}
+
+.openBody strong,
+.openBody span,
+.openBody small {
+  display: block;
+}
+
+.openBody span,
+.openBody small {
+  color: var(--color-muted);
+}
+
 .bookMore {
   background: var(--color-ivory-deep);
 }
@@ -137,46 +299,6 @@
 .bookGrid {
   display: grid;
   gap: var(--space-4);
-}
-
-.openList {
-  display: grid;
-  gap: 0;
-  margin: 0;
-  padding: 0;
-  overflow: hidden;
-  border: 1px solid var(--color-line);
-  border-radius: var(--radius-md);
-  background: var(--color-paper);
-  list-style: none;
-}
-
-.compactList {
-  width: min(100%, 32rem);
-  margin-top: var(--space-3);
-}
-
-.openList li {
-  display: flex;
-  gap: var(--space-3);
-  align-items: center;
-  justify-content: space-between;
-  padding: 0.8rem var(--space-3);
-  border-top: 1px solid var(--color-ivory-deep);
-}
-
-.openList li:first-child {
-  border-top: 0;
-}
-
-.openList strong,
-.openList span {
-  display: block;
-}
-
-.openList span {
-  color: var(--color-muted);
-  font-size: var(--text-sm);
 }
 
 .privacy {
@@ -212,8 +334,16 @@
 }
 
 @media (min-width: 760px) {
+  .emptyIntro {
+    grid-template-columns: minmax(15rem, 0.85fr) minmax(0, 1.15fr);
+  }
+
+  .openGrid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
   .bookGrid {
-    grid-template-columns: minmax(16rem, 0.75fr) minmax(0, 1.25fr);
+    grid-template-columns: minmax(16rem, 0.7fr) minmax(0, 1.3fr);
     align-items: start;
   }
 }

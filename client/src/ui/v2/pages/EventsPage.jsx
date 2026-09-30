@@ -7,7 +7,7 @@ import Seo from '../../../components/ui/Seo.jsx';
 import { EmptyState, ErrorState, LoadingState } from '../../../components/ui/States.jsx';
 import { events as eventsCopy } from '../../../content/pages.js';
 import { useApi } from '../../../hooks/useApi.js';
-import { formatDate, formatDateRange, formatTimeRange } from '../../../i18n/format.js';
+import { formatDate, formatDateRange, formatTimeRange, toBengaliDigits } from '../../../i18n/format.js';
 import { contentApi, couponsApi } from '../../../services/api.js';
 import BiTitle, { useT } from '../BiTitle.jsx';
 import { useSponsor } from '../SponsorSheet.jsx';
@@ -66,8 +66,38 @@ function downloadIcs(event, t) {
   window.setTimeout(() => URL.revokeObjectURL(url), 500);
 }
 
+
+function artForEvent(event) {
+  const text = [event.category?.en, event.category?.bn, event.title?.en, event.title?.bn, event.tagline?.en, event.tagline?.bn, event.summary?.en, event.summary?.bn]
+    .filter(Boolean)
+    .join(' ')
+    .toLowerCase();
+
+  if (/festival|puja|utsab|দুর্গ|উৎসব/.test(text)) {
+    return {
+      image: '/brand/coupon-dhak.png',
+      gradient: 'linear-gradient(135deg, rgb(127 22 17 / 0.96), rgb(74 51 40 / 0.98) 60%, rgb(46 31 24 / 1))',
+      accent: '/brand/coupon-alpana-gold.png',
+    };
+  }
+
+  if (/gathering|meet|adda|bijoya|sammilani|মিলন|আড্ডা/.test(text)) {
+    return {
+      image: /lotus|বিজয়া/.test(text) ? '/brand/coupon-lotus.png' : '/brand/coupon-diya.png',
+      gradient: 'linear-gradient(135deg, rgb(239 226 196 / 0.98), rgb(255 253 249 / 0.98) 45%, rgb(216 191 138 / 0.85))',
+      accent: '/brand/coupon-alpana-red.png',
+    };
+  }
+
+  return {
+    image: '/brand/coupon-alpana-white.png',
+    gradient: 'linear-gradient(135deg, rgb(46 31 24 / 0.96), rgb(152 69 32 / 0.94) 55%, rgb(127 22 17 / 0.9))',
+    accent: '/brand/coupon-marigold.png',
+  };
+}
+
 function DateBadge({ event }) {
-  const { locale, date } = useT();
+  const { locale } = useT();
   if (!event.startDate) {
     return (
       <span className={`${styles.dateBadge} ${styles.tba}`} aria-label="Date to be announced">
@@ -76,10 +106,12 @@ function DateBadge({ event }) {
       </span>
     );
   }
+  const month = formatDate(event.startDate, locale, { month: 'short' });
+  const day = formatDate(event.startDate, locale, { day: 'numeric' });
   return (
     <time className={styles.dateBadge} dateTime={event.startDate}>
-      <small>{formatDate(event.startDate, 'en', { month: 'short' }).toUpperCase()}</small>
-      <b>{date(event.startDate, { day: 'numeric' })}</b>
+      <small>{locale === 'en' ? month.toUpperCase() : month}</small>
+      <b>{day}</b>
     </time>
   );
 }
@@ -88,7 +120,8 @@ function whenText(event, locale, t) {
   if (!event.startDate) return t(event.dateLabel) || (locale === 'bn' ? 'তারিখ শীঘ্রই' : 'Date to be announced');
   const when = formatDateRange(event.startDate, event.endDate, locale, { day: 'numeric', month: 'long', year: 'numeric' });
   const time = formatTimeRange(event.startTime, event.endTime);
-  return time ? `${when} · ${time}` : when;
+  const localTime = locale === 'bn' ? toBengaliDigits(time) : time;
+  return localTime ? `${when} · ${localTime}` : when;
 }
 
 function venueText(event, t) {
@@ -99,12 +132,35 @@ function matchPassEvent(event, openPassEvents) {
   return (openPassEvents || []).find((open) => open.linkedEventSlug === event.slug || open.slug === event.slug);
 }
 
-function EventCard({ event, openPassEvents }) {
+function EventCover({ event, featured = false }) {
+  const { locale } = useT();
+  const art = artForEvent(event);
+  return (
+    <div className={`${styles.cover} ${featured ? styles.heroCover : ''}`} style={{ '--cover-gradient': art.gradient }}>
+      {event.image?.src ? (
+        <img src={event.image.src} alt={event.image.alt || ''} loading="lazy" decoding="async" />
+      ) : (
+        <>
+          <div className={styles.fallbackBackdrop} />
+          <img className={styles.fallbackArtImage} src={art.image} alt="" loading="lazy" decoding="async" />
+          <img className={styles.fallbackAccent} src={art.accent} alt="" loading="lazy" decoding="async" />
+          <Alpana className={styles.fallbackPattern} strokeWidth={0.85} />
+        </>
+      )}
+      <div className={styles.coverShade} aria-hidden="true" />
+      <DateBadge event={event} />
+      {featured && <span className={styles.featuredPill}>{locale === 'bn' ? 'বিশেষ' : 'Featured'}</span>}
+      <PaarBorder className={styles.paar} />
+    </div>
+  );
+}
+
+function EventActions({ event, openPassEvents, featured = false }) {
   const { locale, t } = useT();
   const sponsor = useSponsor();
   const passEvent = matchPassEvent(event, openPassEvents);
-  const venue = venueText(event, t);
   const actions = [];
+
   if (passEvent) {
     actions.push(
       <Button key="passes" to={`/register/${passEvent.slug}`} size="sm" className={styles.primaryAction}>
@@ -112,6 +168,7 @@ function EventCard({ event, openPassEvents }) {
       </Button>,
     );
   }
+
   if (event.sponsorship?.url) {
     actions.push(
       <button key="sponsor" type="button" className={styles.goldAction} onClick={() => sponsor.open(event.slug)} onMouseEnter={sponsor.warmSponsor} onFocus={sponsor.warmSponsor}>
@@ -119,14 +176,8 @@ function EventCard({ event, openPassEvents }) {
       </button>,
     );
   }
-  if (actions.length === 0) {
-    if (event.startDate) {
-      actions.push(
-        <button key="calendar" type="button" className={styles.softAction} onClick={() => downloadIcs(event, t)}>
-          <Icon name="calendar" size={17} /> {locale === 'bn' ? 'ক্যালেন্ডার' : 'Add to calendar'}
-        </button>,
-      );
-    }
+
+  if (!event.sponsorship?.url) {
     if (event.venue?.mapUrl) {
       actions.push(
         <a key="directions" className={styles.softAction} href={event.venue.mapUrl} target="_blank" rel="noopener noreferrer">
@@ -134,29 +185,40 @@ function EventCard({ event, openPassEvents }) {
         </a>,
       );
     }
+    if (event.startDate) {
+      actions.push(
+        <button key="calendar" type="button" className={styles.softAction} onClick={() => downloadIcs(event, t)}>
+          <Icon name="calendar" size={17} /> {locale === 'bn' ? 'ক্যালেন্ডারে রাখুন' : 'Add to calendar'}
+        </button>,
+      );
+    }
   }
 
+  if (!actions.length) return null;
+
+  return <div className={`${styles.actions} ${featured ? styles.heroActions : ''}`}>{actions.slice(0, 2)}</div>;
+}
+
+function EventCard({ event, openPassEvents, featured = false }) {
+  const { locale, t } = useT();
+  const venue = venueText(event, t);
   return (
-    <article className={`${styles.card} ${event.featured ? styles.featured : ''}`}>
-      <Link to={`/events/${event.slug}`} className={styles.cardLink} aria-label={`${t(event.title)} details`}>
-        <div className={styles.cover}>
-          {event.image?.src ? <img src={event.image.src} alt={event.image.alt || ''} loading="lazy" decoding="async" /> : <Alpana className={styles.fallbackArt} />}
-          <DateBadge event={event} />
-          {event.featured && <span className={styles.featuredPill}>{locale === 'bn' ? 'বিশেষ' : 'Featured'}</span>}
-          <PaarBorder className={styles.paar} />
-        </div>
-        <div className={styles.cardBody}>
+    <article className={`${styles.card} ${featured ? styles.heroCard : ''}`}>
+      <Link to={`/events/${event.slug}`} className={`${styles.cardLink} ${featured ? styles.heroLink : ''}`} aria-label={`${t(event.title)} details`}>
+        <EventCover event={event} featured={featured} />
+        <div className={`${styles.cardBody} ${featured ? styles.heroBody : ''}`}>
           {event.category && <p className={styles.kicker}>{t(event.category)}</p>}
           <h2 className={styles.eventTitle}>
             {event.title?.bn && <span lang="bn">{event.title.bn}</span>}
             <em>{event.title?.en}</em>
           </h2>
-          <p className={styles.fact}><Icon name="calendar" size={17} /> {whenText(event, locale, t)}</p>
-          {venue && <p className={styles.fact}><Icon name="pin" size={17} /> {venue}</p>}
-          {event.summary && <p className={styles.summary}>{t(event.summary)}</p>}
+          {featured && event.tagline && <p className={styles.tagline}>{t(event.tagline)}</p>}
+          <p className={styles.fact}><Icon name="calendar" size={17} /> <span>{whenText(event, locale, t)}</span></p>
+          {venue && <p className={styles.fact}><Icon name="pin" size={17} /> <span>{venue}</span></p>}
+          {event.summary && <p className={`${styles.summary} ${featured ? styles.heroSummary : ''}`}>{t(event.summary)}</p>}
         </div>
       </Link>
-      {actions.length > 0 && <div className={styles.actions}>{actions.slice(0, 2)}</div>}
+      <EventActions event={event} openPassEvents={openPassEvents} featured={featured} />
     </article>
   );
 }
@@ -184,13 +246,15 @@ export default function EventsPage() {
   const events = useApi('events', () => contentApi.events());
   const openPasses = useApi('coupon-events:open:v2-events', () => couponsApi.openEvents());
   const list = events.data || [];
-  const upcoming = list.filter((e) => e.status === 'upcoming');
-  const planned = list.filter((e) => e.status === 'planned');
-  const past = list.filter((e) => e.status === 'past');
+  const upcoming = list.filter((event) => event.status === 'upcoming');
+  const planned = list.filter((event) => event.status === 'planned');
+  const past = list.filter((event) => event.status === 'past');
+  const featuredEvent = upcoming.find((event) => event.featured) || upcoming[0] || null;
+  const moreUpcoming = featuredEvent ? upcoming.filter((event) => event.slug !== featuredEvent.slug) : [];
 
   return (
     <>
-      <Seo title="Events" description="Upcoming, planned and past celebrations from Parbon Sanskritik Samity." />
+      <Seo title="Events" description="Upcoming and planned events from Parbon Sanskritik Samity — starting with Durga Puja 2026." />
       <section className={styles.hero}>
         <div className="container">
           <p className={styles.eyebrow}>{t(eventsCopy.hero.eyebrow)}</p>
@@ -204,10 +268,15 @@ export default function EventsPage() {
           <BiTitle id="upcoming-title" as="h2" size="md" bn={eventsCopy.upcoming.title.bn} en={eventsCopy.upcoming.title.en} />
           {events.loading && <LoadingState lines={5} />}
           {events.error && <ErrorState error={events.error} onRetry={events.retry} />}
-          {!events.loading && !events.error && upcoming.length === 0 && <EmptyState title={{ bn: 'শীঘ্রই জানাব', en: 'No upcoming events yet' }} text={{ en: 'The next celebration will appear here as soon as it is announced.', bn: 'পরের অনুষ্ঠান ঘোষণা হলেই এখানে দেখা যাবে।' }} />}
-          <div className={styles.grid}>
-            {upcoming.map((event) => <EventCard key={event.slug} event={event} openPassEvents={openPasses.data || []} />)}
-          </div>
+          {!events.loading && !events.error && !featuredEvent && (
+            <EmptyState title={{ bn: 'শীঘ্রই জানাব', en: 'No upcoming events yet' }} text={{ en: 'The next celebration will appear here as soon as it is announced.', bn: 'পরের অনুষ্ঠান ঘোষণা হলেই এখানে দেখা যাবে।' }} />
+          )}
+          {featuredEvent && (
+            <div className={styles.featuredWrap}>
+              <EventCard event={featuredEvent} openPassEvents={openPasses.data || []} featured />
+            </div>
+          )}
+          {moreUpcoming.length > 0 && <div className={styles.grid}>{moreUpcoming.map((event) => <EventCard key={event.slug} event={event} openPassEvents={openPasses.data || []} />)}</div>}
         </div>
       </section>
 
@@ -216,9 +285,7 @@ export default function EventsPage() {
           <div className="container">
             <BiTitle id="planned-title" as="h2" size="md" bn={eventsCopy.planned.title.bn} en={eventsCopy.planned.title.en} />
             <p className={styles.sectionIntro}>{t(eventsCopy.planned.text)}</p>
-            <div className={styles.grid}>
-              {planned.map((event) => <EventCard key={event.slug} event={event} openPassEvents={openPasses.data || []} />)}
-            </div>
+            <div className={styles.grid}>{planned.map((event) => <EventCard key={event.slug} event={event} openPassEvents={openPasses.data || []} />)}</div>
           </div>
         </section>
       )}
@@ -234,4 +301,3 @@ export default function EventsPage() {
     </>
   );
 }
-
