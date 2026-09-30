@@ -29,20 +29,6 @@ const overflowNav = [
   { to: '/get-involved', key: 'involved' },
 ];
 
-function LanguageSwitch() {
-  const { locale, setLocale, t } = useT();
-  return (
-    <div className={styles.lang} role="group" aria-label={t(shellCopy.language)}>
-      <button type="button" className={locale === 'en' ? styles.langOn : ''} aria-pressed={locale === 'en'} onClick={() => setLocale('en')}>
-        EN
-      </button>
-      <button type="button" className={locale === 'bn' ? styles.langOn : ''} aria-pressed={locale === 'bn'} onClick={() => setLocale('bn')}>
-        বাং
-      </button>
-    </div>
-  );
-}
-
 function Brand() {
   return (
     <Link to="/" className={styles.brand}>
@@ -121,7 +107,6 @@ function MobileHeader() {
   return (
     <header className={`${styles.header} ${styles.mobileHeader}`}>
       <Brand />
-      <LanguageSwitch />
       <OverflowMenu />
     </header>
   );
@@ -141,8 +126,7 @@ function DesktopHeader() {
           ))}
           <OverflowMenu desktop />
         </nav>
-        <LanguageSwitch />
-        <Link to="/give" className={styles.giveTop}>
+          <Link to="/give" className={styles.giveTop}>
           <Icon name="lamp" size={18} />
           {t(shellCopy.nav.give)}
         </Link>
@@ -180,20 +164,14 @@ function TabBar({ hidden }) {
   );
 }
 
+/** English is the site language; there is no language switch, so a previously stored choice is reset. */
 function V2LocaleBootstrap() {
-  const { setLocale } = useLocale();
+  const { locale, setLocale } = useLocale();
   useEffect(() => {
-    try {
-      if (window.localStorage.getItem('parbon.locale')) return;
-    } catch {
-      return;
-    }
-    const languages = navigator.languages?.length ? navigator.languages : [navigator.language];
-    if (languages.some((lang) => String(lang).toLowerCase().startsWith('bn'))) setLocale('bn');
-  }, [setLocale]);
+    if (locale !== 'en') setLocale('en');
+  }, [locale, setLocale]);
   return null;
 }
-
 function ShellFrame() {
   const { pathname } = useLocation();
   const sponsor = useSponsor();
