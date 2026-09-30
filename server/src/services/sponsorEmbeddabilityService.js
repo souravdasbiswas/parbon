@@ -71,16 +71,18 @@ export function createSponsorEmbeddabilityService({
     return cached;
   };
 
+  // Only framing headers prove a page can't be embedded. A slow or failed probe is "unknown" (null), and the
+  // sheet then tries the iframe; Apps Script builds the whole page before its first byte, often 3-5 s.
   async function probe(url) {
     const controller = new AbortController();
     const timer = setTimeout(() => controller.abort(), timeoutMs);
     try {
       const response = await fetchImpl(url, { method: 'GET', redirect: 'follow', signal: controller.signal });
       response.body?.cancel?.();
-      if (!response.ok) return { embeddable: false, failure: true };
+      if (!response.ok) return { embeddable: null, failure: true };
       return { embeddable: sponsorshipEmbeddableFromHeaders(response.headers, { siteUrl, targetUrl: response.url || url }), failure: false };
     } catch {
-      return { embeddable: false, failure: true };
+      return { embeddable: null, failure: true };
     } finally {
       clearTimeout(timer);
     }

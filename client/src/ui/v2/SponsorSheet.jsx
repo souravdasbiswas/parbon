@@ -82,10 +82,12 @@ function SponsorFrame({ event, onClose }) {
       }
     >
       <div className={styles.frameWrap}>
+        {/* "Secure" pill over the sponsor page, hidden for now. Uncomment this and .secure in SponsorSheet.module.css to bring it back.
         <p className={styles.secure}>
           <Icon name="check" size={16} />
           {t(sheetCopy.secure)}
         </p>
+        */}
         {externalOnly ? (
           <div className={styles.externalFallback}>
             <Icon name="lamp" size={40} />
