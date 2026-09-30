@@ -45,12 +45,13 @@ function LanguageSwitch() {
 
 function Brand() {
   return (
-    <Link to="/" className={styles.brand} aria-label={`${shellCopy.brand.en} — Home`}>
+    <Link to="/" className={styles.brand}>
       <Logo width={72} alt="" className={styles.logo} />
       <span className={styles.wordmark}>
         <span lang="bn">{shellCopy.brand.bn}</span>
         <small>{shellCopy.tagline.en}</small>
       </span>
+      <span className="visually-hidden"> — Home</span>
     </Link>
   );
 }

@@ -45,10 +45,17 @@ async function getSponsorEvent(slug) {
   return featured?.data || null;
 }
 
+function openExternalSponsor(url) {
+  const win = window.open(url, '_blank');
+  if (win) win.opener = null;
+  return Boolean(win);
+}
+
 function SponsorFrame({ event, onClose }) {
   const { t } = useT();
   const [loadedUrl, setLoadedUrl] = useState('');
   const url = event?.sponsorship?.url;
+  const externalOnly = event?.sponsorship?.embeddable === false;
 
   if (!url) return null;
 
@@ -79,19 +86,31 @@ function SponsorFrame({ event, onClose }) {
           <Icon name="check" size={16} />
           {t(sheetCopy.secure)}
         </p>
-        {!loaded && (
-          <div className={styles.skeleton} role="status" aria-live="polite">
-            <Icon name="lamp" size={32} />
-            <span>{t(sheetCopy.loading)}</span>
+        {externalOnly ? (
+          <div className={styles.externalFallback}>
+            <Icon name="lamp" size={40} />
+            <p>{t(event.sponsorship?.appeal) || t(sheetCopy.secure)}</p>
+            <a href={url} target="_blank" rel="noopener noreferrer" className={styles.externalButton}>
+              {t(sheetCopy.openSecure)}
+            </a>
           </div>
+        ) : (
+          <>
+            {!loaded && (
+              <div className={styles.skeleton} role="status" aria-live="polite">
+                <Icon name="lamp" size={32} />
+                <span>{t(sheetCopy.loading)}</span>
+              </div>
+            )}
+            <iframe
+              className={styles.iframe}
+              src={url}
+              title={`Sponsor ${event.title?.en || 'Parbon'}`}
+              allow="payment; clipboard-write; web-share"
+              onLoad={() => setLoadedUrl(url)}
+            />
+          </>
         )}
-        <iframe
-          className={styles.iframe}
-          src={url}
-          title={`Sponsor ${event.title?.en || 'Parbon'}`}
-          allow="payment; clipboard-write; web-share"
-          onLoad={() => setLoadedUrl(url)}
-        />
       </div>
     </BottomSheet>
   );
@@ -135,8 +154,13 @@ export function SponsorProvider({ children }) {
       .then((next) => {
         if (!active) return;
         if (next?.sponsorship?.url) {
-          warmSponsor();
-          setEvent(next);
+          if (next.sponsorship.embeddable === false && openExternalSponsor(next.sponsorship.url)) {
+            setEvent(null);
+            removeSponsorSearch(location, navigate);
+          } else {
+            if (next.sponsorship.embeddable !== false) warmSponsor();
+            setEvent(next);
+          }
         } else {
           setEvent(null);
           removeSponsorSearch(location, navigate);

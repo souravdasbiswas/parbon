@@ -25,6 +25,8 @@ The site is a **React (Vite) frontend** served by a small **Node.js / Express ba
 11. [Quality: accessibility, SEO, performance, security](#11-quality)
 12. [Extending the site](#12-extending-the-site)
 
+For the v2 launch smoke list and owner hand-off, see [`docs/v2-parity-checklist.md`](docs/v2-parity-checklist.md).
+
 ---
 
 ## 1. Quick start
