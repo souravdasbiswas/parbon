@@ -11,6 +11,7 @@ The site is a **React (Vite) frontend** served by a small **Node.js / Express ba
 ## Contents
 
 1. [Quick start](#1-quick-start)
+   - [Branches & parallel work](#branches--parallel-work)
 2. [Project structure](#2-project-structure)
 3. [Architecture](#3-architecture)
 4. [Bilingual content model](#4-bilingual-content-model)
@@ -19,6 +20,7 @@ The site is a **React (Vite) frontend** served by a small **Node.js / Express ba
 7. [REST API](#7-rest-api)
 8. [Environment variables](#8-environment-variables)
 9. [Deploying to Hostinger](#9-deploying-to-hostinger)
+   - [Staging site (v2.parbon.in)](#staging-site-v2parbonin)
 10. [Design system](#10-design-system)
 11. [Quality: accessibility, SEO, performance, security](#11-quality)
 12. [Extending the site](#12-extending-the-site)
@@ -53,6 +55,14 @@ To try the production build locally:
 npm run build
 npm start            # http://localhost:5000
 ```
+
+## Branches & parallel work
+
+- `main` is the live branch and auto-deploys to `parbon.in`.
+- Bug fixes should use `fix/<topic>` branches and be merged to `main` through pull requests.
+- The v2 redesign lives on the long-running `v2` branch. Create redesign feature branches as `v2-<topic>` (not `v2/<topic>`; Git cannot have both a `v2` branch and `v2/...` branches) and open pull requests into `v2`.
+- After every fix is merged to `main`, merge `main` into `v2` so staging keeps the production fixes. Merge the shared `v2` branch; never rebase it.
+- Branch protection requires pull requests for both `main` and `v2`.
 
 ---
 
@@ -465,6 +475,9 @@ Copy `.env.example` to `.env` for local use. On Hostinger, set these in hPanel. 
 | `PORT`          | `5000`                   | Port to listen on (Hostinger sets this automatically)         |
 | `NODE_ENV`      | `development`            | Set to `production` in production                              |
 | `SITE_URL`      | `http://localhost:5173`  | Public URL, e.g. `https://parbon.org` (sitemap, robots.txt)    |
+| `PARBON_SITE`   | *(auto-detected)*        | Optional override for the Hostinger site name used to choose `~/parbon.<site>.env` |
+| `PARBON_PRIMARY_SITES` | `parbon.in,www.parbon.in` | Sites allowed to fall back to the legacy `~/parbon.env` home file |
+| `SITE_NOINDEX`  | *(automatic)*            | Explicit robots override. If unset, production non-primary sites are `noindex, nofollow` |
 | `TRUST_PROXY`   | `1`                      | Trust Hostinger's reverse proxy, so rate limiting sees real client IPs |
 | `CORS_ORIGINS`  | *(empty)*                | Comma-separated origins, only needed if the frontend is hosted elsewhere |
 | `SMTP_HOST` …   | *(empty)*                | Optional email: enquiry notifications, and coupon emails to people who register. Hostinger: `smtp.hostinger.com`, `465`, `SMTP_SECURE=true` |
@@ -592,10 +605,14 @@ Hostinger's automatic GitHub deploys have started the app **without the environm
 - admin sign-in, coupons and email switch off;
 - `/api/health` shows `"admin": "not_configured"`.
 
-So the app also reads a settings file from your **home folder**. Deploys replace the app folder but never touch the home folder.
+So the app also reads exactly one settings file from your **home folder**. Deploys replace the app folder but never touch the home folder.
+
+For a single production app, the existing behavior is unchanged: if no Hostinger site can be detected, or the detected site is a primary site (`parbon.in` or `www.parbon.in` by default), the app can use **`~/parbon.env`**. For parallel Hostinger apps, the app detects the site name from paths like `/home/<user>/domains/<site>/...` and prefers **`~/parbon.<site>.env`**. Non-primary sites do **not** fall back to `~/parbon.env`; if `~/parbon.v2.parbon.in.env` is missing, staging starts without a home settings file instead of reading production secrets.
 
 1. In **hPanel → Files → File Manager**, go to your home folder: the top level, `/home/<your-user>/`, **not** `public_html` or `domains/…`.
-2. Create a file named **`parbon.env`**.
+2. Create the right file:
+   - production only: **`parbon.env`**;
+   - staging / another domain: **`parbon.<site>.env`**, for example **`parbon.v2.parbon.in.env`**.
 3. Put one setting per line, `NAME=value`, with no quotes and no spaces around `=`. Use the same values as in hPanel:
    ```
    SITE_URL=https://parbon.in
@@ -616,13 +633,50 @@ So the app also reads a settings file from your **home folder**. Deploys replace
    SESSION_HOURS=8
    ```
 4. Set its **permissions to 600** (right-click → Permissions: owner read and write only). The start-up log warns if other accounts can read it.
-5. Restart the app, or deploy. The log line `.env files: … /home/<your-user>/parbon.env=loaded(16 keys, …)` confirms it was read.
+5. Restart the app, or deploy. The log line `.env files: … /home/<your-user>/parbon.env=loaded(16 keys, …)` or `.env files: … /home/<your-user>/parbon.v2.parbon.in.env=loaded(… keys, …)` confirms the chosen file was read. The same diagnostics also show `site=<detected site>` and `home_env=<file or none>`.
 
 How the two sources combine:
 - Settings passed by hPanel still win.
-- The file only fills in settings that are missing, or that hPanel passed empty.
-- When you change a password or secret, update **both** hPanel and `parbon.env`.
+- The chosen home file only fills in settings that are missing, or that hPanel passed empty.
+- When you change a password or secret, update **both** hPanel and the matching home file (`parbon.env` or `parbon.<site>.env`).
+- If you change primary domains, set `PARBON_PRIMARY_SITES=parbon.in,www.parbon.in` (comma-separated). Only those sites may use the legacy `~/parbon.env` fallback.
+- `PARBON_SITE=<site>` overrides path detection when needed.
+- `SITE_NOINDEX` can force robots behavior. If it is unset, production sites whose `SITE_URL` host is not in `PARBON_PRIMARY_SITES` automatically send `X-Robots-Tag: noindex, nofollow` and return `Disallow: /` from `/robots.txt`.
 - The file is outside the website folder, so it is never served to visitors. Never commit it to Git.
+
+#### Staging site (`v2.parbon.in`)
+
+Owner checklist for a safe staging app:
+
+1. In hPanel, create a **second Node.js app** from the same GitHub repository, but deploy the **`v2` branch**.
+2. Attach the subdomain **`v2.parbon.in`** to that app and enable SSL.
+3. Create a **separate MySQL database and user** for staging. Do not reuse production database credentials.
+4. In the account home folder (`/home/<your-user>/`), create **`parbon.v2.parbon.in.env`** and set permissions to `600`.
+5. Put staging-only settings in that file:
+   ```
+   NODE_ENV=production
+   SITE_URL=https://v2.parbon.in
+   SITE_NOINDEX=true
+   DB_HOST=127.0.0.1
+   DB_NAME=<staging database>
+   DB_USER=<staging database user>
+   DB_PASSWORD=<staging database password>
+   ADMIN_USERNAME=<staging admin>
+   ADMIN_PASSWORD_HASH=<staging hash from npm run admin:hash>
+   SESSION_SECRET=<new staging secret>
+   UI_PREVIEW=true
+   UI_VERSION=v2
+   ```
+   Leave SMTP unset for staging, or use a test mailbox only. The `UI_PREVIEW` and `UI_VERSION` settings are used by the `v2` branch UI.
+6. Deploy / restart the staging app.
+7. Verify:
+   - `https://v2.parbon.in/api/health` shows the staging storage (`"storage": "mysql"` when configured), `"noindex": true`, and the expected admin/email status;
+   - `https://v2.parbon.in/robots.txt` returns:
+     ```
+     User-agent: *
+     Disallow: /
+     ```
+   - runtime logs show `site=v2.parbon.in` and `home_env=/home/<your-user>/parbon.v2.parbon.in.env`.
 
 #### Diagnosing sign-in and settings (runtime logs)
 
@@ -630,12 +684,12 @@ Open **hPanel → Websites → your site → Node.js → Logs** (runtime logs). 
 
 ```
 [parbon][config] node=v22.x env=production pid=1234
-[parbon][config] cwd=/home/…/nodejs appRoot=/home/…/hbuilds/versions/<id>/…
+[parbon][config] cwd=/home/…/nodejs appRoot=/home/…/hbuilds/versions/<id>/… site=parbon.in home_env=/home/…/parbon.env
 [parbon][config] .env files: <appRoot>/.env=absent  <cwd>/.env=loaded(16 keys, 16 used)
 [parbon][config] variables in this process: 23 (npm_*: 0; others not used by Parbon: HOME, PATH, …)
 [parbon][config] settings present: NODE_ENV, PORT, SITE_URL, ADMIN_USERNAME, …
 [parbon][config] settings missing: none
-[parbon][config] admin sign-in=ON  storage=mysql  email=ON  site_url=set
+[parbon][config] admin sign-in=ON  storage=mysql  email=ON  site_url=set  noindex=OFF
 [parbon][config] database connection OK: MySQL database "u123_parbon" on 127.0.0.1:3306
 ```
 
@@ -648,7 +702,7 @@ Open **hPanel → Websites → your site → Node.js → Logs** (runtime logs). 
   - `SESSION_SECRET` shorter than 32 characters;
   - `ADMIN_PASSWORD_HASH` that isn't a hash from `npm run admin:hash`.
 - `database connection FAILED code=…` gives MySQL's error code, e.g. `ER_ACCESS_DENIED_ERROR` (wrong user or password) or `ECONNREFUSED` (wrong host).
-- Settings files are read from the app folder, the working folder and `~/parbon.env` (see above). Variables set in hPanel take precedence.
+- Settings files are read from the app folder, the working folder and the one chosen home file (see above). Variables set in hPanel take precedence. If a non-primary site is missing its per-site file, the log shows the skipped home file and the reason instead of falling back to production settings.
 
 Every sign-in attempt (admin and gate volunteers) writes one `[parbon][auth]` line:
 
@@ -670,7 +724,7 @@ Every sign-in attempt (admin and gate volunteers) writes one `[parbon][auth]` li
 | `database_not_configured` | The gate scanner needs MySQL (`DB_NAME`, `DB_USER`) |
 | `bad_origin` | The request didn't come from this site; `expected=` shows the allowed addresses (check `SITE_URL`) |
 
-Passwords, PINs, hashes, tokens and setting values are never written to the log. Replies to the browser stay generic, so they don't reveal which part was wrong. `/api/health` also shows `"admin": "ready" | "not_configured"` and `"email": "on" | "off"`.
+Passwords, PINs, hashes, tokens and setting values are never written to the log. Replies to the browser stay generic, so they don't reveal which part was wrong. `/api/health` also shows `"admin": "ready" | "not_configured"`, `"email": "on" | "off"` and `"noindex": true | false`.
 
 ### Option B — Hostinger VPS (Ubuntu)
 

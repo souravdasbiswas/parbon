@@ -16,15 +16,112 @@ const homeDir = () => {
   }
 };
 
+const normaliseSiteName = (site) => {
+  const value = String(site || '').trim();
+  if (!value) return '';
+  try {
+    const parsed = new URL(value.includes('://') ? value : `https://${value}`);
+    return parsed.hostname.toLowerCase();
+  } catch {
+    return value.replace(/^\/+|\/+$/g, '').split('/')[0].toLowerCase();
+  }
+};
+
+export const DEFAULT_PRIMARY_SITES = Object.freeze(['parbon.in', 'www.parbon.in']);
+
+export function primarySitesFromEnv(env = process.env) {
+  const configured = (env.PARBON_PRIMARY_SITES || '')
+    .split(',')
+    .map(normaliseSiteName)
+    .filter(Boolean);
+  return configured.length ? configured : [...DEFAULT_PRIMARY_SITES];
+}
+
+export function isPrimarySite(site, primarySites = DEFAULT_PRIMARY_SITES) {
+  const normalised = normaliseSiteName(site);
+  return normalised ? primarySites.map(normaliseSiteName).includes(normalised) : false;
+}
+
+export function detectSiteName(paths = [], env = process.env) {
+  const override = normaliseSiteName(env.PARBON_SITE);
+  if (override) return override;
+  for (const rawPath of paths) {
+    const parts = String(rawPath || '').replace(/\\/g, '/').split('/').filter(Boolean);
+    const domains = parts.findIndex((part) => part === 'domains');
+    if (domains >= 0 && parts[domains + 1]) return normaliseSiteName(parts[domains + 1]);
+  }
+  return '';
+}
+
+export function chooseHomeEnvFile({ home, paths = [], env = process.env, exists = existsSync } = {}) {
+  const site = detectSiteName(paths, env);
+  const primarySites = primarySitesFromEnv(env);
+  if (!home) {
+    return {
+      file: '',
+      site,
+      primarySites,
+      status: 'skipped',
+      reason: 'home directory unavailable',
+    };
+  }
+
+  const legacyFile = path.join(home, 'parbon.env');
+  if (!site) {
+    return {
+      file: legacyFile,
+      site,
+      primarySites,
+      status: 'selected',
+      reason: 'no site detected; using ~/parbon.env',
+    };
+  }
+
+  const perSiteFile = path.join(home, `parbon.${site}.env`);
+  if (exists(perSiteFile)) {
+    return {
+      file: perSiteFile,
+      site,
+      primarySites,
+      status: 'selected',
+      reason: 'per-site settings file found',
+    };
+  }
+
+  if (isPrimarySite(site, primarySites)) {
+    return {
+      file: legacyFile,
+      site,
+      primarySites,
+      status: 'selected',
+      reason: `primary site ${site}; using ~/parbon.env`,
+    };
+  }
+
+  return {
+    file: perSiteFile,
+    selectedFile: '',
+    site,
+    primarySites,
+    status: 'skipped',
+    reason: `create ~/parbon.${site}.env for this site`,
+  };
+}
+
 /**
  * Where settings files are looked for, in order:
  * 1. the app folder;
  * 2. the working folder, when it differs (some hosts write `.env` there);
- * 3. `parbon.env` in the account's home folder. Hosting deploys replace the app folder but never
- *    touch the home folder, so settings kept there survive every deploy even if the host fails to
- *    pass its own environment variables to the app.
+ * 3. the one chosen home-folder file. Hostinger production keeps the legacy `~/parbon.env`; each
+ *    non-primary site must use `~/parbon.<site>.env` so staging can never read production secrets.
  */
-export const HOME_ENV_FILE = homeDir() ? path.join(homeDir(), 'parbon.env') : '';
+export const homeEnvFileChoice = chooseHomeEnvFile({
+  home: homeDir(),
+  paths: [PROJECT_ROOT, process.cwd()],
+  env: process.env,
+  exists: existsSync,
+});
+export const HOME_ENV_FILE = homeEnvFileChoice.status === 'selected' ? homeEnvFileChoice.file : '';
 export const ENV_FILE_CANDIDATES = Object.freeze([path.join(PROJECT_ROOT, '.env'), path.resolve(process.cwd(), '.env'), HOME_ENV_FILE].filter(Boolean));
 
 /**
@@ -51,7 +148,12 @@ export function loadEnvFiles(files = ENV_FILE_CANDIDATES, target = process.env, 
   });
 }
 
-export const envFiles = loadEnvFiles();
+export const envFiles = Object.freeze([
+  ...loadEnvFiles(),
+  ...(homeEnvFileChoice.status === 'skipped'
+    ? [{ file: homeEnvFileChoice.file || HOME_ENV_FILE || '~/parbon.env', status: 'skipped', site: homeEnvFileChoice.site, reason: homeEnvFileChoice.reason }]
+    : []),
+]);
 
 const env = process.env;
 const bool = (value, fallback = false) =>
@@ -63,12 +165,29 @@ const list = (value) =>
     .filter(Boolean);
 
 const nodeEnv = env.NODE_ENV || 'development';
+const siteUrl = (env.SITE_URL || 'http://localhost:5173').replace(/\/+$/, '');
+const primarySites = primarySitesFromEnv(env);
+const siteUrlHost = (url) => {
+  try {
+    return new URL(url).hostname;
+  } catch {
+    return '';
+  }
+};
+
+export function resolveSiteNoindex({ env = process.env, isProduction = false, siteUrl: url = '' } = {}) {
+  if (env.SITE_NOINDEX !== undefined && env.SITE_NOINDEX !== '') return bool(env.SITE_NOINDEX);
+  return isProduction && !isPrimarySite(siteUrlHost(url), primarySitesFromEnv(env));
+}
 
 export const config = Object.freeze({
   nodeEnv,
   isProduction: nodeEnv === 'production',
   port: Number(env.PORT) || 5000,
-  siteUrl: (env.SITE_URL || 'http://localhost:5173').replace(/\/+$/, ''),
+  siteUrl,
+  siteName: homeEnvFileChoice.site,
+  primarySites,
+  siteNoindex: resolveSiteNoindex({ env, isProduction: nodeEnv === 'production', siteUrl }),
   corsOrigins: list(env.CORS_ORIGINS),
   trustProxy: bool(env.TRUST_PROXY, true),
   paths: {
