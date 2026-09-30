@@ -52,6 +52,11 @@ apiRouter.get('/events', shortCacheEvents, async (req, res) => {
   res.json({ data: await eventService.listPublished({ status }) });
 });
 
+apiRouter.get('/events/featured', shortCacheEvents, async (_req, res) => {
+  const { event, reason } = await eventService.getFeatured(await contentService.getSite());
+  res.json({ data: event, reason });
+});
+
 apiRouter.get('/events/:slug', shortCacheEvents, async (req, res) => {
   const event = await eventService.getPublishedBySlug(req.params.slug);
   if (!event) throw new HttpError(404, 'EVENT_NOT_FOUND', 'Event not found.');

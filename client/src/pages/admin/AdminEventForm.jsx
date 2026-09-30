@@ -18,6 +18,9 @@ import e from './EventForm.module.css';
 // Keep in sync with EVENT_ICONS in server/src/utils/validateEvent.js.
 const ICONS = ['dhak', 'shankha', 'lotus', 'bhog', 'lamp', 'music', 'book', 'alpana', 'people', 'sindoor', 'calendar', 'pin', 'megaphone'];
 const bi = () => ({ en: '', bn: '' });
+const emptySponsorship = () => ({ url: '', appeal: bi(), cta: bi(), highlights: [] });
+const sponsorHighlight = () => ({ name: bi(), amount: '', shareable: false });
+const contactRow = () => ({ name: '', role: bi(), phone: '', whatsapp: '' });
 
 const EMPTY = {
   title: bi(),
@@ -41,6 +44,8 @@ const EMPTY = {
   schedule: [],
   scheduleNote: bi(),
   countdown: { enabled: false, date: '', time: '', label: bi(), doneMessage: bi() },
+  sponsorship: emptySponsorship(),
+  contacts: [],
 };
 
 const toLocalInput = (iso) => {
@@ -71,6 +76,15 @@ function fromEvent(ev) {
       : EMPTY.venue,
     description: ev.description?.length ? ev.description.map(b) : [bi()],
     highlights: (ev.highlights || []).map((h) => ({ icon: h.icon || 'lotus', title: b(h.title), text: b(h.text) })),
+    sponsorship: ev.sponsorship
+      ? {
+          url: ev.sponsorship.url || '',
+          appeal: b(ev.sponsorship.appeal),
+          cta: b(ev.sponsorship.cta),
+          highlights: (ev.sponsorship.highlights || []).map((h) => ({ name: b(h.name), amount: h.amount ?? '', shareable: Boolean(h.shareable) })),
+        }
+      : emptySponsorship(),
+    contacts: (ev.contacts || []).map((c) => ({ name: c.name || '', role: b(c.role), phone: c.phone || '', whatsapp: c.whatsapp || '' })),
     schedule: (ev.schedule || []).map((d) => ({ date: d.date || '', day: b(d.day), note: b(d.note), main: Boolean(d.main), items: (d.items || []).map((i) => ({ time: i.time || '', title: b(i.title) })) })),
     publishedAt: toLocalInput(ev.publishedAt),
     countdown: ev.countdown
@@ -130,6 +144,7 @@ function Bi({ path, label, required, textarea, rows = 3, hint, max = 200 }) {
         )}
       </div>
       {hint && <p className={styles.hint}>{hint}</p>}
+      {errors[path] && <p className={styles.fieldError}>{errors[path]}</p>}
       {errors[`${path}.en`] && <p className={styles.fieldError}>{errors[`${path}.en`]}</p>}
     </div>
   );
@@ -443,6 +458,86 @@ export default function AdminEventForm() {
                 ))}
                 <button type="button" className={e.add} onClick={() => set('highlights', [...form.highlights, { icon: 'lotus', title: bi(), text: bi() }])}>
                   + Add highlight
+                </button>
+              </fieldset>
+
+              <fieldset className={styles.group}>
+                <legend>Sponsorship (optional)</legend>
+                <div className={styles.field}>
+                  <label htmlFor={fid('sponsorship.url')}>Sponsor link</label>
+                  <input type="url" {...bind('sponsorship.url')} maxLength={500} placeholder="https://…" />
+                  <p className={styles.hint}>Only https links are accepted.</p>
+                  {err('sponsorship.url')}
+                </div>
+                <Bi path="sponsorship.appeal" label="Sponsor appeal" textarea rows={2} hint="Optional text shown near the sponsor button." max={300} />
+                <Bi path="sponsorship.cta" label="Button label" hint="Optional, e.g. Sponsor now · স্পনসর করুন." max={40} />
+                <div className={styles.field}>
+                  <span className={e.biLabel}>Sponsorship highlights</span>
+                  <p className={styles.hint}>Add up to 6 items that people can sponsor or share.</p>
+                  {err('sponsorship.highlights')}
+                  {form.sponsorship.highlights.map((h, i) => (
+                    <div key={i} className={e.repeat}>
+                      <Bi path={`sponsorship.highlights.${i}.name`} label={`Item ${i + 1}`} max={60} />
+                      <div className={styles.row2}>
+                        <div className={styles.field}>
+                          <label htmlFor={fid(`sponsorship.highlights.${i}.amount`)}>Amount (₹)</label>
+                          <input type="number" min="0" max="10000000" step="1" {...bind(`sponsorship.highlights.${i}.amount`)} />
+                          {err(`sponsorship.highlights.${i}.amount`)}
+                        </div>
+                        <label className={styles.check}>
+                          <input type="checkbox" checked={h.shareable} onChange={(ev) => set(`sponsorship.highlights.${i}.shareable`, ev.target.checked)} /> People can share this item
+                        </label>
+                      </div>
+                      <ListTools
+                        label={`sponsorship highlight ${i + 1}`}
+                        onUp={() => set('sponsorship.highlights', move(form.sponsorship.highlights, i, -1))}
+                        onDown={() => set('sponsorship.highlights', move(form.sponsorship.highlights, i, 1))}
+                        onRemove={() => set('sponsorship.highlights', form.sponsorship.highlights.filter((__, j) => j !== i))}
+                      />
+                    </div>
+                  ))}
+                  <button type="button" className={e.add} disabled={form.sponsorship.highlights.length >= 6} onClick={() => set('sponsorship.highlights', [...form.sponsorship.highlights, sponsorHighlight()])}>
+                    + Add sponsorship item
+                  </button>
+                </div>
+              </fieldset>
+
+              <fieldset className={styles.group}>
+                <legend>Event contacts (optional)</legend>
+                <p className={styles.hint}>Add up to 4 contacts for this event. Each contact needs a name and a phone or WhatsApp number.</p>
+                {err('contacts')}
+                {form.contacts.map((_, i) => (
+                  <div key={i} className={e.repeat}>
+                    <div className={styles.row2}>
+                      <div className={styles.field}>
+                        <label htmlFor={fid(`contacts.${i}.name`)}>Name</label>
+                        <input {...bind(`contacts.${i}.name`)} maxLength={80} />
+                        {err(`contacts.${i}.name`)}
+                      </div>
+                      <Bi path={`contacts.${i}.role`} label="Role" max={80} />
+                    </div>
+                    <div className={styles.row2}>
+                      <div className={styles.field}>
+                        <label htmlFor={fid(`contacts.${i}.phone`)}>Phone</label>
+                        <input {...bind(`contacts.${i}.phone`)} maxLength={20} placeholder="+91 98765 43210" />
+                        {err(`contacts.${i}.phone`)}
+                      </div>
+                      <div className={styles.field}>
+                        <label htmlFor={fid(`contacts.${i}.whatsapp`)}>WhatsApp</label>
+                        <input {...bind(`contacts.${i}.whatsapp`)} maxLength={20} placeholder="+91 98765 43210" />
+                        {err(`contacts.${i}.whatsapp`)}
+                      </div>
+                    </div>
+                    <ListTools
+                      label={`contact ${i + 1}`}
+                      onUp={() => set('contacts', move(form.contacts, i, -1))}
+                      onDown={() => set('contacts', move(form.contacts, i, 1))}
+                      onRemove={() => set('contacts', form.contacts.filter((__, j) => j !== i))}
+                    />
+                  </div>
+                ))}
+                <button type="button" className={e.add} disabled={form.contacts.length >= 4} onClick={() => set('contacts', [...form.contacts, contactRow()])}>
+                  + Add contact
                 </button>
               </fieldset>
 

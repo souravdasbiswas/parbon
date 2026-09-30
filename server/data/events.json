@@ -4,6 +4,48 @@
       "id": "seed-durga-puja-2026",
       "slug": "durga-puja-2026",
       "featured": true,
+      "sponsorship": {
+        "url": "https://script.google.com/macros/s/AKfycbznFDB5XDt0yUPJLqcxVsQvEDkRkO46ETeK23_U5J9MToRZvXARkjNRlnoalDQECPHv5Q/exec",
+        "appeal": {
+          "en": "Sponsor a whole item or share one with others — every offering goes to Ma's puja.",
+          "bn": "পুরো একটি উপকরণ বা তার অংশ স্পনসর করুন — প্রতিটি অর্ঘ্য যায় মায়ের পুজোয়।"
+        },
+        "cta": null,
+        "highlights": [
+          {
+            "name": {
+              "en": "Priest",
+              "bn": "পুরোহিত"
+            },
+            "amount": 30000,
+            "shareable": true
+          },
+          {
+            "name": {
+              "en": "Dhaaki",
+              "bn": "ঢাকি"
+            },
+            "amount": 20000,
+            "shareable": true
+          },
+          {
+            "name": {
+              "en": "Sandhi Pujo Bhog",
+              "bn": "সন্ধিপুজোর ভোগ"
+            },
+            "amount": 10000,
+            "shareable": true
+          },
+          {
+            "name": {
+              "en": "108 Lotus",
+              "bn": "১০৮ পদ্ম"
+            },
+            "amount": 8000,
+            "shareable": false
+          }
+        ]
+      },
       "category": {
         "en": "Festival",
         "bn": "উৎসব"

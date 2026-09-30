@@ -6,6 +6,7 @@
 const SLUG_RE = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
 const DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
 const TIME_RE = /^([01]\d|2[0-3]):[0-5]\d$/;
+const PHONE_RE = /^[\d +-]+$/;
 const IMAGE_SRC_RE = /^\/media\/announcements\/[\w.-]+\.(jpe?g|png|webp)$/i;
 const EMBED_RE = /^https:\/\/(www\.)?google\.com\/maps\/embed\?|^https:\/\/maps\.google\.com\/maps\?/;
 
@@ -84,6 +85,8 @@ export function validateEvent(body) {
     schedule: [],
     scheduleNote: optional(localized(input.scheduleNote, 300)),
     countdown: null,
+    sponsorship: null,
+    contacts: [],
   };
 
   if (value.title.en.length < 3) errors['title.en'] = 'Please add the event name (at least 3 characters).';
@@ -146,6 +149,39 @@ export function validateEvent(body) {
     };
   }
 
+  const s = input.sponsorship && typeof input.sponsorship === 'object' ? input.sponsorship : null;
+  if (s) {
+    const sponsorship = {
+      url: clean(s.url, 500),
+      appeal: localized(s.appeal, 300, false),
+      cta: optional(localized(s.cta, 40)),
+      highlights: [],
+    };
+
+    if (Array.isArray(s.highlights) && s.highlights.length > 6) errors['sponsorship.highlights'] = 'Add up to 6 sponsorship highlights.';
+    list(s.highlights, 6).forEach((h, i) => {
+      const item = {
+        name: localized(h?.name, 60),
+        shareable: Boolean(h?.shareable),
+      };
+      const hasAmount = h?.amount !== undefined && h?.amount !== null && h?.amount !== '';
+      if (hasAmount) item.amount = Number(h.amount);
+      const any = item.name.en || item.name.bn || hasAmount || item.shareable;
+      if (!any) return;
+      if (!item.name.en && !item.name.bn) errors[`sponsorship.highlights.${i}.name`] = 'Name this sponsorship item.';
+      if (hasAmount && (!Number.isInteger(item.amount) || item.amount < 0 || item.amount > 10_000_000)) {
+        errors[`sponsorship.highlights.${i}.amount`] = 'Use a whole rupee amount from 0 to 10,000,000.';
+      }
+      sponsorship.highlights.push(item);
+    });
+
+    const any = sponsorship.url || sponsorship.appeal.en || sponsorship.appeal.bn || sponsorship.cta || sponsorship.highlights.length;
+    if (any) {
+      if (sponsorship.url && !isHttps(sponsorship.url)) errors['sponsorship.url'] = 'Sponsor link must start with https://';
+      value.sponsorship = sponsorship;
+    }
+  }
+
   list(input.highlights, 12).forEach((h, i) => {
     const item = {
       icon: EVENT_ICONS.includes(h?.icon) ? h.icon : 'lotus',
@@ -189,6 +225,23 @@ export function validateEvent(body) {
     if (!TIME_RE.test(countdown.time)) errors['countdown.time'] = 'Use a time like 07:00.';
     value.countdown = countdown;
   }
+
+  if (Array.isArray(input.contacts) && input.contacts.length > 4) errors.contacts = 'Add up to 4 event contacts.';
+  list(input.contacts, 4).forEach((c, i) => {
+    const contact = {
+      name: oneLine(c?.name, 80),
+      role: localized(c?.role, 80),
+      phone: oneLine(c?.phone, 20),
+      whatsapp: oneLine(c?.whatsapp, 20),
+    };
+    const any = contact.name || contact.role.en || contact.role.bn || contact.phone || contact.whatsapp;
+    if (!any) return;
+    if (!contact.name) errors[`contacts.${i}.name`] = 'Add a contact name.';
+    if (!contact.phone && !contact.whatsapp) errors[`contacts.${i}.phone`] = 'Add a phone number or WhatsApp number.';
+    if (contact.phone && !PHONE_RE.test(contact.phone)) errors[`contacts.${i}.phone`] = 'Use digits, spaces, + or - only.';
+    if (contact.whatsapp && !PHONE_RE.test(contact.whatsapp)) errors[`contacts.${i}.whatsapp`] = 'Use digits, spaces, + or - only.';
+    value.contacts.push(contact);
+  });
 
   if (!value.publishedAt) delete value.publishedAt;
   return Object.keys(errors).length ? { errors } : { value };
