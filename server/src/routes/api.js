@@ -39,6 +39,7 @@ apiRouter.get('/health', async (_req, res) => {
     admin: adminConfigured() ? 'ready' : 'not_configured',
     email: mailConfigured() ? 'on' : 'off',
     ui: { version: config.uiVersion, preview: config.uiPreview },
+    noindex: config.siteNoindex,
   };
   if (config.db.enabled) body.database = await databaseStatus();
   res.json(body);
