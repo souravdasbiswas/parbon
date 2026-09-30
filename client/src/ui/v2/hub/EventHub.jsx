@@ -6,6 +6,7 @@ import { useScrollToHash } from '../../../hooks/useScrollToHash.js';
 import { announcementsApi, contentApi, couponsApi } from '../../../services/api.js';
 import NotFound from '../../../pages/NotFound.jsx';
 import { useLocale } from '../../../i18n/LocaleContext.jsx';
+import BiTitle from '../BiTitle.jsx';
 import {
   ActionBar,
   ComingUp,
@@ -67,10 +68,7 @@ function Hero({ event, couponEvents }) {
           <EventCover event={event} />
           <div className={styles.heroBody}>
             {event.category && <p className={styles.heroKicker}>{t(event.category)}</p>}
-            <h1 id="event-title" className={styles.eventTitle}>
-              {event.title?.bn && <span lang="bn" className={styles.eventTitleBn}>{event.title.bn}</span>}
-              {event.title?.en && <span className={styles.eventTitleEn}>{event.title.en}</span>}
-            </h1>
+            <BiTitle id="event-title" as="h1" size="lg" bn={event.title?.bn || ''} en={event.title?.en || ''} className={styles.eventTitle} />
             {event.tagline && <p className={styles.tagline}>{t(event.tagline)}</p>}
             <EventFacts event={event} />
             <StatusBlock event={event} />
@@ -115,24 +113,21 @@ export default function EventHub({ slug: fixedSlug, event: providedEvent, afterH
       <SectionNav sections={sectionIds} />
       <main className={styles.hubMain}>
         <div className={`container ${styles.hubGrid}`}>
-          <div className={styles.primaryColumn}>
-            <DayChipsSchedule event={event} />
-            <PassCards couponEvents={couponEvents} />
-            <Highlights event={event} />
-            {afterHighlights}
-          </div>
-          <aside className={styles.sideColumn}>
-            {event.description?.length > 0 && (
-              <section className={styles.section} aria-label="About this event">
-                {event.description.map((p, i) => <p key={i} className={styles.prose}>{t(p)}</p>)}
-              </section>
-            )}
-            <VenueSection event={event} />
-            <EventContacts event={event} site={site.data} />
-          </aside>
+          <DayChipsSchedule event={event} />
+          <PassCards couponEvents={couponEvents} />
+          <SponsorBand event={event} />
+          <Highlights event={event} />
+          {afterHighlights}
+          <VenueSection event={event} />
+          <ComingUp events={events.data || []} currentSlug={event.slug} />
+          <EventContacts event={event} site={site.data} />
+          {event.description?.length > 0 && (
+            <section className={`${styles.section} ${styles.aboutEvent}`} aria-labelledby="about-event-title">
+              <BiTitle id="about-event-title" as="h2" size="sm" bn="এই অনুষ্ঠান" en="About this event" className={styles.hubHeading} />
+              {event.description.map((p, i) => <p key={i} className={styles.prose}>{t(p)}</p>)}
+            </section>
+          )}
         </div>
-        <div className="container"><SponsorBand event={event} /></div>
-        <div className="container"><ComingUp events={events.data || []} currentSlug={event.slug} /></div>
       </main>
       {afterHub}
     </>
