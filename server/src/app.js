@@ -80,6 +80,12 @@ export function createApp() {
 
   app.disable('x-powered-by');
   if (config.trustProxy) app.set('trust proxy', 1);
+  if (config.siteNoindex) {
+    app.use((_req, res, next) => {
+      res.setHeader('X-Robots-Tag', 'noindex, nofollow');
+      next();
+    });
+  }
 
   app.use(
     helmet({

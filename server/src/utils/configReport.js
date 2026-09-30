@@ -3,11 +3,11 @@
  * Only setting NAMES, counts and yes/no checks are reported — never a value — so the result is
  * safe to print to the host's logs.
  */
-import { PROJECT_ROOT, config, envFiles } from '../config.js';
+import { PROJECT_ROOT, config, envFiles, homeEnvFileChoice } from '../config.js';
 
 /** Every setting the app reads (see .env.example). */
 export const KNOWN_SETTINGS = Object.freeze([
-  'NODE_ENV', 'PORT', 'SITE_URL', 'CORS_ORIGINS', 'TRUST_PROXY',
+  'NODE_ENV', 'PORT', 'PARBON_SITE', 'PARBON_PRIMARY_SITES', 'SITE_URL', 'SITE_NOINDEX', 'CORS_ORIGINS', 'TRUST_PROXY',
   'SMTP_HOST', 'SMTP_PORT', 'SMTP_SECURE', 'SMTP_USER', 'SMTP_PASS', 'MAIL_FROM', 'MAIL_TO',
   'ADMIN_USERNAME', 'ADMIN_PASSWORD_HASH', 'SESSION_SECRET', 'SESSION_HOURS', 'SCANNER_SESSION_HOURS',
   'DATA_DIR', 'STORAGE_DIR', 'MEDIA_DIR', 'LEGACY_IMPORT_DIRS',
@@ -61,6 +61,9 @@ export function configReport(env = process.env) {
     pid: process.pid,
     cwd: process.cwd(),
     appRoot: PROJECT_ROOT,
+    site: homeEnvFileChoice.site,
+    homeEnvFile: homeEnvFileChoice.status === 'selected' ? homeEnvFileChoice.file : '',
+    homeEnvReason: homeEnvFileChoice.reason,
     envFiles,
     totalVariables: names.length,
     otherVariables: names.filter((n) => !known.has(n) && !/^npm_/i.test(n)).sort(),
@@ -75,6 +78,7 @@ export function configReport(env = process.env) {
       storage: isSet(env, 'DB_NAME') && isSet(env, 'DB_USER') ? 'mysql' : 'file',
       email: isSet(env, 'SMTP_HOST') ? 'on' : 'off',
       siteUrl: !siteUrl ? 'not set (localhost)' : /localhost|127\.0\.0\.1/.test(siteUrl) ? 'localhost' : 'set',
+      noindex: config.siteNoindex ? 'on' : 'off',
     },
   };
 }
@@ -83,19 +87,19 @@ export function configReport(env = process.env) {
 export function configReportLines(report = configReport()) {
   const list = (items) => (items.length ? items.join(', ') : 'none');
   const files = report.envFiles
-    .map((f) => `${f.file}=${f.status}${f.status === 'loaded' ? `(${f.keys} keys, ${f.applied} used${f.warning ? `; WARNING: ${f.warning}` : ''})` : f.error ? `(${f.error})` : ''}`)
+    .map((f) => `${f.file}=${f.status}${f.status === 'loaded' ? `(${f.keys} keys, ${f.applied} used${f.warning ? `; WARNING: ${f.warning}` : ''})` : f.reason ? `(${f.reason})` : f.error ? `(${f.error})` : ''}`)
     .join('  ');
   const f = report.features;
   const others = report.otherVariables;
   const shownOthers = others.length > 40 ? `${others.slice(0, 40).join(', ')} … (+${others.length - 40} more)` : list(others);
   const lines = [
     `node=${report.node} env=${report.nodeEnv} pid=${report.pid}`,
-    `cwd=${report.cwd} appRoot=${report.appRoot}`,
+    `cwd=${report.cwd} appRoot=${report.appRoot} site=${report.site || 'not detected'} home_env=${report.homeEnvFile || 'none'}${report.homeEnvReason ? ` (${report.homeEnvReason})` : ''}`,
     `.env files: ${files}`,
     `variables in this process: ${report.totalVariables} (npm_*: ${report.npmVariables}; others not used by Parbon: ${shownOthers})`,
     `settings present: ${list(report.present)}`,
     `settings missing: ${list(report.missing)}${report.empty.length ? `  (set but empty: ${report.empty.join(', ')})` : ''}`,
-    `admin sign-in=${f.admin.length ? `OFF (${f.admin.join(', ')})` : 'ON'}  storage=${f.storage}  email=${f.email.toUpperCase()}  site_url=${f.siteUrl}`,
+    `admin sign-in=${f.admin.length ? `OFF (${f.admin.join(', ')})` : 'ON'}  storage=${f.storage}  email=${f.email.toUpperCase()}  site_url=${f.siteUrl}  noindex=${f.noindex.toUpperCase()}`,
   ];
   if (report.nearMisses.length) lines.push(`names that look like Parbon settings but don't match exactly: ${report.nearMisses.map((m) => `${m.name}→${m.looksLike}`).join(', ')}`);
   if (report.problems.length) lines.push(`problems: ${report.problems.join('; ')}`);
