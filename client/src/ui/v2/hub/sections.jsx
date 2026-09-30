@@ -9,10 +9,10 @@ import Icon from '../../../components/motifs/Icon.jsx';
 import PaarBorder from '../../../components/motifs/PaarBorder.jsx';
 import Button from '../../../components/ui/Button.jsx';
 import Logo from '../../../components/ui/Logo.jsx';
+import Countdown from '../../../components/ui/Countdown.jsx';
 import { countdownProps } from '../../../components/ui/countdownEvent.js';
 import { formatDate, formatDateRange, formatNumber, formatTimeRange, toBengaliDigits } from '../../../i18n/format.js';
 import { useLocale } from '../../../i18n/LocaleContext.jsx';
-import { useCountdown } from '../../../hooks/useCountdown.js';
 import BiTitle from '../BiTitle.jsx';
 import BottomSheet from '../BottomSheet.jsx';
 import { useSponsor } from '../SponsorSheet.jsx';
@@ -31,12 +31,6 @@ const HASH_SECTIONS = [
 
 const digits = (value) => String(value || '').replace(/\D/g, '');
 const STORY_DURATION = 6000;
-const COUNTDOWN_UNITS = [
-  { key: 'days', en: 'Days', bn: 'দিন' },
-  { key: 'hours', en: 'Hours', bn: 'ঘণ্টা' },
-  { key: 'minutes', en: 'Minutes', bn: 'মিনিট' },
-  { key: 'seconds', en: 'Seconds', bn: 'সেকেন্ড' },
-];
 
 function externalProps(href) {
   return href ? { href, target: '_blank', rel: 'noopener noreferrer' } : {};
@@ -149,6 +143,14 @@ function downloadIcs(event, t) {
   window.setTimeout(() => URL.revokeObjectURL(url), 500);
 }
 
+function shortBubbleLabel(announcement, t) {
+  const explicit = t(announcement.shortTitle);
+  if (explicit) return shortText(explicit, 18);
+  const category = t(announcement.category);
+  if (category) return shortText(category, 18);
+  return shortText(t(announcement.title).split(/\s+/).slice(0, 2).join(' '), 18);
+}
+
 export function EventCover({ event, desktop = false }) {
   const { t } = useLocale();
   const img = event.image?.src;
@@ -159,16 +161,27 @@ export function EventCover({ event, desktop = false }) {
       <Alpana />
     </div>
   );
-  const desktopContent = img ? mobileContent : (
-    <div className={styles.archLogoWrap}>
-      <Logo width={320} sizes="min(18rem, 45vw)" loading="eager" fetchPriority="high" className={styles.archLogo} />
-    </div>
-  );
   if (desktop) {
+    // No event artwork: show the v1 home hero exactly (temple-arch outline with the Parbon logo).
+    if (!img) {
+      return (
+        <div className={styles.v1Arch}>
+          <ArchOutline className={styles.v1ArchOutline} fill="var(--color-paper)" />
+          <Logo
+            width={400}
+            sizes="(min-width: 960px) 400px, 70vw"
+            loading="eager"
+            fetchPriority="high"
+            className={styles.v1ArchLogo}
+            alt="Parbon Sanskritik Samity logo — a temple gateway flanked by two dhakis playing the dhak"
+          />
+        </div>
+      );
+    }
     return (
       <div className={styles.archArt}>
         <ArchOutline className={styles.archOutline} />
-        <div className={styles.archFrame}>{desktopContent}</div>
+        <div className={styles.archFrame}>{mobileContent}</div>
       </div>
     );
   }
@@ -214,41 +227,9 @@ export function EventFacts({ event, note }) {
   );
 }
 
+/** Same countdown as v1 home (the committee's favourite): paper card, bilingual label and unit tiles. */
 function HubCountdown({ event }) {
-  const { locale } = useLocale();
-  const props = countdownProps(event, { onEventPage: true });
-  const time = useCountdown(props.target);
-  if (!time) return null;
-  if (time.done) {
-    return (
-      <p className={styles.countdownDone}>
-        <span lang="bn">{props.doneMessage?.bn || 'শুভ শারদীয়া'}</span>
-        <span>{props.doneMessage?.en || 'Subho Sharadiya!'}</span>
-      </p>
-    );
-  }
-  const label = [props.label?.bn, props.label?.en].filter(Boolean).join(' · ');
-  const summary = locale === 'bn'
-    ? `${localizeNumber(time.days, locale)} দিন, ${localizeNumber(time.hours, locale)} ঘণ্টা বাকি`
-    : `${time.days} days, ${time.hours} hours to go`;
-  return (
-    <div className={styles.hubCountdown}>
-      {label && (
-        <p className={styles.countdownLabel}>
-          <span>{label}</span>
-        </p>
-      )}
-      <p className="visually-hidden">{summary}</p>
-      <ol className={styles.countdownUnits} role="list" aria-hidden="true">
-        {COUNTDOWN_UNITS.map((unit) => (
-          <li key={unit.key} className={styles.countdownUnit}>
-            <strong>{String(localizeNumber(time[unit.key], locale)).padStart(2, locale === 'bn' ? '০' : '0')}</strong>
-            <span>{locale === 'bn' ? unit.bn : unit.en}</span>
-          </li>
-        ))}
-      </ol>
-    </div>
-  );
+  return <Countdown {...countdownProps(event, { onEventPage: true })} />;
 }
 
 export function StatusBlock({ event }) {
@@ -256,7 +237,7 @@ export function StatusBlock({ event }) {
   const state = dateState(event);
   if (state === 'before' && event.countdownTo) {
     return (
-      <div className={styles.statusBlock}>
+      <div className={styles.countdownCard}>
         <HubCountdown event={event} />
       </div>
     );
@@ -315,7 +296,7 @@ export function ActionBar({ event, couponEvents = [] }) {
       ? { label: locale === 'bn' ? 'দিকনির্দেশ' : 'Directions', href: event.venue.mapUrl, icon: 'pin' }
       : primaryIsShare
         ? { label: locale === 'bn' ? 'শেয়ার' : 'Share', href: shareHref, icon: 'share', share: true }
-        : { label: locale === 'bn' ? 'ক্যালেন্ডারে রাখুন' : 'Add to calendar', onClick: () => downloadIcs(event, t), icon: 'calendar' };
+        : { label: locale === 'bn' ? 'ক্যালেন্ডার' : 'Calendar', onClick: () => downloadIcs(event, t), icon: 'calendar' };
   return (
     <div className={styles.actions}>
       {primary.to?.startsWith('#') ? <a href={primary.to} className={`${styles.bigButton} ${styles.primaryAction}`}><Icon name={primary.icon} size={18} />{primary.label}</a>
@@ -324,7 +305,7 @@ export function ActionBar({ event, couponEvents = [] }) {
         : primary.href ? <a className={`${styles.bigButton} ${styles.primaryAction}`} {...externalProps(primary.href)}><Icon name={primary.icon} size={18} />{primary.label}</a>
         : <button type="button" className={`${styles.bigButton} ${styles.primaryAction}`} onClick={primary.onClick}><Icon name={primary.icon} size={18} />{primary.label}</button>}
       {event.sponsorship?.url ? (
-        <a href={sponsorHref(event.slug)} className={`${styles.bigButton} ${styles.secondaryAction}`} onClick={(e) => { e.preventDefault(); sponsor.open(event.slug); }}><Icon name="lamp" size={18} />{t(event.sponsorship.cta) || (locale === 'bn' ? 'স্পনসর করুন' : 'Sponsor')}</a>
+        <a href={sponsorHref(event.slug)} className={`${styles.bigButton} ${styles.goldAction}`} onClick={(e) => { e.preventDefault(); sponsor.open(event.slug); }}><Icon name="lamp" size={18} />{t(event.sponsorship.cta) || (locale === 'bn' ? 'স্পনসর করুন' : 'Sponsor')}</a>
       ) : primaryIsShare ? (
         <Link to="/events" className={`${styles.bigButton} ${styles.secondaryAction}`}><Icon name="calendar" size={18} />{locale === 'bn' ? 'সব অনুষ্ঠান' : 'All events'}</Link>
       ) : (
@@ -351,7 +332,7 @@ export function DayChipsSchedule({ event }) {
   return (
     <section id="schedule" className={styles.section} aria-labelledby="schedule-title">
       <HubHeading id="schedule-title" bn="নির্ঘণ্ট" en="Schedule" />
-      <div className={styles.dayChips} role="tablist" aria-label="Schedule days">
+      <div className={styles.dayChips} role="group" aria-label="Schedule days">
         {days.map((d) => (
           <button key={d.date} type="button" className={`${styles.dayChip} ${d.date === day.date ? styles.activeChip : ''}`} onClick={() => setSelected(d.date)}>
             <span>{formatDate(d.date, locale, { day: 'numeric', month: 'short' })}</span>
@@ -647,7 +628,7 @@ export function UpdateBubbles({ announcements = [] }) {
         {announcements.slice(0, 8).map((a, i) => (
           <button key={a.slug} type="button" className={styles.updateBubble} aria-label={t(a.title)} title={t(a.title)} onClick={() => setOpenIndex(i)}>
             <span className={`${styles.updateRing} ${seen.has(a.slug) ? styles.seenRing : ''}`}>{a.image?.src ? <img src={a.image.src} alt="" loading="lazy" /> : <Icon name="megaphone" size={26} />}</span>
-            <span>{t(a.title)}</span>
+            <span>{shortBubbleLabel(a, t)}</span>
           </button>
         ))}
       </section>

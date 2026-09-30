@@ -9,6 +9,7 @@ import { contentService } from '../services/contentService.js';
 import { eventService } from '../services/eventService.js';
 import { INQUIRY_TYPES, submitInquiry } from '../services/inquiryService.js';
 import { mailConfigured } from '../services/mailService.js';
+import { sponsorEmbeddabilityService } from '../services/sponsorEmbeddabilityService.js';
 import { validateInquiry } from '../utils/validate.js';
 import { adminRouter } from './admin.js';
 import { publicCouponsRouter } from './coupons.js';
@@ -26,6 +27,13 @@ const shortCacheEvents = (_req, res, next) => {
   res.setHeader('Cache-Control', 'public, max-age=30, stale-while-revalidate=60');
   next();
 };
+
+async function withSponsorEmbeddability(event, { lazy = false } = {}) {
+  const url = event?.sponsorship?.url;
+  if (!url) return event;
+  const embeddable = lazy ? sponsorEmbeddabilityService.cachedOrKick(url) : await sponsorEmbeddabilityService.check(url);
+  return { ...event, sponsorship: { ...event.sponsorship, embeddable } };
+}
 
 apiRouter.get('/health', async (_req, res) => {
   res.setHeader('Cache-Control', 'no-store');
@@ -51,18 +59,19 @@ apiRouter.get('/site', cacheable, async (_req, res) => {
 
 apiRouter.get('/events', shortCacheEvents, async (req, res) => {
   const status = typeof req.query.status === 'string' ? req.query.status : undefined;
-  res.json({ data: await eventService.listPublished({ status }) });
+  const events = await eventService.listPublished({ status });
+  res.json({ data: await Promise.all(events.map((event) => withSponsorEmbeddability(event, { lazy: true }))) });
 });
 
 apiRouter.get('/events/featured', shortCacheEvents, async (_req, res) => {
   const { event, reason } = await eventService.getFeatured(await contentService.getSite());
-  res.json({ data: event, reason });
+  res.json({ data: await withSponsorEmbeddability(event), reason });
 });
 
 apiRouter.get('/events/:slug', shortCacheEvents, async (req, res) => {
   const event = await eventService.getPublishedBySlug(req.params.slug);
   if (!event) throw new HttpError(404, 'EVENT_NOT_FOUND', 'Event not found.');
-  res.json({ data: event });
+  res.json({ data: await withSponsorEmbeddability(event) });
 });
 
 apiRouter.get('/gallery', cacheable, async (_req, res) => {

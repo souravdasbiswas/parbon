@@ -26,9 +26,13 @@
   border: 0;
   background: transparent;
   display: grid;
+  grid-template-rows: 58px auto;
+  align-content: start;
   justify-items: center;
-  gap: 0.25rem;
+  gap: 0.3rem;
   width: 4rem;
+  min-height: 0;
+  padding: 0;
   flex: 0 0 4rem;
   color: var(--color-charcoal);
   font-size: 0.72rem;
@@ -39,24 +43,47 @@
 }
 
 .updateRing {
-  display: grid;
-  place-items: center;
+  position: relative;
+  display: block;
+  flex: none;
+  box-sizing: border-box;
   width: 58px;
   height: 58px;
+  aspect-ratio: 1;
   padding: 3px;
   border-radius: 50%;
   background: conic-gradient(var(--color-vermilion), var(--color-gold), var(--color-vermilion));
   color: var(--color-vermilion);
 }
 
-.updateRing img,
-.updateRing svg {
-  width: 100%;
-  height: 100%;
+.updateRing::before {
+  content: '';
+  position: absolute;
+  inset: 3px;
+  border: 2px solid var(--color-paper);
+  border-radius: 50%;
+  background: var(--color-gold-pale);
+}
+
+/* Absolutely positioned so the photo always fills a perfect circle, whatever its own aspect ratio. */
+.updateRing img {
+  position: absolute;
+  inset: 3px;
+  display: block;
+  width: calc(100% - 6px);
+  height: calc(100% - 6px);
+  max-width: none;
   border: 2px solid var(--color-paper);
   border-radius: 50%;
   object-fit: cover;
+  object-position: center top;
   background: var(--color-gold-pale);
+}
+
+.updateRing svg {
+  position: absolute;
+  inset: 0;
+  margin: auto;
 }
 
 .seenRing {
@@ -64,11 +91,13 @@
 }
 
 .updateBubble > span:last-child {
-  max-width: 10ch;
+  display: -webkit-box;
+  max-width: 12ch;
   overflow: hidden;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
   text-decoration: none;
   text-overflow: ellipsis;
-  white-space: nowrap;
 }
 
 .hero {
@@ -273,67 +302,20 @@
   background: linear-gradient(180deg, #fffaf0, var(--color-gold-pale));
 }
 
-.hubCountdown {
-  display: grid;
-  gap: 0.4rem;
-}
-
-.countdownLabel {
-  margin: 0;
-  color: var(--color-terracotta);
-  font-size: 0.76rem;
-  font-weight: 800;
-  line-height: 1.1;
-  text-align: center;
-}
-
-.countdownUnits {
-  display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 0.4rem;
-  margin: 0;
-}
-
-.countdownUnit {
-  display: grid;
-  justify-items: center;
-  min-width: 0;
-  padding: 0.48rem 0.25rem 0.28rem;
-  border: 1px solid var(--color-gold-soft);
-  border-radius: 999px 999px 10px 10px;
-  background: linear-gradient(180deg, #fffaf0, var(--color-gold-pale));
-  text-align: center;
-}
-
-.countdownUnit strong {
-  color: var(--color-brown);
-  font-family: var(--font-display);
-  font-size: clamp(1.4rem, 1.1rem + 1.1vw, 2.1rem);
-  font-variant-numeric: tabular-nums lining-nums;
-  line-height: 1;
-}
-
-.countdownUnit span {
-  margin-top: 0.16rem;
-  color: var(--color-muted);
-  font-size: 0.64rem;
-  font-weight: 800;
-  letter-spacing: 0.08em;
-  line-height: 1;
-  text-transform: uppercase;
-}
-
-.countdownDone {
-  display: grid;
-  gap: 0.1rem;
-  margin: 0;
-  text-align: center;
-}
-
-.countdownDone span:first-child {
-  color: var(--color-vermilion);
-  font-family: var(--font-bengali-display);
-  font-size: var(--text-xl);
+/* Countdown card: same look as the v1 home countdown (Home.module.css .countdownCard). */
+.countdownCard {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-4);
+  margin-top: 0.2rem;
+  padding: var(--space-4) clamp(1rem, 0.6rem + 2vw, 2rem);
+  border: 1px solid var(--color-line);
+  border-radius: var(--radius-lg);
+  background: rgb(255 253 249 / 0.85);
+  box-shadow: var(--shadow-md);
+  backdrop-filter: blur(6px);
 }
 
 .nowBlock {
@@ -454,6 +436,46 @@
   display: none;
 }
 
+/* v1 home hero art (Home.module.css .arch / .archOutline / .heroLogo), used when an event has no artwork. */
+.v1Arch {
+  position: relative;
+  justify-self: center;
+  width: min(440px, 100%);
+  padding: 13% 9% 7%;
+}
+
+.v1ArchOutline {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+  filter: drop-shadow(0 30px 40px rgb(46 31 24 / 0.16));
+}
+
+.v1ArchLogo {
+  position: relative;
+  display: block;
+  mix-blend-mode: multiply;
+}
+
+.v1ArchLogo img {
+  width: 100%;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .v1ArchLogo {
+    animation: v1ArchRise 1.1s var(--ease-out) both;
+  }
+}
+
+@keyframes v1ArchRise {
+  from {
+    opacity: 0;
+    translate: 0 16px;
+  }
+}
+
 .archArt {
   position: relative;
   justify-self: center;
@@ -481,15 +503,15 @@
   width: 100%;
   height: 100%;
   place-items: center;
-  padding: 18%;
+  padding: 8%;
   background:
-    radial-gradient(circle at 50% 28%, rgb(216 191 138 / 0.28), transparent 44%),
+    radial-gradient(circle at 50% 42%, rgb(255 245 210 / 0.95), rgb(216 191 138 / 0.42) 36%, transparent 68%),
     var(--color-paper);
 }
 
 .archLogo,
 .archLogo img {
-  width: min(18rem, 68%);
+  width: min(24rem, 78%);
   height: auto;
 }
 
@@ -1391,14 +1413,6 @@
 
   .statusBlock {
     padding: var(--space-3);
-  }
-
-  .hubCountdown {
-    gap: var(--space-3);
-  }
-
-  .countdownLabel {
-    font-size: var(--text-xs);
   }
 
   .desktopArt {

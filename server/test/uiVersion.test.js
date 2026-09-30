@@ -106,6 +106,10 @@ describe('version-aware routes and sitemap', { skip: !htmlBuilt && 'client not b
     const sponsor = await getHtml('/sponsor/durga-puja-2026');
     assert.equal(sponsor.status, 302);
     assert.equal(new URL(sponsor.headers.get('location'), base).pathname, '/events/durga-puja-2026');
+
+    const passes = await getHtml('/passes');
+    assert.equal(passes.status, 302);
+    assert.equal(new URL(passes.headers.get('location'), base).pathname, '/register');
   });
 
   it('knows v2-only client paths only for v2', async () => {

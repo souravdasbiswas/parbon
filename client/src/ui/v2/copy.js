@@ -24,6 +24,7 @@ export const sheetCopy = {
   close: { en: 'Close', bn: 'বন্ধ করুন' },
   secure: { en: 'Secure', bn: 'নিরাপদ' },
   openExternal: { en: 'Payment app not opening? Open in browser ↗', bn: 'পেমেন্ট অ্যাপ খুলছে না? ব্রাউজারে খুলুন ↗' },
+  openSecure: { en: 'Open the secure sponsorship page ↗', bn: 'নিরাপদ স্পনসরশিপ পেজ খুলুন ↗' },
   loading: { en: 'Opening sponsor form…', bn: 'স্পনসর ফর্ম খুলছে…' },
 };
 
