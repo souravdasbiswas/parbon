@@ -15,6 +15,7 @@
   "scripts": {
     "dev": "concurrently -k -n server,client -c red,yellow \"npm run dev -w server\" \"npm run dev -w client\"",
     "build": "npm run build -w client",
+    "postinstall": "npm run build",
     "start": "node server.js",
     "test": "npm test -w server",
     "lint": "npm run lint -w client",
