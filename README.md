@@ -607,7 +607,9 @@ Hostinger's automatic GitHub deploys have started the app **without the environm
 
 So the app also reads exactly one settings file from your **home folder**. Deploys replace the app folder but never touch the home folder.
 
-For a single production app, the existing behavior is unchanged: if no Hostinger site can be detected, or the detected site is a primary site (`parbon.in` or `www.parbon.in` by default), the app can use **`~/parbon.env`**. For parallel Hostinger apps, the app detects the site name from paths like `/home/<user>/domains/<site>/...` and prefers **`~/parbon.<site>.env`**. Non-primary sites do **not** fall back to `~/parbon.env`; if `~/parbon.v2.parbon.in.env` is missing, staging starts without a home settings file instead of reading production secrets.
+For a single production app, the existing behavior is unchanged when the app folder is under a primary site name: if no Hostinger site can be detected, or the detected site is a primary site (`parbon.in` or `www.parbon.in` by default), the app can use **`~/parbon.env`**. For parallel Hostinger apps, the app detects the site name from paths like `/home/<user>/domains/<site>/...` and prefers **`~/parbon.<site>.env`**. Non-primary sites do **not** fall back to `~/parbon.env`; if `~/parbon.v2.parbon.in.env` is missing, staging starts without a home settings file instead of reading production secrets.
+
+Before enabling this on production, check the current production start-up log or hPanel File Manager and confirm the app folder really is under `/home/<your-user>/domains/parbon.in/…` (or another name in `PARBON_PRIMARY_SITES`). If Hostinger is actually running production under a different folder name, such as a temporary `hostingersite.com` domain, production will not read `~/parbon.env`; either rename/attach the app under `parbon.in`, add that folder name to `PARBON_PRIMARY_SITES`, or copy the settings to `~/parbon.<that-site>.env`.
 
 1. In **hPanel → Files → File Manager**, go to your home folder: the top level, `/home/<your-user>/`, **not** `public_html` or `domains/…`.
 2. Create the right file:
@@ -641,7 +643,7 @@ How the two sources combine:
 - When you change a password or secret, update **both** hPanel and the matching home file (`parbon.env` or `parbon.<site>.env`).
 - If you change primary domains, set `PARBON_PRIMARY_SITES=parbon.in,www.parbon.in` (comma-separated). Only those sites may use the legacy `~/parbon.env` fallback.
 - `PARBON_SITE=<site>` overrides path detection when needed.
-- `SITE_NOINDEX` can force robots behavior. If it is unset, production sites whose `SITE_URL` host is not in `PARBON_PRIMARY_SITES` automatically send `X-Robots-Tag: noindex, nofollow` and return `Disallow: /` from `/robots.txt`.
+- `SITE_NOINDEX` can force robots behavior. If it is unset, detected primary sites are never auto-noindexed. Other production sites automatically send `X-Robots-Tag: noindex, nofollow` and return `Disallow: /` from `/robots.txt` when the detected site is non-primary, or when no site is detected but `SITE_URL` is a real non-primary host. A missing `SITE_URL` that falls back to localhost does not auto-noindex production.
 - The file is outside the website folder, so it is never served to visitors. Never commit it to Git.
 
 #### Staging site (`v2.parbon.in`)

@@ -90,16 +90,28 @@ describe('chooseHomeEnvFile', () => {
 });
 
 describe('resolveSiteNoindex', () => {
-  it('automatically noindexes production non-primary hosts', () => {
-    assert.equal(resolveSiteNoindex({ env: {}, isProduction: true, siteUrl: 'https://v2.parbon.in' }), true);
+  it('does not auto-noindex a primary production site when SITE_URL fell back to localhost', () => {
+    assert.equal(resolveSiteNoindex({ env: {}, isProduction: true, siteName: 'parbon.in', siteUrl: 'http://localhost:5173' }), false);
   });
 
-  it('does not automatically noindex production primary hosts', () => {
-    assert.equal(resolveSiteNoindex({ env: {}, isProduction: true, siteUrl: 'https://parbon.in' }), false);
+  it('does not auto-noindex production with no detected site and localhost SITE_URL', () => {
+    assert.equal(resolveSiteNoindex({ env: {}, isProduction: true, siteName: '', siteUrl: 'http://localhost:5173' }), false);
+  });
+
+  it('automatically noindexes a production non-primary detected site', () => {
+    assert.equal(resolveSiteNoindex({ env: {}, isProduction: true, siteName: 'v2.parbon.in', siteUrl: 'http://localhost:5173' }), true);
+  });
+
+  it('automatically noindexes production non-primary SITE_URL hosts when no site is detected', () => {
+    assert.equal(resolveSiteNoindex({ env: {}, isProduction: true, siteName: '', siteUrl: 'https://v2.parbon.in' }), true);
+  });
+
+  it('does not automatically noindex production primary SITE_URL hosts', () => {
+    assert.equal(resolveSiteNoindex({ env: {}, isProduction: true, siteName: '', siteUrl: 'https://parbon.in' }), false);
   });
 
   it('uses explicit SITE_NOINDEX when set', () => {
-    assert.equal(resolveSiteNoindex({ env: { SITE_NOINDEX: 'false' }, isProduction: true, siteUrl: 'https://v2.parbon.in' }), false);
-    assert.equal(resolveSiteNoindex({ env: { SITE_NOINDEX: 'true' }, isProduction: false, siteUrl: 'https://parbon.in' }), true);
+    assert.equal(resolveSiteNoindex({ env: { SITE_NOINDEX: 'false' }, isProduction: true, siteName: 'v2.parbon.in', siteUrl: 'https://v2.parbon.in' }), false);
+    assert.equal(resolveSiteNoindex({ env: { SITE_NOINDEX: 'true' }, isProduction: false, siteName: 'parbon.in', siteUrl: 'https://parbon.in' }), true);
   });
 });

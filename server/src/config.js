@@ -174,10 +174,19 @@ const siteUrlHost = (url) => {
     return '';
   }
 };
+const isLocalSiteHost = (host) => ['localhost', '127.0.0.1', '::1', '[::1]'].includes(normaliseSiteName(host));
 
-export function resolveSiteNoindex({ env = process.env, isProduction = false, siteUrl: url = '' } = {}) {
+export function resolveSiteNoindex({ env = process.env, isProduction = false, siteName = '', siteUrl: url = '' } = {}) {
   if (env.SITE_NOINDEX !== undefined && env.SITE_NOINDEX !== '') return bool(env.SITE_NOINDEX);
-  return isProduction && !isPrimarySite(siteUrlHost(url), primarySitesFromEnv(env));
+  if (!isProduction) return false;
+
+  const primarySitesForEnv = primarySitesFromEnv(env);
+  const detectedSite = normaliseSiteName(siteName);
+  if (isPrimarySite(detectedSite, primarySitesForEnv)) return false;
+  if (detectedSite) return true;
+
+  const host = siteUrlHost(url);
+  return Boolean(host && !isLocalSiteHost(host) && !isPrimarySite(host, primarySitesForEnv));
 }
 
 export const config = Object.freeze({
@@ -187,7 +196,7 @@ export const config = Object.freeze({
   siteUrl,
   siteName: homeEnvFileChoice.site,
   primarySites,
-  siteNoindex: resolveSiteNoindex({ env, isProduction: nodeEnv === 'production', siteUrl }),
+  siteNoindex: resolveSiteNoindex({ env, isProduction: nodeEnv === 'production', siteName: homeEnvFileChoice.site, siteUrl }),
   corsOrigins: list(env.CORS_ORIGINS),
   trustProxy: bool(env.TRUST_PROXY, true),
   paths: {
