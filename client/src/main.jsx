@@ -1,6 +1,6 @@
 import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
-import { RouterProvider } from 'react-router';
+import { createBrowserRouter, RouterProvider } from 'react-router';
 
 // Self-hosted fonts (bundled by Vite; unicode-range subsets load only what a page needs).
 import '@fontsource/cormorant-garamond/500.css';
@@ -14,12 +14,38 @@ import './styles/tokens.css';
 import './styles/base.css';
 
 import { LocaleProvider } from './i18n/LocaleContext.jsx';
-import { router } from './router.jsx';
+import { composeRoutes } from './router.jsx';
+import PreviewBadge from './ui/PreviewBadge.jsx';
+import { getUiVersion, loadUiRoutes } from './ui/versions.js';
 
-createRoot(document.getElementById('root')).render(
-  <StrictMode>
-    <LocaleProvider>
-      <RouterProvider router={router} />
-    </LocaleProvider>
-  </StrictMode>,
-);
+const root = createRoot(document.getElementById('root'));
+const version = getUiVersion();
+document.documentElement.dataset.ui = version;
+
+function render(router) {
+  root.render(
+    <StrictMode>
+      <LocaleProvider>
+        <RouterProvider router={router} />
+        <PreviewBadge />
+      </LocaleProvider>
+    </StrictMode>,
+  );
+}
+
+loadUiRoutes(version)
+  .then((module) => {
+    const versionRouteTree = module.routes || module.default;
+    render(createBrowserRouter(composeRoutes(versionRouteTree)));
+  })
+  .catch((error) => {
+    console.error('[parbon] Unable to load UI routes.', error);
+    root.render(
+      <StrictMode>
+        <div className="container section" role="alert">
+          <h1>Parbon could not load</h1>
+          <p>Please refresh the page. If the problem continues, contact the organisers.</p>
+        </div>
+      </StrictMode>,
+    );
+  });

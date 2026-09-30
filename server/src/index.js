@@ -5,6 +5,8 @@ import { configReportLines } from './utils/configReport.js';
 
 // What this process received from the host (setting names and checks only, never values).
 for (const line of configReportLines()) console.log(line);
+if (config.uiVersionWarning) console.warn(`[parbon][config] ${config.uiVersionWarning}`);
+console.log(`[parbon][config] UI version: ${config.uiVersion} (preview ${config.uiPreview ? 'on' : 'off'})`);
 
 const app = createApp();
 

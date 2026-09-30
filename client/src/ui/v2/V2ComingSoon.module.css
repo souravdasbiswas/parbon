@@ -1,0 +1,11 @@
+.wrap {
+  min-height: calc(100dvh - var(--header-h));
+  display: grid;
+  align-items: center;
+}
+
+.actions {
+  display: flex;
+  justify-content: center;
+  margin-top: var(--space-6);
+}

@@ -467,6 +467,8 @@ Copy `.env.example` to `.env` for local use. On Hostinger, set these in hPanel. 
 | `SITE_URL`      | `http://localhost:5173`  | Public URL, e.g. `https://parbon.org` (sitemap, robots.txt)    |
 | `TRUST_PROXY`   | `1`                      | Trust Hostinger's reverse proxy, so rate limiting sees real client IPs |
 | `CORS_ORIGINS`  | *(empty)*                | Comma-separated origins, only needed if the frontend is hosted elsewhere |
+| `UI_VERSION`    | `v1`                     | Active public UI route tree. Allowed values are registered in `server/src/uiVersions.js` |
+| `UI_PREVIEW`    | `false`                  | Allows `?ui=<version>` preview switching for non-admin requests. Admin sessions can preview even when this is `false` |
 | `SMTP_HOST` …   | *(empty)*                | Optional email: enquiry notifications, and coupon emails to people who register. Hostinger: `smtp.hostinger.com`, `465`, `SMTP_SECURE=true` |
 | `SMTP_USER` / `SMTP_PASS` | *(empty)*      | Mailbox credentials (never commit these)                      |
 | `MAIL_FROM` / `MAIL_TO`   | —              | Sender, and the committee inbox that receives enquiries       |
@@ -480,6 +482,16 @@ Copy `.env.example` to `.env` for local use. On Hostinger, set these in hPanel. 
 | `SESSION_HOURS`  | `8`                  | How long an admin stays signed in                               |
 | `SCANNER_SESSION_HOURS` | `16`          | How long a gate volunteer stays signed in to the scanner (volunteers are managed under *Gate team*) |
 | `VITE_API_BASE_URL` | *(empty)*            | **Build-time** (client). Only for split deployments           |
+
+### UI versions (`UI_VERSION`)
+
+The public site can run multiple UI route trees from one codebase. The server validates `UI_VERSION` against `server/src/uiVersions.js`, falls back to `v1` with a startup warning when it is invalid, and reports the active value at `/api/health` under `ui.version`.
+
+- **Preview on production as an admin:** sign in to `/admin`, then open `/?ui=v2`. The server stores `parbon_ui` for 30 days and injects a small "Viewing v2 · switch back" badge. Use `?ui=reset` from any page to clear the preview cookie. The `/give` v1 server redirect points to `/get-involved` because URL fragments are not reliable in server redirects; the v1 client route also redirects `/give` to `/get-involved#donate` when a dev/static shell handles it directly.
+- **Temporary public preview:** set `UI_PREVIEW=true`, restart, and share `/?ui=v2`. Turn it off and restart when preview access should return to admin-only.
+- **Go live with v2:** set `UI_VERSION=v2` in hPanel and in the persistent `~/parbon.<site>.env` (or equivalent home-folder env file), restart the Node app, then check `/api/health` shows `"ui":{"version":"v2","preview":false}`.
+- **Roll back:** set `UI_VERSION=v1`, restart, and verify `/api/health`.
+- **Add v3 later:** add `client/src/ui/v3/routes.jsx` (and any v3 layout/components), then add `v3` to both `server/src/uiVersions.js` and `client/src/ui/versions.js`. Add any v3-only server-known paths/redirects in `server/src/uiVersions.js`.
 
 ---
 

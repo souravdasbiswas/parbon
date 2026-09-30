@@ -1,5 +1,6 @@
 import { readFile, stat } from 'node:fs/promises';
 import { config } from '../config.js';
+import { routeChunkPreloadHref } from './clientManifest.js';
 
 const escapeHtml = (s) =>
   String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]);
@@ -13,11 +14,31 @@ async function loadIndex(file) {
 
 const absolute = (url) => (/^https?:\/\//.test(url) ? url : `${config.siteUrl}${url}`);
 
+async function injectUi(html, ui = {}) {
+  const version = ui.version || config.uiVersion;
+  const preload = await routeChunkPreloadHref(version);
+  const tags = [
+    `<meta name="parbon-ui" content="${escapeHtml(version)}" />`,
+    ui.overrideActive && '<meta name="parbon-ui-preview" content="1" />',
+    preload && `<link rel="modulepreload" href="${escapeHtml(preload)}" />`,
+  ]
+    .filter(Boolean)
+    .join('\n    ');
+
+  return html
+    .replace(/<html([^>]*)>/i, (match, attrs) => (/\sdata-ui=/.test(attrs) ? match : `<html${attrs} data-ui="${escapeHtml(version)}">`))
+    .replace('</head>', `    ${tags}\n  </head>`);
+}
+
+export async function renderShell(indexFile, ui) {
+  return injectUi(await loadIndex(indexFile), ui);
+}
+
 /**
  * Link-preview crawlers (WhatsApp, Facebook, X…) don't run JavaScript, so pages that are
  * commonly shared get their title, description and image written into the HTML here.
  */
-export async function renderWithMeta(indexFile, { title, description, image, url, type = 'article' }) {
+export async function renderWithMeta(indexFile, { title, description, image, url, type = 'article' }, ui) {
   const html = await loadIndex(indexFile);
   const fullTitle = `${title} · Parbon Sanskritik Samity`;
   const tags = [
@@ -32,11 +53,14 @@ export async function renderWithMeta(indexFile, { title, description, image, url
     .filter(Boolean)
     .join('\n    ');
 
-  return html
-    .replace(/<title>[\s\S]*?<\/title>/, `<title>${escapeHtml(fullTitle)}</title>`)
-    .replace(/<meta\s+name="description"[\s\S]*?\/>/, `<meta name="description" content="${escapeHtml(description)}" />`)
-    .replace(/\s*<meta property="og:(type|image)"[^>]*\/>/g, '')
-    .replace('</head>', `    ${tags}\n  </head>`);
+  return injectUi(
+    html
+      .replace(/<title>[\s\S]*?<\/title>/, `<title>${escapeHtml(fullTitle)}</title>`)
+      .replace(/<meta\s+name="description"[\s\S]*?\/>/, `<meta name="description" content="${escapeHtml(description)}" />`)
+      .replace(/\s*<meta property="og:(type|image)"[^>]*\/>/g, '')
+      .replace('</head>', `    ${tags}\n  </head>`),
+    ui,
+  );
 }
 
 export const summarise = (text = '', max = 180) => {

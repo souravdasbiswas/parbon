@@ -3,6 +3,7 @@ import os from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { parseEnv } from 'node:util';
+import { resolveConfiguredUiVersion } from './uiVersions.js';
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 export const SERVER_ROOT = path.resolve(here, '..');
@@ -63,6 +64,7 @@ const list = (value) =>
     .filter(Boolean);
 
 const nodeEnv = env.NODE_ENV || 'development';
+const uiVersion = resolveConfiguredUiVersion(env.UI_VERSION);
 
 export const config = Object.freeze({
   nodeEnv,
@@ -71,6 +73,9 @@ export const config = Object.freeze({
   siteUrl: (env.SITE_URL || 'http://localhost:5173').replace(/\/+$/, ''),
   corsOrigins: list(env.CORS_ORIGINS),
   trustProxy: bool(env.TRUST_PROXY, true),
+  uiVersion: uiVersion.version,
+  uiPreview: bool(env.UI_PREVIEW, false),
+  uiVersionWarning: uiVersion.warning,
   paths: {
     data: env.DATA_DIR ? path.resolve(env.DATA_DIR) : path.join(SERVER_ROOT, 'data'),
     storage: env.STORAGE_DIR ? path.resolve(env.STORAGE_DIR) : path.join(SERVER_ROOT, 'storage'),
