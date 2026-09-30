@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { useParams } from 'react-router';
 import Seo from '../../../components/ui/Seo.jsx';
 import { ErrorState, LoadingState } from '../../../components/ui/States.jsx';
@@ -83,6 +84,27 @@ function Hero({ event, couponEvents }) {
   );
 }
 
+function AboutEventSection({ description = [] }) {
+  const { locale, t } = useLocale();
+  const [expanded, setExpanded] = useState(false);
+  if (!description.length) return null;
+  const rest = description.slice(1);
+  return (
+    <section className={`${styles.section} ${styles.aboutEvent}`} aria-labelledby="about-event-title">
+      <BiTitle id="about-event-title" as="h2" size="sm" bn="এই অনুষ্ঠান" en="About this event" className={styles.hubHeading} />
+      <div className={styles.aboutProse}>
+        <p className={styles.prose}>{t(description[0])}</p>
+        {expanded && rest.map((paragraph, index) => <p key={index} className={styles.prose}>{t(paragraph)}</p>)}
+      </div>
+      {rest.length > 0 && (
+        <button type="button" className={styles.aboutToggle} onClick={() => setExpanded((value) => !value)}>
+          {expanded ? (locale === 'bn' ? 'কম দেখুন' : 'Read less') : (locale === 'bn' ? 'আরও পড়ুন' : 'Read more')}
+        </button>
+      )}
+    </section>
+  );
+}
+
 export default function EventHub({ slug: fixedSlug, event: providedEvent, afterHighlights = null, beforeHero = null, afterHub = null, showUpdates = false }) {
   const params = useParams();
   const slug = fixedSlug || params.slug;
@@ -121,12 +143,7 @@ export default function EventHub({ slug: fixedSlug, event: providedEvent, afterH
           <VenueSection event={event} />
           <ComingUp events={events.data || []} currentSlug={event.slug} />
           <EventContacts event={event} site={site.data} />
-          {event.description?.length > 0 && (
-            <section className={`${styles.section} ${styles.aboutEvent}`} aria-labelledby="about-event-title">
-              <BiTitle id="about-event-title" as="h2" size="sm" bn="এই অনুষ্ঠান" en="About this event" className={styles.hubHeading} />
-              {event.description.map((p, i) => <p key={i} className={styles.prose}>{t(p)}</p>)}
-            </section>
-          )}
+          <AboutEventSection key={event.slug} description={event.description} />
         </div>
       </main>
       {afterHub}

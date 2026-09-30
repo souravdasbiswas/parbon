@@ -25,7 +25,6 @@ const HASH_SECTIONS = [
   ['passes', { bn: 'পাস', en: 'Passes' }],
   ['sponsor', { bn: 'সহায়তা', en: 'Sponsor' }],
   ['venue', { bn: 'ঠিকানা', en: 'Venue' }],
-  ['contact', { bn: 'যোগাযোগ', en: 'Contact' }],
   ['updates', { bn: 'খবর', en: 'Updates' }],
 ];
 
@@ -149,6 +148,46 @@ function shortBubbleLabel(announcement, t) {
   const category = t(announcement.category);
   if (category) return shortText(category, 18);
   return shortText(t(announcement.title).split(/\s+/).slice(0, 2).join(' '), 18);
+}
+
+function formatTileMonth(date, locale) {
+  const month = formatDate(date, locale, { month: 'short' });
+  return locale === 'bn' ? month : month.toUpperCase();
+}
+
+function localizedClockLabel(value, locale) {
+  return locale === 'bn' ? toBengaliDigits(value) : value;
+}
+
+function keywordMatch(text, words) {
+  return words.some((word) => text.includes(word));
+}
+
+export function highlightArt(highlight = {}) {
+  const haystack = `${highlight.icon || ''} ${highlight.title?.en || ''} ${highlight.title?.bn || ''} ${highlight.text?.en || ''} ${highlight.text?.bn || ''}`.toLowerCase();
+  if (keywordMatch(haystack, ['dhak', 'dhaaki'])) return '/brand/coupon-dhak.png';
+  if (keywordMatch(haystack, ['lotus', 'pushpanjali', 'অঞ্জলি', 'পুষ্পাঞ্জলি'])) return '/brand/coupon-lotus.png';
+  if (keywordMatch(haystack, ['diya', 'lamp', 'sandhi', 'সন্ধি', 'প্রদীপ'])) return '/brand/coupon-diya.png';
+  if (keywordMatch(haystack, ['bhog', 'food', 'mishti', 'খাবার', 'ভোগ', 'shingara'])) return '/brand/coupon-banana-leaf.png';
+  if (keywordMatch(haystack, ['kash', 'festival', 'উৎসব', 'puja'])) return '/brand/coupon-kash.png';
+  if (keywordMatch(haystack, ['sindoor', 'সিঁদুর'])) return '/brand/coupon-sindoor.png';
+  if (keywordMatch(haystack, ['music', 'cultural', 'song', 'dance', 'আবৃত্তি', 'সাংস্কৃতিক'])) return '/brand/coupon-moon.png';
+  return '/brand/coupon-alpana-gold.png';
+}
+
+function upcomingArt(event = {}) {
+  const haystack = `${event.category?.en || ''} ${event.category?.bn || ''} ${event.title?.en || ''} ${event.title?.bn || ''}`.toLowerCase();
+  if (keywordMatch(haystack, ['festival', 'puja', 'উৎসব'])) return '/brand/coupon-kash.png';
+  if (keywordMatch(haystack, ['gathering', 'meet', 'মিলন', 'adda'])) return '/brand/coupon-marigold.png';
+  if (keywordMatch(haystack, ['music', 'cultural', 'performance', 'সাংস্কৃতিক'])) return '/brand/coupon-moon.png';
+  return '/brand/coupon-alpana-gold.png';
+}
+
+function compactLines(values) {
+  return values
+    .map((value) => String(value || '').trim())
+    .filter(Boolean)
+    .filter((value, index, all) => all.indexOf(value) === index);
 }
 
 export function EventCover({ event, desktop = false }) {
@@ -325,38 +364,64 @@ export function DayChipsSchedule({ event }) {
   const days = event.schedule || [];
   const [openNote, setOpenNote] = useState(false);
   const defaultSelected = selectedScheduleDate(event);
-  const [selected, setSelected] = useState(defaultSelected);
+  const [selected, setSelected] = useState(() => defaultSelected);
   if (!days.length) return null;
   const currentSelected = days.some((d) => d.date === selected) ? selected : defaultSelected;
   const day = days.find((d) => d.date === currentSelected) || days[0];
+  const noteText = t(day.note) || t(event.scheduleNote);
   return (
     <section id="schedule" className={styles.section} aria-labelledby="schedule-title">
       <HubHeading id="schedule-title" bn="নির্ঘণ্ট" en="Schedule" />
-      <div className={styles.dayChips} role="group" aria-label="Schedule days">
-        {days.map((d) => (
-          <button key={d.date} type="button" className={`${styles.dayChip} ${d.date === day.date ? styles.activeChip : ''}`} onClick={() => setSelected(d.date)}>
-            <span>{formatDate(d.date, locale, { day: 'numeric', month: 'short' })}</span>
-            <strong>{t(d.day)}</strong>
-          </button>
-        ))}
+      <div className={styles.dayChipsWrap}>
+        <div className={styles.dayChips} role="tablist" aria-label="Schedule days">
+          {days.map((d) => {
+            const active = d.date === day.date;
+            return (
+              <button
+                key={d.date}
+                id={`schedule-tab-${d.date}`}
+                type="button"
+                role="tab"
+                aria-selected={active}
+                aria-controls={`schedule-panel-${d.date}`}
+                className={`${styles.dayChip} ${active ? styles.activeChip : ''}`}
+                onClick={() => setSelected(d.date)}
+              >
+                <span className={styles.dayChipDate}>
+                  <strong>{formatDate(d.date, locale, { day: 'numeric' })}</strong>
+                  <small>{formatTileMonth(d.date, locale)}</small>
+                </span>
+                <span className={styles.dayChipLabel}>{t(d.day)}</span>
+              </button>
+            );
+          })}
+        </div>
       </div>
-      <div className={styles.scheduleList}>
+      <div id={`schedule-panel-${day.date}`} className={styles.scheduleList} role="tabpanel" aria-labelledby={`schedule-tab-${day.date}`}>
         {(day.items || []).map((item, i) => {
           const live = isItemLive(event, item, day.date);
           return (
             <div key={`${item.time}-${i}`} className={`${styles.scheduleRow} ${live ? styles.liveRow : ''}`}>
-              <time>{item.time}</time>
-              <span>{t(item.title)}</span>
+              <time>{localizedClockLabel(item.time, locale)}</time>
+              <span className={styles.scheduleCopy}>
+                <strong className={styles.scheduleItemTitle}>{t(item.title)}</strong>
+                {item.note && <small>{t(item.note)}</small>}
+              </span>
               {live && <em>{locale === 'bn' ? 'চলছে' : 'LIVE'}</em>}
             </div>
           );
         })}
         {!day.items?.length && <p className={styles.muted}>{locale === 'bn' ? 'বিস্তারিত শীঘ্রই।' : 'Details coming soon.'}</p>}
       </div>
-      {(event.scheduleNote || day.note) && (
+      {noteText && (
         <div className={styles.scheduleNote}>
-          <button type="button" onClick={() => setOpenNote((v) => !v)}>{locale === 'bn' ? 'পুরো নোট দেখুন' : 'Full schedule & notes'} <Icon name="arrow" size={15} /></button>
-          {openNote && <p>{t(day.note) || t(event.scheduleNote)}</p>}
+          <button type="button" onClick={() => setOpenNote((v) => !v)} aria-expanded={openNote}>
+            {openNote ? (locale === 'bn' ? 'নোট গুটিয়ে রাখুন' : 'Hide notes') : (locale === 'bn' ? 'পুরো নোট দেখুন' : 'Full schedule & notes')}
+            <Icon name="arrow" size={15} />
+          </button>
+          <div className={`${styles.scheduleNoteBody} ${openNote ? styles.scheduleNoteOpen : ''}`}>
+            <div><p>{noteText}</p></div>
+          </div>
         </div>
       )}
     </section>
@@ -435,21 +500,68 @@ export function SponsorBand({ event }) {
 export function VenueSection({ event }) {
   const { locale, t } = useLocale();
   const [copied, setCopied] = useState(false);
-  const venue = event.venue;
+  const [loadedMapUrl, setLoadedMapUrl] = useState('');
+  const venue = event.venue || {};
+  const venueName = t(venue.name);
+  const spot = t(venue.spot);
+  const address = t(venue.address);
+  const area = t(venue.area);
+  const copyTarget = compactLines([venueName, spot, address, area]).join(', ');
   if (!venue?.name) return null;
-  const address = t(venue.address) || [t(venue.spot), t(venue.area)].filter(Boolean).join(', ');
+  const mapReady = loadedMapUrl === venue.mapEmbedUrl;
   return (
     <section id="venue" className={styles.section} aria-labelledby="venue-title">
       <HubHeading id="venue-title" bn="ঠিকানা" en="Venue" />
       <div className={styles.venueGrid}>
-        <div className={styles.staticMap} aria-hidden="true"><Alpana /><Icon name="pin" size={38} /></div>
+        <div className={styles.venueMapShell}>
+          <div className={styles.staticMap} aria-hidden="true">
+            <Alpana />
+            <Icon name="pin" size={38} />
+          </div>
+          {venue.mapEmbedUrl && (
+            <iframe
+              className={`${styles.venueMap} ${mapReady ? styles.venueMapReady : ''}`}
+              src={venue.mapEmbedUrl}
+              title={locale === 'bn' ? `${venueName} মানচিত্র` : `${venueName} map`}
+              loading="lazy"
+              referrerPolicy="no-referrer-when-downgrade"
+              onLoad={() => setLoadedMapUrl(venue.mapEmbedUrl)}
+            />
+          )}
+        </div>
         <div className={styles.venueCard}>
-          <h3>{t(venue.name)}</h3>
-          {venue.spot && <p>{t(venue.spot)}</p>}
-          {address && <address>{address}</address>}
-          <div className={styles.inlineLinks}>
-            {venue.mapUrl && <a {...externalProps(venue.mapUrl)}>{locale === 'bn' ? 'দিকনির্দেশ' : 'Directions'} ↗</a>}
-            {address && <button type="button" onClick={async () => { if (await copyText(address)) { setCopied(true); window.setTimeout(() => setCopied(false), 1800); } }}><Icon name={copied ? 'check' : 'copy'} size={15} />{copied ? (locale === 'bn' ? 'কপি হয়েছে' : 'Copied') : (locale === 'bn' ? 'ঠিকানা কপি' : 'Copy address')}</button>}
+          <div className={styles.venueMeta}>
+            <h3>{venueName}</h3>
+            {(spot || address || area) && (
+              <div className={styles.venueAddressBlock}>
+                {spot && <p className={styles.venueSpot}>{spot}</p>}
+                {address && <address>{address}</address>}
+                {area && <p className={styles.venueArea}>{area}</p>}
+              </div>
+            )}
+          </div>
+          <div className={styles.venueButtons}>
+            {venue.mapUrl && (
+              <a className={`${styles.venueButton} ${styles.venueButtonPrimary}`} {...externalProps(venue.mapUrl)}>
+                <Icon name="pin" size={16} />
+                {locale === 'bn' ? 'দিকনির্দেশ' : 'Directions'}
+              </a>
+            )}
+            {copyTarget && (
+              <button
+                type="button"
+                className={`${styles.venueButton} ${styles.venueButtonSecondary}`}
+                onClick={async () => {
+                  if (await copyText(copyTarget)) {
+                    setCopied(true);
+                    window.setTimeout(() => setCopied(false), 1800);
+                  }
+                }}
+              >
+                <Icon name={copied ? 'check' : 'copy'} size={15} />
+                {copied ? (locale === 'bn' ? 'কপি হয়েছে ✓' : 'Copied ✓') : (locale === 'bn' ? 'ঠিকানা কপি' : 'Copy address')}
+              </button>
+            )}
           </div>
         </div>
       </div>
@@ -464,11 +576,17 @@ export function Highlights({ event }) {
     <section id="highlights" className={styles.section} aria-labelledby="highlights-title">
       <HubHeading id="highlights-title" bn="যা থাকছে" en="Highlights" />
       <div className={styles.highlightGrid}>
-        {event.highlights.map((h) => (
-          <article key={`${h.icon}-${h.title?.en}`} className={styles.highlightCard}>
-            <Icon name={h.icon || 'lotus'} size={24} />
-            <h3>{t(h.title)}</h3>
-            {h.text && <p>{t(h.text)}</p>}
+        {event.highlights.map((h, index) => (
+          <article key={`${h.icon}-${h.title?.en}`} className={`${styles.highlightCard} ${index % 2 ? styles.highlightCardRich : styles.highlightCardWarm}`}>
+            <div className={styles.highlightMedia}>
+              <span className={styles.highlightBadge}><Icon name={h.icon || 'lotus'} size={18} /></span>
+              <img src={highlightArt(h)} alt="" loading="lazy" />
+              <PaarBorder className={styles.highlightPaar} />
+            </div>
+            <div className={styles.highlightCopy}>
+              <h3>{t(h.title)}</h3>
+              {h.text && <p>{t(h.text)}</p>}
+            </div>
           </article>
         ))}
       </div>
@@ -478,16 +596,50 @@ export function Highlights({ event }) {
 
 export function ComingUp({ events = [], currentSlug }) {
   const { locale, t } = useLocale();
-  const list = events.filter((e) => e.slug !== currentSlug && e.status !== 'past').slice(0, 6);
+  const list = events.filter((e) => e.slug !== currentSlug && e.status !== 'past' && e.state !== 'draft').slice(0, 6);
   if (!list.length) return null;
+  const modeClass = list.length === 1 ? styles.comingRailSingle : list.length <= 3 ? styles.comingRailGrid : styles.comingRailScroller;
   return (
     <section id="coming-up" className={styles.section} aria-labelledby="coming-title">
       <HubHeading id="coming-title" bn="আরও যা আসছে" en="Coming up" />
-      <div className={styles.comingRail}>
+      <div className={`${styles.comingRail} ${modeClass}`}>
         {list.map((e) => (
-          <Link key={e.slug} to={`/events/${e.slug}`} className={styles.comingCard}>
-            <span className={styles.dateBlock}>{e.startDate ? <><strong>{formatDate(e.startDate, 'en', { day: 'numeric' })}</strong><small>{formatDate(e.startDate, 'en', { month: 'short' })}</small></> : <><strong>{locale === 'bn' ? 'শীঘ্র' : 'Soon'}</strong></>}</span>
-            <span><b>{t(e.title)}</b><small>{e.startDate ? formatDateRange(e.startDate, e.endDate, locale) : t(e.dateLabel)}</small></span>
+          <Link key={e.slug} to={`/events/${e.slug}`} className={`${styles.comingCard} ${list.length === 1 ? styles.comingCardSingle : ''}`}>
+            <div className={styles.comingMedia}>
+              {e.image?.src ? (
+                <img src={e.image.src} alt={e.image.alt || ''} loading="lazy" />
+              ) : (
+                <div className={styles.comingFallback}>
+                  <img src={upcomingArt(e)} alt="" loading="lazy" />
+                </div>
+              )}
+              <span className={styles.dateBadge}>
+                {e.startDate ? (
+                  <>
+                    <strong>{formatDate(e.startDate, locale, { day: 'numeric' })}</strong>
+                    <small>{formatTileMonth(e.startDate, locale)}</small>
+                  </>
+                ) : (
+                  <>
+                    <strong>{locale === 'bn' ? 'শীঘ্র' : 'Soon'}</strong>
+                    <small>{t(e.category) || (locale === 'bn' ? 'অনুষ্ঠান' : 'Event')}</small>
+                  </>
+                )}
+              </span>
+            </div>
+            <div className={styles.comingBody}>
+              <div className={styles.comingTitles}>
+                {e.title?.bn && <span className={styles.comingTitleBn}>{e.title.bn}</span>}
+                <span className={styles.comingTitleEn}>{e.title?.en || t(e.title)}</span>
+              </div>
+              <div className={styles.comingMeta}>
+                <span>{e.startDate ? formatDateRange(e.startDate, e.endDate, locale) : t(e.dateLabel)}</span>
+                {[t(e.venue?.name), t(e.venue?.spot), t(e.venue?.area)].filter(Boolean).length > 0 && (
+                  <span>{[t(e.venue?.name), t(e.venue?.spot), t(e.venue?.area)].filter(Boolean).join(' · ')}</span>
+                )}
+              </div>
+              <span className={styles.comingAction}>{locale === 'bn' ? 'বিস্তারিত দেখুন' : 'View details'} →</span>
+            </div>
           </Link>
         ))}
       </div>
@@ -499,27 +651,69 @@ export function EventContacts({ event, site }) {
   const { locale, t } = useLocale();
   const contacts = event.contacts?.length ? event.contacts : site?.contact?.people || [];
   const community = site?.contact?.whatsappCommunity;
+  const email = site?.contact?.email || 'mail@parbon.in';
+  const sitePhone = digits(site?.contact?.phone);
+  const siteWhatsapp = digits(site?.contact?.whatsapp);
   const message = encodeURIComponent(`Hi, about ${event.title?.en || 'Parbon event'}…`);
   const visibleContacts = contacts.slice(0, 3);
-  if (!visibleContacts.length && !community) return null;
+  const quickActions = [
+    sitePhone && { key: 'phone', href: `tel:${sitePhone}`, label: locale === 'bn' ? 'ফোন' : 'Call', detail: sitePhone, icon: 'phone' },
+    siteWhatsapp && { key: 'whatsapp', href: `https://wa.me/${siteWhatsapp}?text=${message}`, label: 'WhatsApp', detail: locale === 'bn' ? 'বার্তা পাঠান' : 'Message the committee', icon: 'whatsapp', external: true },
+    email && { key: 'email', href: `mailto:${email}?subject=${encodeURIComponent(`${event.title?.en || 'Parbon event'} enquiry`)}`, label: locale === 'bn' ? 'ইমেল' : 'Email', detail: email, icon: 'mail' },
+  ].filter(Boolean);
+  if (!visibleContacts.length && !community && !quickActions.length) return null;
   return (
     <section id="contact" className={styles.section} aria-labelledby="contact-title">
       <HubHeading id="contact-title" bn="যোগাযোগ" en="Contact" />
-      <div className={styles.contactList}>
-        {community && <a className={`${styles.contactRow} ${styles.communityRow}`} {...externalProps(community)}><Icon name="whatsapp" size={24} /><span><strong>{locale === 'bn' ? 'হোয়াটসঅ্যাপ কমিউনিটি' : 'WhatsApp community'}</strong><small>{locale === 'bn' ? 'সর্বশেষ খবর পেতে যোগ দিন' : 'Join for event updates'}</small></span></a>}
-        {visibleContacts.map((c) => {
-          const wa = digits(c.whatsapp || c.phone);
-          const phone = digits(c.phone || c.whatsapp);
-          return (
-            <div key={`${c.name}-${wa}-${phone}`} className={styles.contactRow}>
-              <span className={styles.initials}>{String(c.name || 'P').slice(0, 1)}</span>
-              <span><strong>{c.name}</strong>{c.role && <small>{t(c.role)}</small>}</span>
-              <span className={styles.contactActions}>{phone && <a href={`tel:${phone}`}><Icon name="phone" size={17} />{locale === 'bn' ? 'কল' : 'Call'}</a>}{wa && <a {...externalProps(`https://wa.me/${wa}?text=${message}`)}><Icon name="whatsapp" size={17} />WhatsApp</a>}</span>
-            </div>
-          );
-        })}
+      <div className={styles.contactPanel}>
+        {community && (
+          <a className={`${styles.contactRow} ${styles.communityRow}`} {...externalProps(community)}>
+            <Icon name="whatsapp" size={24} />
+            <span className={styles.contactMeta}>
+              <strong>{locale === 'bn' ? 'হোয়াটসঅ্যাপ কমিউনিটি' : 'WhatsApp community'}</strong>
+              <small>{locale === 'bn' ? 'আপডেট, স্মরণিকা আর জরুরি খবরের জন্য যোগ দিন' : 'Join for event updates, reminders and urgent notices'}</small>
+            </span>
+          </a>
+        )}
+        {quickActions.length > 0 && (
+          <div className={styles.contactQuickGrid}>
+            {quickActions.map((action) => (
+              <a key={action.key} className={styles.contactQuickAction} href={action.href} {...(action.external ? { target: '_blank', rel: 'noopener noreferrer' } : {})}>
+                <Icon name={action.icon} size={18} />
+                <span className={styles.contactMeta}>
+                  <strong>{action.label}</strong>
+                  <small>{action.detail}</small>
+                </span>
+              </a>
+            ))}
+          </div>
+        )}
+        {visibleContacts.length > 0 && (
+          <div className={styles.contactList}>
+            {visibleContacts.map((c) => {
+              const wa = digits(c.whatsapp || c.phone);
+              const phone = digits(c.phone || c.whatsapp);
+              return (
+                <div key={`${c.name}-${wa}-${phone}`} className={styles.contactRow}>
+                  <span className={styles.initials}>{String(c.name || 'P').slice(0, 1)}</span>
+                  <span className={styles.contactMeta}>
+                    <strong>{c.name}</strong>
+                    {c.role && <small>{t(c.role)}</small>}
+                  </span>
+                  <span className={styles.contactActions}>
+                    {phone && <a href={`tel:${phone}`}><Icon name="phone" size={17} />{locale === 'bn' ? 'কল' : 'Call'}</a>}
+                    {wa && <a {...externalProps(`https://wa.me/${wa}?text=${message}`)}><Icon name="whatsapp" size={17} />WhatsApp</a>}
+                  </span>
+                </div>
+              );
+            })}
+          </div>
+        )}
+        <div className={styles.contactFooter}>
+          {site?.contact?.responseTime && <p className={styles.contactResponse}>{t(site.contact.responseTime)}</p>}
+          <Button to="/contact" variant="secondary">{locale === 'bn' ? 'সব যোগাযোগ' : 'All contacts'} →</Button>
+        </div>
       </div>
-      <Button to="/contact" variant="secondary">{locale === 'bn' ? 'সব যোগাযোগ' : 'All contacts'} →</Button>
     </section>
   );
 }
@@ -639,7 +833,7 @@ export function UpdateBubbles({ announcements = [] }) {
 
 export function SectionNav({ sections }) {
   const { t } = useLocale();
-  const [active, setActive] = useState(sections[0]);
+  const [active, setActive] = useState(sections[0] || '');
   useEffect(() => {
     const observer = new IntersectionObserver((entries) => {
       const visible = entries.filter((e) => e.isIntersecting).sort((a, b) => b.intersectionRatio - a.intersectionRatio)[0];
@@ -649,9 +843,10 @@ export function SectionNav({ sections }) {
     return () => observer.disconnect();
   }, [sections]);
   if (sections.length < 2) return null;
+  const currentActive = sections.includes(active) ? active : sections[0];
   return (
     <nav className={styles.sectionNav} aria-label="Event sections">
-      {HASH_SECTIONS.filter(([id]) => sections.includes(id)).map(([id, label]) => <a key={id} href={`#${id}`} className={active === id ? styles.activeNav : ''}>{t(label)}</a>)}
+      {HASH_SECTIONS.filter(([id]) => sections.includes(id)).map(([id, label]) => <a key={id} href={`#${id}`} className={currentActive === id ? styles.activeNav : ''}>{t(label)}</a>)}
     </nav>
   );
 }
