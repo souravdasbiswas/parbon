@@ -17,10 +17,8 @@ import {
   EventFacts,
   Highlights,
   PassCards,
-  SectionNav,
   SponsorBand,
   UpdateBubbles,
-  usePresentSections,
   VenueSection,
   StatusBlock,
 } from './sections.jsx';
@@ -118,8 +116,6 @@ export default function EventHub({ slug: fixedSlug, event: providedEvent, afterH
   useScrollToHash(Boolean(event));
 
   const couponEvents = couponReq.data || [];
-  const sectionIds = usePresentSections({ event: event || {}, couponEvents, site: site.data, announcements: showUpdates ? updates.data || [] : [] });
-
   if (eventReq.error?.status === 404) return <NotFound />;
   if (!event && eventReq.loading) return <div className="container section"><LoadingState lines={6} /></div>;
   if (!event && eventReq.error) return <div className="container section"><ErrorState error={eventReq.error} onRetry={eventReq.retry} /></div>;
@@ -132,7 +128,6 @@ export default function EventHub({ slug: fixedSlug, event: providedEvent, afterH
       {showUpdates && <UpdateBubbles announcements={updates.data || []} />}
       {beforeHero}
       <Hero event={event} couponEvents={couponEvents} />
-      <SectionNav sections={sectionIds} />
       <main className={styles.hubMain}>
         <div className={`container ${styles.hubGrid}`}>
           <DayChipsSchedule event={event} />
