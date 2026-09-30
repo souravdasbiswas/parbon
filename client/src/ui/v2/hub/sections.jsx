@@ -178,7 +178,7 @@ export function highlightArt(highlight = {}) {
 function upcomingArt(event = {}) {
   const haystack = `${event.category?.en || ''} ${event.category?.bn || ''} ${event.title?.en || ''} ${event.title?.bn || ''}`.toLowerCase();
   if (keywordMatch(haystack, ['festival', 'puja', 'উৎসব'])) return '/brand/coupon-kash.png';
-  if (keywordMatch(haystack, ['gathering', 'meet', 'মিলন', 'adda'])) return '/brand/coupon-marigold.png';
+  if (keywordMatch(haystack, ['gathering', 'meet', 'মিলন', 'adda'])) return '/brand/coupon-diya.png';
   if (keywordMatch(haystack, ['music', 'cultural', 'performance', 'সাংস্কৃতিক'])) return '/brand/coupon-moon.png';
   return '/brand/coupon-alpana-gold.png';
 }

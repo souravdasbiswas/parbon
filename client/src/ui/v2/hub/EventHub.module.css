@@ -1230,9 +1230,8 @@
   height: 100%;
   place-items: center;
   background:
-    radial-gradient(circle at 50% 22%, rgb(255 245 210 / 0.22), transparent 42%),
-    linear-gradient(180deg, rgb(176 138 69 / 0.18), rgb(46 31 24 / 0.14)),
-    var(--color-brown);
+    radial-gradient(circle at 50% 30%, rgb(255 255 255 / 0.75), transparent 60%),
+    linear-gradient(160deg, #fff7e6, var(--color-gold-pale));
 }
 
 .comingFallback img {
@@ -1539,6 +1538,7 @@
 .aboutProse {
   display: grid;
   gap: var(--space-3);
+  align-content: start;
 }
 
 .aboutToggle {
@@ -1950,9 +1950,17 @@
   }
 
   .hubGrid > :global(#highlights),
-  .hubGrid > :global(#venue),
-  .hubGrid > :global(#contact) {
+  .hubGrid > :global(#venue) {
     grid-column: 2;
+  }
+
+  /* Venue (tall map card) sits beside the About + Contact stack so neither column has dead space. */
+  .hubGrid > :global(#venue) {
+    grid-row: span 2;
+  }
+
+  .hubGrid > :global(#contact) {
+    grid-column: 1;
   }
 
   .hubGrid > :global(#coming-up),

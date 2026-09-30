@@ -398,7 +398,8 @@
   line-height: 1.2;
 }
 
-.aboutEn {
+.aboutBanner .aboutEn {
+  color: var(--color-gold-soft);
   font-family: var(--font-display);
   font-size: clamp(1.45rem, 1.15rem + 1vw, 2rem);
   font-style: italic;
@@ -550,3 +551,24 @@
   }
 }
 
+
+/* Two (or one) update cards fill the row instead of leaving an empty third column. */
+.latestGrid.latestTwo {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.latestGrid.latestOne {
+  grid-template-columns: minmax(0, 46rem);
+}
+
+@media (max-width: 47.99rem) {
+  .latestGrid.latestTwo,
+  .latestGrid.latestOne {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+/* Once the poster is visible, hide the placeholder art so no icon shows through it. */
+.posterLoaded .posterFallback {
+  opacity: 0;
+}
