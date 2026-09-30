@@ -34,6 +34,7 @@
   display: grid;
 }
 
+/* "Secure" pill, hidden for now (see SponsorSheet.jsx).
 .secure {
   position: absolute;
   z-index: 2;
@@ -50,6 +51,7 @@
   font-weight: 700;
   font-size: var(--text-sm);
 }
+*/
 
 .skeleton {
   position: absolute;
