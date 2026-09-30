@@ -1,5 +1,5 @@
 /* eslint-disable react-refresh/only-export-components -- section component library also exports a small presence hook */
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router';
 import PronamiPanel from '../../../components/donate/PronamiPanel.jsx';
 import { usePronami } from '../../../components/donate/PronamiDialog.jsx';
@@ -19,14 +19,6 @@ import { useSponsor } from '../SponsorSheet.jsx';
 import { sponsorHref } from './sponsorLink.js';
 import { addDaysIso, dateState, isItemLive, nowNext, selectedScheduleDate } from './timing.js';
 import styles from './EventHub.module.css';
-
-const HASH_SECTIONS = [
-  ['schedule', { bn: 'নির্ঘণ্ট', en: 'Schedule' }],
-  ['passes', { bn: 'পাস', en: 'Passes' }],
-  ['sponsor', { bn: 'সহায়তা', en: 'Sponsor' }],
-  ['venue', { bn: 'ঠিকানা', en: 'Venue' }],
-  ['updates', { bn: 'খবর', en: 'Updates' }],
-];
 
 const digits = (value) => String(value || '').replace(/\D/g, '');
 const STORY_DURATION = 6000;
@@ -831,34 +823,3 @@ export function UpdateBubbles({ announcements = [] }) {
   );
 }
 
-export function SectionNav({ sections }) {
-  const { t } = useLocale();
-  const [active, setActive] = useState(sections[0] || '');
-  useEffect(() => {
-    const observer = new IntersectionObserver((entries) => {
-      const visible = entries.filter((e) => e.isIntersecting).sort((a, b) => b.intersectionRatio - a.intersectionRatio)[0];
-      if (visible?.target?.id) setActive(visible.target.id);
-    }, { rootMargin: '-30% 0px -60% 0px', threshold: [0.1, 0.4, 0.8] });
-    sections.forEach((id) => { const el = document.getElementById(id); if (el) observer.observe(el); });
-    return () => observer.disconnect();
-  }, [sections]);
-  if (sections.length < 2) return null;
-  const currentActive = sections.includes(active) ? active : sections[0];
-  return (
-    <nav className={styles.sectionNav} aria-label="Event sections">
-      {HASH_SECTIONS.filter(([id]) => sections.includes(id)).map(([id, label]) => <a key={id} href={`#${id}`} className={currentActive === id ? styles.activeNav : ''}>{t(label)}</a>)}
-    </nav>
-  );
-}
-
-export function usePresentSections({ event, couponEvents, site, announcements }) {
-  return useMemo(() => HASH_SECTIONS.map(([id]) => id).filter((id) => {
-    if (id === 'schedule') return event.schedule?.length;
-    if (id === 'passes') return couponEvents?.length;
-    if (id === 'sponsor') return event.sponsorship?.url || event.sponsorship?.appeal || event.sponsorship?.highlights?.length;
-    if (id === 'venue') return event.venue?.name;
-    if (id === 'contact') return event.contacts?.length || site?.contact?.people?.length || site?.contact?.whatsappCommunity || site?.contact?.email;
-    if (id === 'updates') return announcements?.length;
-    return false;
-  }), [event, couponEvents, site, announcements]);
-}
