@@ -24,7 +24,7 @@ Object.assign(process.env, {
 
 const { createApp } = await import('../src/app.js');
 const { validateEvent } = await import('../src/utils/validateEvent.js');
-const { eventTiming, sortEvents } = await import('../src/services/eventService.js');
+const { eventTiming, selectFeaturedEvent, sortEvents } = await import('../src/services/eventService.js');
 
 let server;
 let base;
@@ -101,6 +101,37 @@ describe('event validation', () => {
     const { events } = JSON.parse(await readFile(new URL('../data/events.json', import.meta.url), 'utf8'));
     for (const e of events) assert.equal(validateEvent(e).errors, undefined, e.slug);
   });
+
+  it('validates sponsorship and contacts, and drops empty optional rows', () => {
+    const valid = validateEvent(
+      basic({
+        sponsorship: {
+          url: 'https://example.com/sponsor',
+          appeal: { en: 'Sponsor a puja item.', bn: 'পুজোর উপকরণ স্পনসর করুন।' },
+          cta: { en: 'Sponsor', bn: 'স্পনসর' },
+          highlights: [{ name: { en: 'Priest', bn: 'পুরোহিত' }, amount: '30000', shareable: true }, { name: { en: '' }, amount: '', shareable: false }],
+        },
+        contacts: [
+          { name: 'Ananya Sen', role: { en: 'Volunteer lead', bn: 'স্বেচ্ছাসেবক' }, phone: '+91 98765-43210', whatsapp: '' },
+          { name: '', role: { en: '' }, phone: '', whatsapp: '' },
+        ],
+      }),
+    );
+    assert.equal(valid.errors, undefined);
+    assert.equal(valid.value.sponsorship.url, 'https://example.com/sponsor');
+    assert.deepEqual(valid.value.sponsorship.highlights, [{ name: { en: 'Priest', bn: 'পুরোহিত' }, shareable: true, amount: 30000 }]);
+    assert.deepEqual(valid.value.contacts, [{ name: 'Ananya Sen', role: { en: 'Volunteer lead', bn: 'স্বেচ্ছাসেবক' }, phone: '+91 98765-43210', whatsapp: '' }]);
+
+    const empty = validateEvent(basic({ sponsorship: { url: '', appeal: { en: '', bn: '' }, cta: { en: '', bn: '' }, highlights: [{ name: { en: '' }, amount: '', shareable: false }] }, contacts: [{}] }));
+    assert.equal(empty.value.sponsorship, null);
+    assert.deepEqual(empty.value.contacts, []);
+
+    assert.ok(validateEvent(basic({ sponsorship: { url: 'http://example.com/sponsor' } })).errors['sponsorship.url']);
+    assert.ok(validateEvent(basic({ sponsorship: { highlights: Array.from({ length: 7 }, (_, i) => ({ name: { en: `Item ${i}` } })) } })).errors['sponsorship.highlights']);
+    const badContact = validateEvent(basic({ contacts: [{ name: '', phone: 'abc' }] })).errors;
+    assert.ok(badContact['contacts.0.name']);
+    assert.ok(badContact['contacts.0.phone']);
+  });
 });
 
 describe('event timing and order', () => {
@@ -126,6 +157,41 @@ describe('event timing and order', () => {
     ];
     assert.deepEqual(sortEvents(list, now).map((e) => e.slug), ['meet', 'puja', 'bijoya', 'tba', 'past-recent', 'past-old']);
   });
+
+  it('selects the featured event by running, override, featured, next and none priority', () => {
+    const live = (slug, startDate, extra = {}) => ({
+      id: slug,
+      slug,
+      title: { en: slug },
+      state: 'published',
+      publishedAt: '2026-01-01T00:00:00.000Z',
+      startDate,
+      endDate: startDate,
+      ...extra,
+    });
+    const future = live('future', '2026-10-10');
+    const featured = live('featured', '2026-10-05', { featured: true });
+    const running = live('running', '2026-10-02', { startTime: '08:00', endTime: '18:00' });
+    const past = live('past', '2026-09-01');
+
+    assert.deepEqual(
+      Object.fromEntries(Object.entries(selectFeaturedEvent([future, featured, running], { featuredEvent: { slug: 'future' } }, now)).map(([k, v]) => [k, k === 'event' ? v.slug : v])),
+      { event: 'running', reason: 'running' },
+    );
+    assert.deepEqual(
+      Object.fromEntries(Object.entries(selectFeaturedEvent([future, featured], { featuredEvent: { slug: 'future' } }, now)).map(([k, v]) => [k, k === 'event' ? v.slug : v])),
+      { event: 'future', reason: 'override' },
+    );
+    assert.deepEqual(
+      Object.fromEntries(Object.entries(selectFeaturedEvent([future, featured, past], { featuredEvent: { slug: 'past' } }, now)).map(([k, v]) => [k, k === 'event' ? v.slug : v])),
+      { event: 'featured', reason: 'featured' },
+    );
+    assert.deepEqual(
+      Object.fromEntries(Object.entries(selectFeaturedEvent([future, past], {}, now)).map(([k, v]) => [k, k === 'event' ? v.slug : v])),
+      { event: 'future', reason: 'next' },
+    );
+    assert.deepEqual(selectFeaturedEvent([past], {}, now), { event: null, reason: 'none' });
+  });
 });
 
 describe('events API', () => {
@@ -143,6 +209,14 @@ describe('events API', () => {
     const meet = all.find((e) => e.slug === 'meet-and-greet-2026');
     assert.equal(meet.state, 'draft');
     assert.equal(meet.startTime, '17:00');
+  });
+
+  it('serves the featured event resolver before slug lookup', async () => {
+    const res = await fetch(`${base}/api/events/featured`);
+    assert.equal(res.status, 200);
+    const json = await res.json();
+    assert.ok(['running', 'override', 'featured', 'next', 'none'].includes(json.reason));
+    assert.equal(json.error, undefined);
   });
 
   it('lets the admin create a draft, publish it, and schedules future publishing', async () => {

@@ -12,6 +12,8 @@
     "whatsapp": "",
     "address": { "en": "", "bn": "" },
     "mapEmbedUrl": "",
+    "people": [],
+    "whatsappCommunity": "https://chat.whatsapp.com/CwmIJ4iGN3zLXYL6UbeQA3",
     "responseTime": { "en": "We usually reply within two working days.", "bn": "সাধারণত দুই কর্মদিবসের মধ্যে উত্তর দিই।" }
   },
   "social": [

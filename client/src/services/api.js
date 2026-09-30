@@ -9,7 +9,7 @@ export class ApiError extends Error {
   }
 }
 
-async function request(path, { method = 'GET', body, signal } = {}) {
+async function request(path, { method = 'GET', body, signal, raw = false } = {}) {
   let res;
   try {
     res = await fetch(`${BASE_URL}/api${path}`, {
@@ -29,7 +29,7 @@ async function request(path, { method = 'GET', body, signal } = {}) {
     const e = payload?.error || {};
     throw new ApiError(res.status, e.code || 'HTTP_ERROR', e.message || 'Something went wrong.', e.fields);
   }
-  return payload?.data;
+  return raw ? payload : payload?.data;
 }
 
 export const api = {
@@ -42,6 +42,7 @@ export const api = {
 /** Typed-ish service functions — the only place that knows API paths. */
 export const contentApi = {
   site: () => api.get('/site'),
+  featuredEvent: () => api.get('/events/featured', { raw: true }),
   events: (status) => api.get(status ? `/events?status=${encodeURIComponent(status)}` : '/events'),
   event: (slug) => api.get(`/events/${encodeURIComponent(slug)}`),
   gallery: () => api.get('/gallery'),

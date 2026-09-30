@@ -26,10 +26,16 @@ export class JsonContentRepository {
   }
 }
 
+export function publicSiteContent(site) {
+  const contact = site?.contact || {};
+  const people = Array.isArray(contact.people) ? contact.people.filter((person) => person?.public !== false) : [];
+  return { ...site, contact: { ...contact, people } };
+}
+
 // Events are managed in the admin now (see eventService); server/data/events.json is only their seed.
 export function createContentService(repository) {
   return {
-    getSite: () => repository.read('site'),
+    getSite: async () => publicSiteContent(await repository.read('site')),
     getGallery: () => repository.read('gallery'),
     getCommittee: () => repository.read('committee'),
     getSupport: () => repository.read('support'),

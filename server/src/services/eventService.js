@@ -106,6 +106,7 @@ async function loadPublic() {
 
 // ── Timing & ordering (India Standard Time, no daylight saving) ──
 const IST = '+05:30';
+const IST_OFFSET_MS = 330 * 60 * 1000;
 const startMoment = (e) => Date.parse(`${e.startDate}T${e.startTime || '00:00'}:00${IST}`);
 const endMoment = (e) => Date.parse(`${e.endDate || e.startDate}T${e.endTime || '23:59'}:59${IST}`);
 
@@ -113,6 +114,12 @@ const endMoment = (e) => Date.parse(`${e.endDate || e.startDate}T${e.endTime || 
 export function eventTiming(e, now = Date.now()) {
   if (!e.startDate) return 'planned';
   return endMoment(e) < now ? 'past' : 'upcoming';
+}
+
+export function eventRunning(e, now = Date.now()) {
+  if (!e.startDate) return false;
+  const today = new Date(now + IST_OFFSET_MS).toISOString().slice(0, 10);
+  return e.startDate <= today && (e.endDate || e.startDate) >= today && startMoment(e) <= now && endMoment(e) >= now;
 }
 
 const RANK = { upcoming: 0, planned: 1, past: 2 };
@@ -132,6 +139,26 @@ const isLive = (e, now = Date.now()) => e.state === 'published' && Date.parse(e.
 export const countdownTarget = (e) => (e.countdown?.date ? `${e.countdown.date}T${e.countdown.time || '00:00'}:00${IST}` : null);
 /** Adds the computed fields the public pages use: status (upcoming / planned / past) and countdownTo. */
 const withStatus = (e, now) => ({ ...e, status: eventTiming(e, now), countdownTo: countdownTarget(e) });
+
+const soonestUpcoming = (items, now) => sortEvents(items.filter((e) => eventTiming(e, now) === 'upcoming'), now)[0] || null;
+
+export function selectFeaturedEvent(events, site, now = Date.now()) {
+  const live = (events || []).filter((e) => isLive(e, now));
+  const running = sortEvents(live.filter((e) => eventRunning(e, now)), now)[0];
+  if (running) return { event: withStatus(running, now), reason: 'running' };
+
+  const overrideSlug = site?.featuredEvent?.slug;
+  const override = overrideSlug ? live.find((e) => e.slug === overrideSlug && eventTiming(e, now) !== 'past') : null;
+  if (override) return { event: withStatus(override, now), reason: 'override' };
+
+  const featured = soonestUpcoming(live.filter((e) => e.featured), now);
+  if (featured) return { event: withStatus(featured, now), reason: 'featured' };
+
+  const next = soonestUpcoming(live, now);
+  if (next) return { event: withStatus(next, now), reason: 'next' };
+
+  return { event: null, reason: 'none' };
+}
 
 export function slugify(text) {
   return (
@@ -169,6 +196,10 @@ export const eventService = {
     const now = Date.now();
     const e = (await loadPublic()).find((x) => x.slug === slug && isLive(x, now));
     return e ? withStatus(e, now) : null;
+  },
+
+  async getFeatured(site, now = Date.now()) {
+    return selectFeaturedEvent(await loadPublic(), site, now);
   },
 
   async listAll() {
