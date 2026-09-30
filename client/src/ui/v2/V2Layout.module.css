@@ -1,6 +1,6 @@
 .skip {
   position: fixed;
-  top: -100px;
+  top: 0;
   left: var(--space-4);
   z-index: 120;
   padding: 0.75rem 1.25rem;
@@ -9,11 +9,17 @@
   color: #fff;
   font-weight: 700;
   text-decoration: none;
+  opacity: 0;
+  pointer-events: none;
+  transform: translateY(-140%);
 }
 
-.skip:focus {
+.skip:focus-visible {
   top: var(--space-3);
   color: #fff;
+  opacity: 1;
+  pointer-events: auto;
+  transform: none;
 }
 
 .header {
@@ -218,11 +224,11 @@
 }
 
 .withTab {
-  padding-bottom: calc(86px + env(safe-area-inset-bottom));
+  padding-bottom: calc(104px + env(safe-area-inset-bottom));
 }
 
 .footerLift {
-  padding-bottom: calc(86px + env(safe-area-inset-bottom));
+  padding-bottom: calc(104px + env(safe-area-inset-bottom));
 }
 
 .fallback {
