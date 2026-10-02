@@ -1,10 +1,89 @@
 {
   "intro": {
-    "en": "Photographs from our celebrations will live here — the first alpana, the first beat of the dhak, the first bhog we share.",
-    "bn": "আমাদের উৎসবের ছবিগুলো এখানেই থাকবে — প্রথম আলপনা, ঢাকের প্রথম বোল, প্রথম একসাথে ভোগ।"
+    "en": "Some moments captured from our past events — the sindoor, the smiles, the dhak and the devotion we carry into every Puja.",
+    "bn": "আগের অনুষ্ঠানের কিছু মুহূর্ত — সিঁদুরের রং, প্রাণখোলা হাসি, ঢাকের বোল আর ভক্তির ছোঁয়া।"
   },
   "albums": [
-    { "id": "durga-puja-2026", "title": { "en": "Durga Puja 2026", "bn": "দুর্গোৎসব ২০২৬" } }
+    { "id": "past-events", "title": { "en": "Moments from past events", "bn": "আগের অনুষ্ঠানের মুহূর্ত" } }
   ],
-  "items": []
+  "items": [
+    {
+      "id": "sindoor-khela-at-the-pandal",
+      "album": "past-events",
+      "src": "/media/gallery/sindoor-khela-at-the-pandal.jpg",
+      "thumb": "/media/gallery/sindoor-khela-at-the-pandal-small.webp",
+      "width": 1600,
+      "height": 1200,
+      "alt": {
+        "en": "A large group of women in red-and-white saris, faces smeared with sindoor, gathered with two little girls in front of a pandal decorated with peacocks and Ma Durga's face",
+        "bn": "ময়ূর আর মায়ের মুখে সাজানো মণ্ডপের সামনে লাল-সাদা শাড়িতে সিঁদুর মাখা মহিলারা, সঙ্গে দুই খুদে"
+      },
+      "caption": { "en": "Sindoor Khela at the pandal gate", "bn": "মণ্ডপের দোরগোড়ায় সিঁদুর খেলা" }
+    },
+    {
+      "id": "boron-for-ma",
+      "album": "past-events",
+      "src": "/media/gallery/boron-for-ma.jpg",
+      "thumb": "/media/gallery/boron-for-ma-small.webp",
+      "width": 960,
+      "height": 1280,
+      "alt": {
+        "en": "Close-up of a hand wearing shankha and pola bangles gently touching Ma Durga's golden face, framed by a white shola crown and flower garlands",
+        "bn": "শাঁখা-পলা পরা হাতে মায়ের সোনালি মুখে আলতো ছোঁয়া, মাথায় শোলার মুকুট আর ফুলের মালা"
+      },
+      "caption": { "en": "Boron — a loving farewell touch for Ma", "bn": "মায়ের বরণ" }
+    },
+    {
+      "id": "ma-with-naivedya",
+      "album": "past-events",
+      "src": "/media/gallery/ma-with-naivedya.jpg",
+      "thumb": "/media/gallery/ma-with-naivedya-small.webp",
+      "width": 1200,
+      "height": 1600,
+      "alt": {
+        "en": "Ma Durga and her children in white shola decoration inside a red pandal, with fruits, sweets, marigolds and new clothes laid out as offerings",
+        "bn": "লাল মণ্ডপে শোলার সাজে মা ও তাঁর সন্তানেরা, সামনে ফল, মিষ্টি, গাঁদাফুল আর নতুন বস্ত্রের নৈবেদ্য"
+      },
+      "caption": { "en": "Ma amid the naivedya", "bn": "নৈবেদ্যে সাজানো মায়ের আসন" }
+    },
+    {
+      "id": "puja-before-ma",
+      "album": "past-events",
+      "src": "/media/gallery/puja-before-ma.jpg",
+      "thumb": "/media/gallery/puja-before-ma-small.webp",
+      "width": 1600,
+      "height": 1200,
+      "alt": {
+        "en": "A priest in white reads the puja mantras before the garlanded idols of Ma Durga, Ganesh and family, with plates of fruit and sweets on the green floor",
+        "bn": "সাদা ধুতি-চাদরে পুরোহিত মন্ত্রপাঠ করছেন, সামনে মালায় সাজানো মা দুর্গা ও সপরিবার, মেঝেতে ফল-মিষ্টির থালা"
+      },
+      "caption": { "en": "Mantras before Ma", "bn": "মায়ের সামনে মন্ত্রপাঠ" }
+    },
+    {
+      "id": "capturing-ma-on-camera",
+      "album": "past-events",
+      "src": "/media/gallery/capturing-ma-on-camera.jpg",
+      "thumb": "/media/gallery/capturing-ma-on-camera-small.webp",
+      "width": 960,
+      "height": 1280,
+      "alt": {
+        "en": "A hand holding a phone that is recording the Durga idol, with the brightly lit pandal blurred in the background",
+        "bn": "হাতে ধরা ফোনের পর্দায় মায়ের প্রতিমা, পেছনে আলোয় ঝলমলে মণ্ডপ ঝাপসা"
+      },
+      "caption": { "en": "Keeping Ma close, one frame at a time", "bn": "ফ্রেমে বাঁধা মায়ের রূপ" }
+    },
+    {
+      "id": "sindoor-khela-together",
+      "album": "past-events",
+      "src": "/media/gallery/sindoor-khela-together.jpg",
+      "thumb": "/media/gallery/sindoor-khela-together-small.webp",
+      "width": 1600,
+      "height": 1200,
+      "alt": {
+        "en": "Smiling women in red-and-white saris holding boron thalas, faces bright with sindoor, posing with children in front of the decorated Durga idol",
+        "bn": "বরণডালা হাতে লাল-সাদা শাড়িতে সিঁদুর রাঙা হাসিমুখ মহিলারা, শিশুদের সঙ্গে মায়ের প্রতিমার সামনে"
+      },
+      "caption": { "en": "Sindoor Khela — together in red and white", "bn": "লাল-সাদায় সিঁদুর খেলা" }
+    }
+  ]
 }

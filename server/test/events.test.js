@@ -138,6 +138,7 @@ describe('events API', () => {
     assert.equal(list.find((e) => e.slug === 'bijoya-sammilani-2026').status, 'planned');
     assert.equal(list[0].schedule, undefined, 'list pages get summaries');
     assert.equal((await call('/events/durga-puja-2026')).data.schedule.length > 0, true);
+    assert.equal((await call('/events/durga-puja-2026')).data.seedRevision, undefined, 'seed bookkeeping is not stored');
 
     const all = (await admin('/events')).data;
     const meet = all.find((e) => e.slug === 'meet-and-greet-2026');
@@ -208,7 +209,7 @@ describe('event countdown timer', () => {
 
   it('gives Durga Puja its Bodhon countdown and lets the admin switch timers on and off', async () => {
     const puja = (await call('/events')).data.find((e) => e.slug === 'durga-puja-2026');
-    assert.equal(puja.countdownTo, '2026-10-16T07:00:00+05:30');
+    assert.equal(puja.countdownTo, '2026-10-16T18:00:00+05:30');
     assert.equal(puja.countdown.label.en, 'Maa arrives in');
 
     const created = await admin('/events', {
