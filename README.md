@@ -46,6 +46,7 @@ Open http://localhost:5173.
 | `npm run images` | Regenerates optimized logo files from `images/logo.jpeg` (see §10)   |
 | `npm run db:migrate` | Imports old file data into MySQL (`--dry-run`, `--from <folder>`; see [Database](#database-mysql)) |
 | `npm run images:updates` | Prepares announcement posters from `images/updates/` (see §5) |
+| `npm run images:gallery` | Prepares gallery photos from `images/gallery/` (see §5) |
 
 To try the production build locally:
 
@@ -65,8 +66,10 @@ Parbon/
 ├── .env.example               # Environment variable template
 ├── images/logo.jpeg           # Original logo (source artwork, never modified)
 ├── images/updates/<year>/     # Original announcement posters: YYYY-MM-DD-<slug>.jpg
+├── images/gallery/            # Original gallery photos: <slug>.jpg
 ├── scripts/optimize-images.mjs
 ├── scripts/prepare-update-images.mjs
+├── scripts/prepare-gallery-images.mjs
 │
 ├── client/                    # React frontend (Vite)
 │   ├── index.html
@@ -225,10 +228,12 @@ It disappears once the event is over, and the home page banner is hidden when no
 
 `server/data/events.json` is used only to seed events. On start, entries that are new to the site are added once, and published ones go live. Events edited or deleted in the admin area are never overwritten or brought back. The 2 October 2026 **Meet & Greet** is shipped as a draft: review it and click **Publish** when ready.
 
+**Pushing a corrected seed event to the live site.** When an event that is already live needs a correction shipped with the code (for example a new Puja schedule), give its seed entry a higher `"seedRevision"` (2, 3, …) and list the fields to replace in `"seedUpdates"`, e.g. `["startDate", "endDate", "countdown", "venue", "image", "schedule"]`. On the next start, those fields (and only those) are copied onto the stored event once, even if it was edited in the admin; `id` and `slug` never change. The applied revision is recorded (`<id>@r<revision>` in `event_seeds`, or `seeded` in the file store), so later admin edits are kept. An event an admin deleted stays deleted.
+
 **Home ticker (running text)**
 
 The band at the top of the home hero scrolls:
-1. A fixed **"NEW · Durga Puja 2026 · 16–21 Oct at 📍 venue"** item. The title and dates open `/durga-puja`, and the venue opens Google Maps. The title, dates, venue name/area and map link come from the `durga-puja-2026` event (`title`, `startDate`, `endDate`, `venue.name`, `venue.area`, `venue.mapUrl`), so edit that event in **Admin → Events** to change them.
+1. A fixed **"NEW · Durga Puja 2026 · 15–21 Oct at 📍 venue"** item. The title and dates open `/durga-puja`, and the venue opens Google Maps. The title, dates, venue name/area and map link come from the `durga-puja-2026` event (`title`, `startDate`, `endDate`, `venue.name`, `venue.area`, `venue.mapUrl`), so edit that event in **Admin → Events** to change them.
 2. Up to **3 announcements** that have **"Show in the home page ticker"** ticked (new announcements start ticked). Pinned ones come first, then the newest, and each links to its page. To choose which three appear, tick or untick that box when editing an announcement. The admin Announcements list shows an **In ticker** badge on the ones currently shown, and **Ticker full** on ticked ones that don't fit.
 
 Each item starts with a topic icon, so its subject is clear at a glance: a dhak for the Puja item, and for announcements a people, lamp (pronami/donation), music, bhog, calendar, book, alpana, sindoor, shankha or megaphone icon. By default it's chosen automatically from words in the title (then the message), e.g. "meet & greet" → people, "cultural" → music. Admins can override it with the **Ticker icon** dropdown in the announcement form, which also previews the automatic choice. The keyword rules are in `client/src/content/announcementIcons.js`.
@@ -258,16 +263,17 @@ Then update `upiId` and `upiLink` in `support.json`. Pronami appears in the home
 
 **Adding photos to the gallery**
 
-1. Upload images (ideally resized to about 1600px wide, JPEG/WebP) to `server/media/gallery/`.
-2. Add entries to `gallery.json`:
+1. Save the original photo as `images/gallery/<slug>.jpg` (a short lowercase slug, e.g. `sindoor-khela-together.jpg`).
+2. Run `npm i --no-save sharp && npm run images:gallery`. It writes `server/media/gallery/<slug>.jpg` (max 1600px, for the slideshow) and `<slug>-small.webp` (max 720px, for the grid) with metadata stripped, and prints the item block with its width and height. Photos already prepared are left untouched (`-- --force` regenerates them).
+3. Add the item to `gallery.json` (the order there is the order on the page):
 
 ```json
 "items": [
   {
     "id": "shashthi-bodhon",
-    "album": "durga-puja-2026",
+    "album": "past-events",
     "src": "/media/gallery/shashthi-bodhon.jpg",
-    "thumb": "/media/gallery/shashthi-bodhon-small.jpg",
+    "thumb": "/media/gallery/shashthi-bodhon-small.webp",
     "width": 1600,
     "height": 1067,
     "alt": { "en": "Priest performing Bodhon on Shashthi evening", "bn": "ষষ্ঠীর সন্ধ্যায় বোধন" },
@@ -276,7 +282,7 @@ Then update `upiId` and `upiLink` in `support.json`. Pronami appears in the home
 ]
 ```
 
-`width`/`height` prevent layout shift, and `thumb` is optional. Always write a meaningful `alt`.
+`width`/`height` prevent layout shift and decide the grid shape: on wider screens landscape photos span two columns, so alternating one landscape and one portrait keeps the rows even. `thumb` is optional. Always write a meaningful `alt`. Album filter buttons appear once `albums` lists more than one album. Clicking a photo (or **Slide through all photos**) opens the slideshow: swipe, arrow keys, the on-screen arrows or the thumbnail strip move between photos.
 
 **Adding committee members** (`committee.json`):
 
@@ -404,8 +410,8 @@ These values are placeholders on purpose. Fill them in rather than publish inven
 
 - [ ] `site.json → contact` — email, phone, WhatsApp, address, `mapEmbedUrl` (Google Maps "Embed a map" URL)
 - [ ] `site.json → social` — Facebook / Instagram / YouTube URLs
-- [x] `events.json → durga-puja-2026.venue` — Nirusa Banquets & Caterers (on the terrace), Serilingampally, Hyderabad. The venue object has `name`, `spot`, `area`, `address`, `mapUrl` (Google Maps share link), `mapEmbedUrl` (`https://maps.google.com/maps?q=LAT,LNG&z=17&output=embed`) and `geo`. It's shown in the Durga Puja hero, the "Plan your visit" venue card with map, event cards, the event page, the home page Puja band, the Contact page and the Event structured data.
-- [x] `events.json → schedule` — Puja timings from the committee's nirghonto: Shashthi 16 Oct (Bodhon 7:00 AM), Saptami 17, Ashtami Bihita 18, Maha Ashtami & Sandhi Puja 19 (7:26–8:14 AM), Navami 20, Dashami 21 Oct 2026. The Durga Puja countdown targets Bodhon (**Admin → Events → Durga Puja 2026 → Countdown timer**). Update both if timings change.
+- [x] `events.json → durga-puja-2026.venue` — Nirusa Banquet (on the terrace), Lingampally, Hyderabad, beside Sancta Maria School. The venue object has `name`, `spot`, `area`, `address`, `mapUrl` (Google Maps share link), `mapEmbedUrl` (`https://maps.google.com/maps?q=LAT,LNG&z=17&output=embed`) and `geo`. It's shown in the Durga Puja hero, the "Plan your visit" venue card with map, event cards, the event page, the home page Puja band, the Contact page and the Event structured data.
+- [x] `events.json → schedule` — Puja timings exactly as on the committee's schedule poster (`images/updates/2026/2026-10-02-durga-puja-2026-schedule.jpg`, the event's `image`): Maha Panchami 15 Oct to Maha Dashami 21 Oct 2026, with Maha Saptami over two days (17 and 18 Oct). The Durga Puja page shows the poster first, then the day-by-day list. The countdown targets Bodhon, 16 Oct 6:00 PM (**Admin → Events → Durga Puja 2026 → Countdown timer**). If timings change, update the poster and the schedule together (and bump `seedRevision`, see §5).
 - [ ] `committee.json → members`
 - [ ] `support.json → donation.methods` (bank/UPI), and review sponsorship tier benefits
 - [ ] `SITE_URL` environment variable = your real domain (used by canonical links, sitemap, robots.txt)
@@ -525,7 +531,7 @@ With `DB_NAME` and `DB_USER` set, the app stores these in MySQL/MariaDB:
 | `announcements` | Admin-created announcements (whole record as JSON in `data`) |
 | `announcement_seeds` | Seed entries already merged once, so a seed an admin deletes stays deleted |
 | `site_events` | Website events managed in **Admin → Events**: draft/published state, publish time and start date as columns, the whole event as JSON in `data` |
-| `event_seeds` | Seed events from `events.json` already imported once, so an event an admin deletes stays deleted |
+| `event_seeds` | Seed events from `events.json` already imported once (and applied `seedRevision`s, as `<id>@r<n>`), so an event an admin deletes stays deleted |
 | `inquiries` | Contact-form submissions (shown on `/admin/responses`) |
 | `media` | Uploaded announcement images and coupon pictures, served from `/media/announcements/<name>` |
 | `data_imports` | Old files already imported (by content hash) |

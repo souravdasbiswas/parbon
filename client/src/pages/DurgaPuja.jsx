@@ -49,6 +49,46 @@ function EventJsonLd({ event }) {
   return <script type="application/ld+json">{JSON.stringify(data)}</script>;
 }
 
+/** The official schedule poster, shown first so the whole Puja can be taken in at a glance. */
+function SchedulePoster({ event }) {
+  const { t } = useLocale();
+  const { image, venue } = event;
+  const copy = durgaPuja.days.poster;
+  return (
+    <figure className={`${styles.poster} reveal`} style={{ '--poster': `url("${image.src}")` }}>
+      <a href={image.src} target="_blank" rel="noopener" className={styles.posterFrame}>
+        <img src={image.src} alt={image.alt || t(copy.title)} width={image.width || undefined} height={image.height || undefined} decoding="async" />
+        <span className="visually-hidden">(opens the full-size poster)</span>
+      </a>
+      <figcaption className={styles.posterText}>
+        <span className={styles.posterEyebrow}>{t(copy.eyebrow)}</span>
+        <span lang="bn" className={styles.posterBn}>
+          {copy.title.bn}
+        </span>
+        <span className={styles.posterEn}>{copy.title.en}</span>
+        <span className={styles.posterMeta}>
+          {formatDateRange(event.startDate, event.endDate, 'en')}
+          {venue?.name && (
+            <>
+              <br />
+              {t(venue.name)}
+              {venue.area && <>, {t(venue.area)}</>}
+            </>
+          )}
+        </span>
+        <span className={styles.posterActions}>
+          <a href={image.src} target="_blank" rel="noopener" className={styles.posterBtn}>
+            {t(copy.open)}
+          </a>
+          <a href={image.src} download className={`${styles.posterBtn} ${styles.posterBtnGhost}`}>
+            {t(copy.download)}
+          </a>
+        </span>
+      </figcaption>
+    </figure>
+  );
+}
+
 export default function DurgaPuja() {
   const { t } = useLocale();
   const { data: event, loading, error, retry } = useApi(`event:${SLUG}`, () => contentApi.event(SLUG));
@@ -58,7 +98,7 @@ export default function DurgaPuja() {
     <>
       <Seo
         title="Durga Puja 2026"
-        description="Join Parbon Sanskritik Samity for our first Sharadiya Durgotsav, 16–21 October 2026, on the terrace of Nirusa Banquets & Caterers, Serilingampally, Hyderabad — rituals, anjali, Sandhi Puja, Sandhya Arati and Boron."
+        description="Join Parbon Sanskritik Samity for our first Sharadiya Durgotsav, 15–21 October 2026, at Nirusa Banquet, Lingampally (beside Sancta Maria School), Hyderabad — from Panchami Puja and Bodhon to Sandhi Puja, Anjali, Sindoor Khela and Bishorjon."
       />
       {event && <EventJsonLd event={event} />}
       <PageHero {...durgaPuja.hero} art={<AlpanaMedallion />}>
@@ -123,8 +163,22 @@ export default function DurgaPuja() {
           <SectionHeading id="days-title" eyebrow={durgaPuja.days.eyebrow} title={durgaPuja.days.title} />
           {loading && <LoadingState lines={5} />}
           {error && <ErrorState error={error} onRetry={retry} />}
-          {event && <Schedule days={event.schedule} note={event.scheduleNote} />}
         </div>
+        {event?.image?.src && (
+          <div className="container">
+            <SchedulePoster event={event} />
+          </div>
+        )}
+        {event?.schedule?.length > 0 && (
+          <div className="container-narrow">
+            {event.image?.src && (
+              <p className={styles.dayByDay}>
+                <span lang="bn">{durgaPuja.days.list.bn}</span> · {durgaPuja.days.list.en}
+              </p>
+            )}
+            <Schedule days={event.schedule} note={event.scheduleNote} />
+          </div>
+        )}
       </section>
 
       {event?.highlights?.length > 0 && (

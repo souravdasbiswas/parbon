@@ -21,6 +21,7 @@
     "lint": "npm run lint -w client",
     "images": "node scripts/optimize-images.mjs",
     "images:updates": "node scripts/prepare-update-images.mjs",
+    "images:gallery": "node scripts/prepare-gallery-images.mjs",
     "admin:hash": "node scripts/admin-hash.mjs",
     "db:migrate": "node scripts/db-migrate.mjs"
   },

@@ -4,13 +4,14 @@ import { mkdir, readFile, rename, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 import { config } from '../config.js';
 import { databaseReady } from '../db/index.js';
-import { eventsTable, readSeedEvents } from '../db/eventsTable.js';
+import { applySeedRevision, eventsTable, readSeedEvents, seedRecord, seedRevisionKey } from '../db/eventsTable.js';
 import { HttpError } from '../middleware/errorHandler.js';
 
 /**
  * Website events, managed in Admin → Events. With a database they live in MySQL; otherwise in
  * STORAGE_DIR/events.json. server/data/events.json is the seed: each entry is merged in once, so new
- * seed events reach a live site after a deploy and an event an admin deletes stays deleted.
+ * seed events reach a live site after a deploy and an event an admin deletes stays deleted. A seed
+ * entry's `seedRevision` pushes corrected fields to the stored event once (see eventsTable.js).
  *
  * Upcoming / past is worked out from the dates in India time; events without a date are "planned"
  * (date to be announced). Public lists are sorted: upcoming soonest first, then planned, then past
@@ -44,12 +45,22 @@ async function saveFile(events) {
 async function syncFileSeed() {
   await mkdir(config.paths.storage, { recursive: true });
   const store = await readStore();
-  const events = store?.events || [];
+  let events = store?.events || [];
   seeded = store?.seeded || [];
-  const fresh = (await readSeedEvents()).filter((e) => e.id && !seeded.includes(e.id));
-  if (!store || fresh.length) {
-    seeded = [...seeded, ...fresh.map((e) => e.id)];
-    await saveFile([...events, ...fresh.filter((e) => !events.some((x) => x.id === e.id || x.slug === e.slug))]);
+  const seed = await readSeedEvents();
+  const fresh = seed.filter((e) => e.id && !seeded.includes(e.id));
+  const marks = fresh.map((e) => e.id);
+  events = [...events, ...fresh.filter((e) => !events.some((x) => x.id === e.id || x.slug === e.slug)).map(seedRecord)];
+  // New seed revisions (see eventsTable.js) update events already in the store once.
+  for (const e of seed) {
+    const key = seedRevisionKey(e);
+    if (!key || seeded.includes(key)) continue;
+    if (!fresh.includes(e)) events = events.map((x) => (x.id === e.id ? applySeedRevision(x, e) : x));
+    marks.push(key);
+  }
+  if (!store || marks.length) {
+    seeded = [...seeded, ...marks];
+    await saveFile(events);
   }
 }
 
@@ -100,7 +111,7 @@ async function loadPublic() {
     return await load();
   } catch (error) {
     if (!config.db.enabled) throw error;
-    return readSeedEvents();
+    return (await readSeedEvents()).map(seedRecord);
   }
 }
 

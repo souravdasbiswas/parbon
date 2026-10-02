@@ -120,7 +120,7 @@ export const about = {
       {
         label: { en: 'Sharadiya 2026', bn: 'শারদীয়া ২০২৬' },
         title: { en: 'Our first Durga Puja', bn: 'আমাদের প্রথম দুর্গাপুজো' },
-        text: { en: 'Parbon welcomes Ma Durga for the first time — 16–21 October 2026, on the terrace of Nirusa Banquets & Caterers, Serilingampally.', bn: '১৬–২১ অক্টোবর ২০২৬ — সেরিলিঙ্গামপল্লির নিরুসা ব্যাঙ্কোয়েটসের ছাদে পার্বণের প্রথম মাতৃ আরাধনা।' },
+        text: { en: 'Parbon welcomes Ma Durga for the first time — 15–21 October 2026, at Nirusa Banquet, Lingampally, beside Sancta Maria School.', bn: '১৫–২১ অক্টোবর ২০২৬ — লিঙ্গমপল্লির নিরুসা ব্যাঙ্কোয়েটে, সাঙ্কটা মারিয়া স্কুলের পাশে, পার্বণের প্রথম মাতৃ আরাধনা।' },
         current: true,
       },
       {
@@ -163,6 +163,13 @@ export const durgaPuja = {
   days: {
     eyebrow: { en: 'Pujo Nirghonto · Puja timings', bn: 'নির্ঘণ্ট' },
     title: { bn: 'পুজোর দিনক্ষণ', en: 'Day-by-day Puja Timings' },
+    poster: {
+      eyebrow: { en: 'At a glance', bn: 'এক নজরে' },
+      title: { bn: 'পুজোর নির্ঘণ্ট', en: 'The whole schedule in one view' },
+      open: { en: 'Open full size', bn: 'বড় করে দেখুন' },
+      download: { en: 'Download poster', bn: 'পোস্টার নামান' },
+    },
+    list: { en: 'Day by day', bn: 'দিন অনুযায়ী' },
   },
   highlights: {
     eyebrow: { en: 'What to expect', bn: 'যা থাকছে' },
@@ -172,8 +179,8 @@ export const durgaPuja = {
     eyebrow: { en: 'Plan your visit', bn: 'আসার আগে' },
     title: { bn: 'আপনাকে সাদর আমন্ত্রণ', en: 'You Are Warmly Invited' },
     intro: {
-      en: 'Our pandal this year is on the terrace of Nirusa Banquets & Caterers in Serilingampally — under the open autumn sky.',
-      bn: 'এ বছর আমাদের মণ্ডপ সেরিলিঙ্গামপল্লির নিরুসা ব্যাঙ্কোয়েটসের ছাদে — শরতের খোলা আকাশের নীচে।',
+      en: 'Our pandal this year is on the terrace of Nirusa Banquet in Lingampally, beside Sancta Maria School — under the open autumn sky.',
+      bn: 'এ বছর আমাদের মণ্ডপ লিঙ্গমপল্লির নিরুসা ব্যাঙ্কোয়েটের ছাদে, সাঙ্কটা মারিয়া স্কুলের পাশে — শরতের খোলা আকাশের নীচে।',
     },
     items: [
       { title: { en: 'Open to all', bn: 'সবার জন্য' }, text: { en: 'Families, friends and neighbours of every background are welcome.', bn: 'সব ধর্ম, সব বয়সের মানুষকে সাদর আমন্ত্রণ।' } },
@@ -216,6 +223,15 @@ export const gallery = {
       bn: 'দুর্গোৎসব ২০২৬ দিয়েই শুরু হবে আমাদের অ্যালবাম। পুজোর পরে আবার আসুন।',
     },
     cta: { en: 'Share your photos', bn: 'ছবি পাঠান' },
+  },
+  album: {
+    eyebrow: { en: 'From our album', bn: 'আমাদের অ্যালবাম' },
+    title: { bn: 'ফেলে আসা দিনের ছবি', en: 'Moments captured from our past events' },
+    hint: {
+      en: 'Tap any photo to open it, then swipe or use the arrow keys to slide through.',
+      bn: 'যেকোনো ছবিতে চাপ দিন, তারপর সোয়াইপ করে একের পর এক দেখুন।',
+    },
+    slideshow: { en: 'Slide through all photos', bn: 'সব ছবি দেখুন' },
   },
   all: { en: 'All', bn: 'সব' },
 };

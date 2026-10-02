@@ -76,7 +76,7 @@ export default function Home() {
 
   return (
     <>
-      <Seo description="Parbon Sanskritik Samity — a Bengali cultural community celebrating music, literature, art, food and festivals. Join us for our first Durga Puja, 16–21 October 2026." />
+      <Seo description="Parbon Sanskritik Samity — a Bengali cultural community celebrating music, literature, art, food and festivals. Join us for our first Durga Puja, 15–21 October 2026." />
 
       {/* ───────── Hero ───────── */}
       <section className={styles.hero} aria-labelledby="page-title">
