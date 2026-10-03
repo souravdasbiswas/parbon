@@ -101,6 +101,16 @@ describe('event validation', () => {
     const { events } = JSON.parse(await readFile(new URL('../data/events.json', import.meta.url), 'utf8'));
     for (const e of events) assert.equal(validateEvent(e).errors, undefined, e.slug);
   });
+
+  it('keeps an event video shipped in /media/videos and rejects anything else', () => {
+    const video = { src: '/media/videos/clip.mp4', poster: '/media/videos/clip-poster.jpg', width: 576, height: 1024, duration: '0:50', title: { en: 'Highlights' }, text: { en: '', bn: '' } };
+    const ok = validateEvent(basic({ video }));
+    assert.equal(ok.errors, undefined);
+    assert.deepEqual(ok.value.video, { ...video, title: { en: 'Highlights', bn: '' }, text: null });
+    assert.equal(validateEvent(basic()).value.video, null);
+    assert.ok(validateEvent(basic({ video: { src: 'https://evil.example/x.mp4' } })).errors['video.src']);
+    assert.equal(validateEvent(basic({ video: { ...video, poster: '/etc/passwd', duration: 'long' } })).value.video.poster, null);
+  });
 });
 
 describe('event timing and order', () => {

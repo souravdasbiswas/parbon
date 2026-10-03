@@ -37,6 +37,7 @@ const EMPTY = {
   summary: bi(),
   description: [bi()],
   image: null,
+  video: null,
   highlights: [],
   schedule: [],
   scheduleNote: bi(),
@@ -415,6 +416,17 @@ export default function AdminEventForm() {
                   <div className={styles.field}>
                     <label htmlFor={fid('image.alt')}>Describe the picture</label>
                     <input {...bind('image.alt')} maxLength={300} placeholder="For people using screen readers" />
+                  </div>
+                )}
+                {form.video?.src && (
+                  <div className={styles.imagePreview}>
+                    {form.video.poster && <img src={form.video.poster} alt="" />}
+                    <p className={styles.hint}>
+                      This event has a video{form.video.duration ? ` (${form.video.duration})` : ''}, shown on its card and page. Videos are added with the website’s code.
+                    </p>
+                    <button type="button" className={styles.danger} onClick={() => set('video', null)}>
+                      Remove video
+                    </button>
                   </div>
                 )}
               </fieldset>

@@ -93,7 +93,7 @@ Parbon/
 │
 └── server/                    # Node.js backend (Express 5)
     ├── data/                  # ★ Site content as JSON — edit these files to update the site
-    ├── media/                 # ★ Uploaded photos (gallery/, committee/) served at /media
+    ├── media/                 # ★ Uploaded photos (gallery/, committee/) and videos (videos/) served at /media
     ├── storage/               # File store when no database is configured — not committed
     ├── src/
     │   ├── index.js           # Starts the HTTP server (and connects to MySQL if configured)
@@ -282,7 +282,21 @@ Then update `upiId` and `upiLink` in `support.json`. Pronami appears in the home
 ]
 ```
 
-`width`/`height` prevent layout shift and decide the grid shape: on wider screens landscape photos span two columns, so alternating one landscape and one portrait keeps the rows even. `thumb` is optional. Always write a meaningful `alt`. Album filter buttons appear once `albums` lists more than one album. Clicking a photo (or **Slide through all photos**) opens the slideshow: swipe, arrow keys, the on-screen arrows or the thumbnail strip move between photos.
+`width`/`height` prevent layout shift and decide the grid shape: on wider screens landscape photos span two columns, so alternating one landscape and one portrait keeps the rows even. `thumb` is optional. Always write a meaningful `alt`. Album filter buttons appear once `albums` lists more than one album. Clicking a photo (or **Slide through all photos & videos**) opens the slideshow: swipe, arrow keys, the on-screen arrows or the thumbnail strip move between photos.
+
+**Videos** live in `server/media/videos/` (MP4, H.264/AAC). Before adding one, move its index to the front so it starts playing straight away, and save a poster frame (`ffmpeg` is not a project dependency; any copy works, e.g. the one bundled with `pip install imageio-ffmpeg`):
+
+```bash
+ffmpeg -i original.mp4 -map 0 -c copy -map_metadata -1 -movflags +faststart server/media/videos/<name>.mp4
+ffmpeg -i server/media/videos/<name>.mp4 -ss 9 -frames:v 1 frame.png   # pick a good moment, then save it as
+#   server/media/videos/<name>-poster.jpg (and a ≤720px <name>-poster-small.webp for gallery tiles)
+```
+
+Videos never download until someone presses play, and then play in place with sound.
+
+- **Home page welcome video:** `home.welcome.video` in `client/src/content/pages.js` (`src`, `poster`, `width`, `height`, `duration`). It sits in a card below the countdown.
+- **Gallery:** add an item with `"type": "video"`, `src` (the MP4), `poster`, `thumb`, `width`, `height`, `duration` (e.g. `"0:50"`), `alt` and `caption`. The tile shows a play button; in the slideshow the video plays when its slide is shown and stops when you move on.
+- **An event:** give the event (in `events.json`) a `video` object: `src` (`/media/videos/…mp4`), `poster`, `width`, `height`, `duration` and optional bilingual `title` / `text`. The event card shows the event picture and the video side by side, and the event page gets a video section. Admins can remove a video in **Admin → Events** but can't upload one. To add a video to an event that is already live, bump its `seedRevision` with `"video"` in `seedUpdates` (see §5).
 
 **Adding committee members** (`committee.json`):
 

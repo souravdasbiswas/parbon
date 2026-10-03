@@ -7,6 +7,10 @@ const SLUG_RE = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
 const DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
 const TIME_RE = /^([01]\d|2[0-3]):[0-5]\d$/;
 const IMAGE_SRC_RE = /^\/media\/announcements\/[\w.-]+\.(jpe?g|png|webp)$/i;
+// Event videos ship with the code (server/media/videos); the admin can keep or remove them.
+const VIDEO_SRC_RE = /^\/media\/videos\/[\w.-]+\.mp4$/i;
+const POSTER_SRC_RE = /^\/media\/videos\/[\w.-]+\.(jpe?g|png|webp)$/i;
+const DURATION_RE = /^\d{1,2}:\d{2}$/;
 const EMBED_RE = /^https:\/\/(www\.)?google\.com\/maps\/embed\?|^https:\/\/maps\.google\.com\/maps\?/;
 
 /** Icons an event highlight may use. Keep in sync with client/src/components/motifs/Icon.jsx. */
@@ -80,6 +84,7 @@ export function validateEvent(body) {
       .map((p) => localized(p, 2000, false))
       .filter((p) => p.en || p.bn),
     image: null,
+    video: null,
     highlights: [],
     schedule: [],
     scheduleNote: optional(localized(input.scheduleNote, 300)),
@@ -143,6 +148,22 @@ export function validateEvent(body) {
       alt: oneLine(input.image.alt, 300),
       width: Math.max(0, Math.min(10000, Number(input.image.width) || 0)) || null,
       height: Math.max(0, Math.min(10000, Number(input.image.height) || 0)) || null,
+    };
+  }
+
+  if (input.video && input.video.src) {
+    const src = clean(input.video.src, 200);
+    const poster = clean(input.video.poster, 200);
+    const duration = clean(input.video.duration, 5);
+    if (!VIDEO_SRC_RE.test(src)) errors['video.src'] = 'This video is not available any more. Remove it and save again.';
+    value.video = {
+      src,
+      poster: POSTER_SRC_RE.test(poster) ? poster : null,
+      width: Math.max(0, Math.min(10000, Number(input.video.width) || 0)) || null,
+      height: Math.max(0, Math.min(10000, Number(input.video.height) || 0)) || null,
+      duration: DURATION_RE.test(duration) ? duration : null,
+      title: optional(localized(input.video.title, 120)),
+      text: optional(localized(input.video.text, 400, false)),
     };
   }
 

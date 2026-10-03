@@ -376,6 +376,8 @@
     {
       "id": "seed-meet-and-greet-2026",
       "slug": "meet-and-greet-2026",
+      "seedRevision": 2,
+      "seedUpdates": ["image", "video"],
       "state": "draft",
       "featured": false,
       "category": {
@@ -437,10 +439,25 @@
         }
       ],
       "image": {
-        "src": "/media/announcements/lets-get-together.jpg",
-        "alt": "Parbon Sanskritik Samity flyer: “Let’s get together! Cha, shingara, mishti & a little adda before Pujo begins” — an informal meet & greet on 2nd October, 5 PM to 7 PM, at NIRUSA Banquet, Lingampally.",
-        "width": 1024,
-        "height": 1536
+        "src": "/media/announcements/meet-and-greet-thank-you.jpg",
+        "alt": "Group photo from Parbon's Pre-Puja Meet & Greet: friends and families in festive clothes with children seated in front, under a chandelier, with \"Thank you All!!\", the Parbon logo and Ma Durga's face.",
+        "width": 1600,
+        "height": 1200
+      },
+      "video": {
+        "src": "/media/videos/meet-and-greet-highlights.mp4",
+        "poster": "/media/videos/meet-and-greet-highlights-poster.jpg",
+        "width": 576,
+        "height": 1024,
+        "duration": "0:50",
+        "title": {
+          "en": "Watch the highlights",
+          "bn": "সেই সন্ধ্যার ঝলক"
+        },
+        "text": {
+          "en": "A glimpse of the evening — friends arriving, songs, a few words from the committee and a happy group photo at the end. Thank you all for coming!",
+          "bn": "আসার জন্য সবাইকে অনেক ধন্যবাদ — দেখা হবে পুজোয়!"
+        }
       },
       "highlights": [
         {

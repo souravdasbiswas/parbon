@@ -15,6 +15,18 @@ export const home = {
     primaryCta: { en: 'Durga Puja 2026', bn: 'দুর্গোৎসব ২০২৬' },
     secondaryCta: { en: 'Join the Samity', bn: 'আমাদের সঙ্গে যুক্ত হোন' },
   },
+  welcome: {
+    eyebrow: { en: 'Welcome', bn: 'স্বাগতম' },
+    title: { bn: 'পার্বণে আপনাকে স্বাগত', en: 'A warm welcome from the Parbon family' },
+    hint: { en: 'Tap to play · with sound', bn: 'চালাতে চাপ দিন' },
+    video: {
+      src: '/media/videos/welcome.mp4',
+      poster: '/media/videos/welcome-poster.jpg',
+      width: 848,
+      height: 478,
+      duration: '0:10',
+    },
+  },
   story: {
     eyebrow: { en: 'Who we are', bn: 'আমরা কারা' },
     title: { bn: 'আমাদের কথা', en: 'Our Story' },
@@ -228,10 +240,10 @@ export const gallery = {
     eyebrow: { en: 'From our album', bn: 'আমাদের অ্যালবাম' },
     title: { bn: 'ফেলে আসা দিনের ছবি', en: 'Moments captured from our past events' },
     hint: {
-      en: 'Tap any photo to open it, then swipe or use the arrow keys to slide through.',
-      bn: 'যেকোনো ছবিতে চাপ দিন, তারপর সোয়াইপ করে একের পর এক দেখুন।',
+      en: 'Tap any photo or video to open it, then swipe or use the arrow keys to slide through.',
+      bn: 'যেকোনো ছবি বা ভিডিওতে চাপ দিন, তারপর সোয়াইপ করে একের পর এক দেখুন।',
     },
-    slideshow: { en: 'Slide through all photos', bn: 'সব ছবি দেখুন' },
+    slideshow: { en: 'Slide through all photos & videos', bn: 'সব ছবি ও ভিডিও দেখুন' },
   },
   all: { en: 'All', bn: 'সব' },
 };

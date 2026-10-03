@@ -17,6 +17,7 @@ import SectionHeading from '../components/ui/SectionHeading.jsx';
 import Seo from '../components/ui/Seo.jsx';
 import { ErrorState, LoadingState } from '../components/ui/States.jsx';
 import Ticker from '../components/ui/Ticker.jsx';
+import VideoPlayer from '../components/ui/VideoPlayer.jsx';
 import { announcementIcon } from '../content/announcementIcons.js';
 import { announcements as announcementsCopy, home } from '../content/pages.js';
 import { useApi } from '../hooks/useApi.js';
@@ -156,6 +157,27 @@ export default function Home() {
               </div>
             </div>
           )}
+        </div>
+
+        <div className={`container ${styles.welcomeWrap}`}>
+          <div className={styles.welcomeCard}>
+            <div className={styles.welcomeText}>
+              <p className={styles.welcomeEyebrow}>
+                <span lang="bn">{home.welcome.eyebrow.bn}</span> · {home.welcome.eyebrow.en}
+              </p>
+              <h2 className={styles.welcomeTitle}>
+                <span lang="bn" className={styles.welcomeTitleBn}>
+                  {home.welcome.title.bn}
+                </span>
+                <span className={styles.welcomeTitleEn}>{home.welcome.title.en}</span>
+              </h2>
+              <p className={styles.welcomeHint} aria-hidden="true">
+                <span className={styles.welcomeHintIcon}>▶</span>
+                {t(home.welcome.hint)} · {home.welcome.video.duration}
+              </p>
+            </div>
+            <VideoPlayer {...home.welcome.video} label={home.welcome.title.en} className={styles.welcomeVideo} />
+          </div>
         </div>
       </section>
 

@@ -254,6 +254,105 @@
   font-size: var(--text-sm);
 }
 
+/* Welcome video: the same card language as the countdown card above it. */
+.welcomeWrap {
+  margin-top: var(--space-5);
+}
+
+.welcomeCard {
+  display: grid;
+  grid-template-columns: minmax(0, 0.85fr) minmax(0, 1.6fr);
+  gap: clamp(1.5rem, 1rem + 2vw, 3rem);
+  align-items: center;
+  padding: var(--space-5) clamp(1.25rem, 0.8rem + 2vw, 2.5rem);
+  border: 1px solid var(--color-line);
+  border-radius: var(--radius-lg);
+  background: rgb(255 253 249 / 0.85);
+  box-shadow: var(--shadow-md);
+  backdrop-filter: blur(6px);
+}
+
+.welcomeText {
+  display: grid;
+  gap: 0.4rem;
+}
+
+.welcomeEyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.6rem;
+  font-size: var(--text-xs);
+  font-weight: 600;
+  letter-spacing: var(--tracking-caps);
+  text-transform: uppercase;
+  color: var(--color-terracotta);
+}
+
+.welcomeEyebrow::before {
+  content: '';
+  width: 28px;
+  height: 1px;
+  background: currentColor;
+  opacity: 0.6;
+}
+
+.welcomeEyebrow span[lang='bn'] {
+  font-family: var(--font-bengali-display);
+  font-size: var(--text-sm);
+  font-weight: 400;
+  letter-spacing: 0;
+}
+
+.welcomeTitle {
+  display: grid;
+  gap: 0.2rem;
+  font-weight: 400;
+}
+
+.welcomeTitleBn {
+  font-family: var(--font-bengali-display);
+  font-size: var(--text-2xl);
+  line-height: 1.35;
+  color: var(--color-vermilion);
+}
+
+.welcomeTitleEn {
+  font-family: var(--font-display);
+  font-style: italic;
+  font-size: var(--text-lg);
+  color: var(--color-charcoal);
+}
+
+.welcomeHint {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-top: var(--space-2);
+  font-size: var(--text-sm);
+  font-weight: 600;
+  color: var(--color-vermilion);
+}
+
+.welcomeHintIcon {
+  display: grid;
+  place-items: center;
+  width: 30px;
+  height: 30px;
+  padding-left: 2px;
+  border: 1px solid var(--color-gold);
+  border-radius: 50%;
+  font-size: 0.7rem;
+}
+
+@media (max-width: 760px) {
+  .welcomeCard {
+    grid-template-columns: 1fr;
+  }
+  .welcomeVideo {
+    order: -1;
+  }
+}
+
 /* Running-text band above the hero; reserves one band of height so loading never shifts the layout. */
 .noticeSlot {
   grid-area: notice;
