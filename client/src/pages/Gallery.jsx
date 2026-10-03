@@ -22,6 +22,7 @@ const PLACEHOLDER_FRAMES = [
 
 const pad = (n) => String(n).padStart(2, '0');
 const isWide = (item) => item.width > 0 && item.height > 0 && item.width / item.height > 1.15;
+const isVideo = (item) => item.type === 'video';
 // How far (px) a swipe must travel before it changes the photo.
 const SWIPE_THRESHOLD = 60;
 
@@ -144,7 +145,11 @@ function Slideshow({ items, index, title, onClose, onStep, onJump }) {
                 aria-label={`${i + 1} of ${items.length}`}
                 onClick={onSlideClick}
               >
-                {near(i) && <img src={it.src} alt={t(it.alt)} width={it.width} height={it.height} draggable={false} decoding="async" />}
+                {i === index && isVideo(it) ? (
+                  <video src={it.src} poster={it.poster || undefined} width={it.width} height={it.height} controls autoPlay playsInline aria-label={t(it.alt)} />
+                ) : (
+                  near(i) && <img src={isVideo(it) ? it.poster || it.thumb : it.src} alt={t(it.alt)} width={it.width} height={it.height} draggable={false} decoding="async" />
+                )}
               </li>
             ))}
           </ul>
@@ -163,7 +168,7 @@ function Slideshow({ items, index, title, onClose, onStep, onJump }) {
 
       <div className={styles.captionBar} aria-live="polite">
         <p className="visually-hidden">
-          Photo {index + 1} of {items.length}
+          {isVideo(item) ? 'Video' : 'Photo'} {index + 1} of {items.length}
         </p>
         {item.caption && (
           <p className={styles.slideCaption}>
@@ -181,10 +186,10 @@ function Slideshow({ items, index, title, onClose, onStep, onJump }) {
         <ul ref={thumbsRef} className={styles.thumbs} role="list" aria-label="All photos">
           {items.map((it, i) => (
             <li key={it.id || it.src}>
-              <button type="button" className={styles.thumbBtn} aria-current={i === index} onClick={() => onJump(i)}>
+              <button type="button" className={`${styles.thumbBtn} ${isVideo(it) ? styles.thumbVideo : ''}`} aria-current={i === index} onClick={() => onJump(i)}>
                 <img src={it.thumb || it.src} alt="" loading="lazy" decoding="async" draggable={false} />
                 <span className="visually-hidden">
-                  Show photo {i + 1}
+                  Show {isVideo(it) ? 'video' : 'photo'} {i + 1}
                   {it.caption ? `: ${t(it.caption)}` : ''}
                 </span>
               </button>
@@ -246,7 +251,7 @@ export default function Gallery() {
               <ul className={styles.grid} role="list">
                 {items.map((item, i) => (
                   <li key={item.id || item.src} className={`${styles.cell} ${isWide(item) ? styles.wide : ''} reveal`} style={{ '--i': i }}>
-                    <button type="button" className={styles.tile} onClick={() => setOpen(i)}>
+                    <button type="button" className={`${styles.tile} ${isVideo(item) ? styles.tileVideo : ''}`} onClick={() => setOpen(i)}>
                       <img
                         src={item.thumb || item.src}
                         alt={t(item.alt)}
@@ -269,7 +274,17 @@ export default function Gallery() {
                           <span className={styles.captionEn}>{t(item.caption)}</span>
                         </span>
                       )}
-                      <span className="visually-hidden">— open in slideshow</span>
+                      {isVideo(item) && (
+                        <>
+                          <span className={styles.tilePlay} aria-hidden="true">
+                            <svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor">
+                              <path d="M8 5.5v13l11-6.5z" />
+                            </svg>
+                          </span>
+                          {item.duration && <span className={styles.tileDuration}>▶ {item.duration}</span>}
+                        </>
+                      )}
+                      <span className="visually-hidden">— {isVideo(item) ? 'play video' : 'open in slideshow'}</span>
                     </button>
                   </li>
                 ))}

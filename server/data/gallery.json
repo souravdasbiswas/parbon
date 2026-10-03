@@ -8,6 +8,35 @@
   ],
   "items": [
     {
+      "id": "meet-and-greet-thank-you",
+      "album": "past-events",
+      "src": "/media/gallery/meet-and-greet-thank-you.jpg",
+      "thumb": "/media/gallery/meet-and-greet-thank-you-small.webp",
+      "width": 1600,
+      "height": 1200,
+      "alt": {
+        "en": "Group photo from Parbon's Pre-Puja Meet & Greet: friends and families in festive clothes with children seated in front, under a chandelier, with \"Thank you All!!\" and the Parbon logo",
+        "bn": "পার্বণের পুজোর আগের আড্ডার দলগত ছবি — উৎসবের সাজে বন্ধু ও পরিবার, সামনে খুদেরা, ওপরে লেখা \"Thank you All!!\""
+      },
+      "caption": { "en": "Meet & Greet — thank you all!", "bn": "পুজোর আগে আড্ডা" }
+    },
+    {
+      "id": "meet-and-greet-highlights",
+      "type": "video",
+      "album": "past-events",
+      "src": "/media/videos/meet-and-greet-highlights.mp4",
+      "poster": "/media/videos/meet-and-greet-highlights-poster.jpg",
+      "thumb": "/media/videos/meet-and-greet-highlights-poster-small.webp",
+      "width": 576,
+      "height": 1024,
+      "duration": "0:50",
+      "alt": {
+        "en": "Highlights video of the Pre-Puja Meet & Greet: friends arriving, songs, the committee speaking and a cheering group photo",
+        "bn": "পুজোর আগের আড্ডার ভিডিও — বন্ধুদের আগমন, গান, কমিটির কথা আর হাসিখুশি দলগত ছবি"
+      },
+      "caption": { "en": "Meet & Greet highlights", "bn": "সেই সন্ধ্যার ঝলক" }
+    },
+    {
       "id": "sindoor-khela-at-the-pandal",
       "album": "past-events",
       "src": "/media/gallery/sindoor-khela-at-the-pandal.jpg",

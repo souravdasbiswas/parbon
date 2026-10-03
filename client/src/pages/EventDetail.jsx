@@ -10,6 +10,7 @@ import SectionHeading from '../components/ui/SectionHeading.jsx';
 import Seo from '../components/ui/Seo.jsx';
 import { ErrorState, LoadingState } from '../components/ui/States.jsx';
 import VenueCard from '../components/ui/VenueCard.jsx';
+import VideoPlayer from '../components/ui/VideoPlayer.jsx';
 import { useApi } from '../hooks/useApi.js';
 import { useScrollToHash } from '../hooks/useScrollToHash.js';
 import { formatDateRange, formatTimeRange } from '../i18n/format.js';
@@ -85,6 +86,40 @@ export default function EventDetail() {
         )}
         <CouponsCta siteEventSlug={event.slug} className={styles.couponsCta} />
       </PageHero>
+
+      {event.video?.src && (
+        <section className="section section--paper" aria-labelledby="video-title">
+          <div className={`container ${styles.videoBlock}`}>
+            <VideoPlayer
+              src={event.video.src}
+              poster={event.video.poster}
+              width={event.video.width}
+              height={event.video.height}
+              duration={event.video.duration}
+              label={`${event.title.en} — ${t(event.video.title) || 'video'}`}
+              className={event.video.width < event.video.height ? styles.videoTall : ''}
+            />
+            <div className={`${styles.videoText} reveal`}>
+              <SectionHeading
+                id="video-title"
+                eyebrow={{ en: 'Moments from the event', bn: 'মুহূর্তগুলো' }}
+                title={event.video.title || { bn: 'ভিডিও', en: 'Watch the video' }}
+                align="start"
+              />
+              {event.video.text && (
+                <>
+                  <p className={styles.videoEn}>{t(event.video.text)}</p>
+                  {event.video.text.bn && (
+                    <p lang="bn" className={styles.paraBn}>
+                      {event.video.text.bn}
+                    </p>
+                  )}
+                </>
+              )}
+            </div>
+          </div>
+        </section>
+      )}
 
       {event.description?.length > 0 && (
         <section className="section section--paper" aria-label="About this event">

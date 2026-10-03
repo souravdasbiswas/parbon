@@ -221,3 +221,36 @@
     display: none;
   }
 }
+
+/* Picture + video (e.g. highlights of a past event) in a strip below the text. The picture still
+   opens the event; the video sits above the card link so it can be played in place. */
+.media {
+  grid-column: 1 / -1;
+  display: grid;
+  grid-template-columns: minmax(0, 1.55fr) minmax(0, 0.75fr);
+  gap: var(--space-3);
+}
+
+.mediaPhoto {
+  width: 100%;
+  height: 100%;
+  aspect-ratio: 4 / 3;
+  object-fit: cover;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--color-line);
+}
+
+.mediaVideo {
+  position: relative;
+  z-index: 1;
+}
+
+/* Beside the picture, the video fills the picture's height. */
+.media:not(.mediaSolo) .mediaVideo {
+  aspect-ratio: auto !important;
+  min-height: 100%;
+}
+
+.mediaSolo {
+  grid-template-columns: minmax(0, 360px);
+}
