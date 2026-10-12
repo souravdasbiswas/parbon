@@ -22,6 +22,7 @@ const AdminResponses = lazy(() => import('./pages/admin/AdminResponses.jsx'));
 const AdminStorage = lazy(() => import('./pages/admin/AdminStorage.jsx'));
 const AdminEvents = lazy(() => import('./pages/admin/AdminEvents.jsx'));
 const AdminEventForm = lazy(() => import('./pages/admin/AdminEventForm.jsx'));
+const AdminSponsors = lazy(() => import('./pages/admin/AdminSponsors.jsx'));
 const AdminCouponEvents = lazy(() => import('./pages/admin/coupons/AdminCouponEvents.jsx'));
 const AdminCouponEvent = lazy(() => import('./pages/admin/coupons/AdminCouponEvent.jsx'));
 const AdminCouponDesigner = lazy(() => import('./pages/admin/coupons/AdminCouponDesigner.jsx'));
@@ -70,6 +71,7 @@ export const router = createBrowserRouter([
       { path: 'admin/events', Component: AdminEvents },
       { path: 'admin/events/new', Component: AdminEventForm },
       { path: 'admin/events/:id', Component: AdminEventForm },
+      { path: 'admin/sponsors', Component: AdminSponsors },
       { path: 'admin/coupons', Component: AdminCouponEvents },
       { path: 'admin/coupons/gate-team', Component: AdminGateTeam },
       { path: 'admin/coupons/:id', Component: AdminCouponEvent },

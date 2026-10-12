@@ -91,9 +91,15 @@ export default function Footer() {
       </div>
 
       <div className={`container ${styles.bottom}`}>
-        <p>
-          © {year} {BRAND.name.en} · <span lang="bn">{BRAND.name.bn}</span>
-        </p>
+        <div className={styles.copyright}>
+          <p>
+            © {year} {BRAND.name.en} · <span lang="bn">{BRAND.name.bn}</span>. All rights reserved.
+          </p>
+          <p className={styles.legal}>
+            Website, text, photographs and artwork © {BRAND.name.en}; not to be reproduced without permission. Sponsor names and logos
+            belong to their respective owners.
+          </p>
+        </div>
         <p lang="bn" className={styles.signoff}>
           ভালোবাসায়, বাংলার জন্য
         </p>

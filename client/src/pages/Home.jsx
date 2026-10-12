@@ -19,7 +19,8 @@ import { ErrorState, LoadingState } from '../components/ui/States.jsx';
 import Ticker from '../components/ui/Ticker.jsx';
 import VideoPlayer from '../components/ui/VideoPlayer.jsx';
 import { announcementIcon } from '../content/announcementIcons.js';
-import { announcements as announcementsCopy, home } from '../content/pages.js';
+import { announcements as announcementsCopy, home, sponsors } from '../content/pages.js';
+import { sponsorTickerItems } from '../content/sponsorTicker.js';
 import { useApi } from '../hooks/useApi.js';
 import { formatDate, formatDateRange, toBengaliDigits } from '../i18n/format.js';
 import { useLocale } from '../i18n/LocaleContext.jsx';
@@ -65,6 +66,7 @@ export default function Home() {
   const puja = useApi('event:durga-puja-2026', () => contentApi.event('durga-puja-2026'));
   const news = useApi('announcements:home', () => announcementsApi.list(2));
   const tickerNews = useApi('announcements:ticker', announcementsApi.ticker);
+  const sponsorList = useApi('sponsors', contentApi.sponsors);
 
   // Already in date order from the server: soonest upcoming first, then "date to be announced".
   const upcoming = (events.data || []).filter((e) => e.status !== 'past').slice(0, 3);
@@ -351,6 +353,20 @@ export default function Home() {
             </Button>
           </div>
         </div>
+        {sponsorList.data?.length > 0 && (
+          <div className={`container ${styles.sponsorsWrap}`}>
+            <Ticker
+              items={sponsorTickerItems(sponsorList.data)}
+              label={sponsors.label}
+              ariaLabel={sponsors.aria}
+              icon="shankha"
+              variant="logos"
+              repeat={3}
+              allTo="/get-involved#sponsorship"
+              allLabel={t(sponsors.become)}
+            />
+          </div>
+        )}
       </section>
     </>
   );

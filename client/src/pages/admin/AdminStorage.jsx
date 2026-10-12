@@ -6,7 +6,7 @@ import { AdminBar } from './AdminAnnouncements.jsx';
 import { useAdminSession } from './adminSession.js';
 import styles from './Admin.module.css';
 
-const LABELS = { announcements: 'Announcements', inquiries: 'Form responses', media: 'Uploaded images' };
+const LABELS = { announcements: 'Announcements', sponsors: 'Sponsors', inquiries: 'Form responses', media: 'Uploaded images' };
 const KINDS = { announcements: 'Announcements file', inquiries: 'Form responses file' };
 
 const when = (iso) =>

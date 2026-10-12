@@ -47,6 +47,7 @@ export const contentApi = {
   gallery: () => api.get('/gallery'),
   committee: () => api.get('/committee'),
   support: () => api.get('/support'),
+  sponsors: () => api.get('/sponsors'),
 };
 
 export const inquiryApi = {
@@ -78,6 +79,11 @@ export const adminApi = {
   createEvent: (data) => api.post('/admin/events', data),
   updateEvent: (id, data) => api.put(`/admin/events/${encodeURIComponent(id)}`, data),
   deleteEvent: (id) => api.delete(`/admin/events/${encodeURIComponent(id)}`),
+  sponsors: () => api.get('/admin/sponsors'),
+  createSponsor: (data) => api.post('/admin/sponsors', data),
+  updateSponsor: (id, data) => api.put(`/admin/sponsors/${encodeURIComponent(id)}`, data),
+  reorderSponsors: (ids) => api.put('/admin/sponsors/order', { ids }),
+  deleteSponsor: (id) => api.delete(`/admin/sponsors/${encodeURIComponent(id)}`),
 };
 
 const enc = encodeURIComponent;

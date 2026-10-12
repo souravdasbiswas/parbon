@@ -11,9 +11,11 @@ import { logSignIn } from '../services/authLog.js';
 import { adminProblems } from '../utils/configReport.js';
 import { queryResponses } from '../services/responsesService.js';
 import { saveAnnouncementImage } from '../services/uploadService.js';
+import { sponsorService } from '../services/sponsorService.js';
 import { toCsv } from '../utils/csv.js';
 import { validateAnnouncement } from '../utils/validateAnnouncement.js';
 import { validateEvent } from '../utils/validateEvent.js';
+import { validateSponsor, validateSponsorOrder } from '../utils/validateSponsor.js';
 import { adminCouponsRouter, scanRouter } from './coupons.js';
 
 export const adminRouter = Router();
@@ -141,6 +143,40 @@ adminRouter.put('/events/:id', requireAdmin, express.json({ limit: '256kb' }), a
 
 adminRouter.delete('/events/:id', requireAdmin, async (req, res) => {
   if (!(await eventService.remove(req.params.id))) throw new HttpError(404, 'NOT_FOUND', 'Event not found.');
+  res.status(204).end();
+});
+
+// ── Sponsors (Admin → Sponsors) ──
+
+const parseSponsor = (req) => {
+  const { value, errors } = validateSponsor(req.body);
+  if (errors) throw new HttpError(422, 'VALIDATION_FAILED', 'Please check the highlighted fields.', errors);
+  return value;
+};
+
+adminRouter.get('/sponsors', requireAdmin, async (_req, res) => {
+  res.json({ data: await sponsorService.listAll() });
+});
+
+adminRouter.post('/sponsors', requireAdmin, express.json({ limit: '16kb' }), async (req, res) => {
+  res.status(201).json({ data: await sponsorService.create(parseSponsor(req), req.admin.username) });
+});
+
+// Registered before '/sponsors/:id' so "order" is never read as an id.
+adminRouter.put('/sponsors/order', requireAdmin, express.json({ limit: '16kb' }), async (req, res) => {
+  const { value, errors } = validateSponsorOrder(req.body);
+  if (errors) throw new HttpError(422, 'VALIDATION_FAILED', 'Please check the order.', errors);
+  res.json({ data: await sponsorService.reorder(value) });
+});
+
+adminRouter.put('/sponsors/:id', requireAdmin, express.json({ limit: '16kb' }), async (req, res) => {
+  const updated = await sponsorService.update(req.params.id, parseSponsor(req));
+  if (!updated) throw new HttpError(404, 'NOT_FOUND', 'Sponsor not found.');
+  res.json({ data: updated });
+});
+
+adminRouter.delete('/sponsors/:id', requireAdmin, async (req, res) => {
+  if (!(await sponsorService.remove(req.params.id))) throw new HttpError(404, 'NOT_FOUND', 'Sponsor not found.');
   res.status(204).end();
 });
 

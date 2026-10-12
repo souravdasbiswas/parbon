@@ -2,6 +2,7 @@ import path from 'node:path';
 import { PROJECT_ROOT, config } from '../config.js';
 import { readSeedAnnouncements, syncAnnouncementSeed } from './announcementsTable.js';
 import { readSeedEvents, syncEventSeed } from './eventsTable.js';
+import { readSeedSponsors, syncSponsorSeed } from './sponsorsTable.js';
 import { findPreviousDeployments, importLegacyData, mediaDirFor, storageDirFor } from './legacyImport.js';
 import { closePool, ensureSchema, getPool } from './mysql.js';
 
@@ -32,6 +33,7 @@ export function databaseReady() {
     await importLegacyData(db, sources);
     await syncAnnouncementSeed(db, await readSeedAnnouncements());
     await syncEventSeed(db, await readSeedEvents());
+    await syncSponsorSeed(db, await readSeedSponsors());
     scheduleFollowUpImports(db, sources);
     return db;
   })().catch((error) => {
@@ -68,7 +70,7 @@ function scheduleFollowUpImports(db, sources) {
 export async function storageReport() {
   const db = await databaseReady();
   const counts = {};
-  for (const table of ['announcements', 'site_events', 'inquiries', 'media', 'coupon_events', 'coupon_registrations', 'coupons', 'gate_users']) {
+  for (const table of ['announcements', 'site_events', 'sponsors', 'inquiries', 'media', 'coupon_events', 'coupon_registrations', 'coupons', 'gate_users']) {
     const [[row]] = await db.query(`SELECT COUNT(*) AS n FROM ${table}`);
     counts[table] = Number(row.n);
   }

@@ -87,6 +87,18 @@ export const home = {
   },
 };
 
+/** Wording around the sponsors; the sponsors themselves are managed in Admin → Sponsors (GET /api/sponsors). */
+export const sponsors = {
+  label: { bn: 'আমাদের সহযোগী', en: 'Our Sponsors' },
+  aria: 'Our sponsors',
+  become: { en: 'Become a sponsor', bn: 'সহযোগী হোন' },
+  opensSite: 'opens their website in a new tab',
+  intro: {
+    en: 'Our celebrations are made possible by the generous support of our sponsors. Thank you for standing with Parbon.',
+    bn: 'আমাদের সহযোগীদের আন্তরিক সহায়তায় এই উৎসব সম্ভব হয়েছে। পার্বণের পাশে থাকার জন্য আন্তরিক ধন্যবাদ।',
+  },
+};
+
 export const about = {
   hero: {
     eyebrow: { en: 'About Parbon', bn: 'পার্বণ পরিচিতি' },

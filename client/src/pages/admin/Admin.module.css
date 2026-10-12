@@ -756,3 +756,51 @@
   font-size: var(--text-sm);
   overflow-wrap: anywhere;
 }
+/* ── Sponsors ── */
+.sponsorEditor {
+  max-width: 760px;
+  margin-bottom: var(--space-7);
+  padding: var(--space-5);
+  border: 1px solid var(--color-line);
+  border-radius: var(--radius-md);
+  background: var(--color-paper);
+}
+
+.logoThumb {
+  object-fit: contain;
+  object-position: center;
+  border: 1px solid var(--color-line);
+  background: #fff;
+}
+
+.logoPreview {
+  height: 96px;
+  width: auto;
+}
+
+.orderBtns {
+  display: inline-flex;
+  gap: 0.15rem;
+}
+
+.orderBtns .iconBtn {
+  margin: 0;
+  border: 1px solid var(--color-line);
+  font-size: 1rem;
+}
+
+.orderBtns .iconBtn:disabled {
+  opacity: 0.35;
+}
+
+.rowActions .editBtn {
+  margin: 0;
+  font-size: inherit;
+  font-weight: 600;
+}
+
+.sponsorPreview {
+  display: grid;
+  gap: var(--space-3);
+  margin-top: var(--space-7);
+}

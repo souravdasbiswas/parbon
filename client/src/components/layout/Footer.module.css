@@ -148,6 +148,17 @@
   color: #b9a58e;
 }
 
+.copyright {
+  display: grid;
+  gap: var(--space-1);
+}
+
+.legal {
+  max-width: 90ch;
+  font-size: var(--text-xs);
+  color: #9c8a76;
+}
+
 .signoff {
   font-family: var(--font-bengali-display);
   color: #d9bf8a;
