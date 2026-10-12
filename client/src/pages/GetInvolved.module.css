@@ -125,9 +125,14 @@
   margin: 0;
 }
 
+.sponsorLogos > li {
+  max-width: 100%;
+}
+
 .sponsorLogo {
   --logo-h: clamp(6.5rem, 5.5rem + 4vw, 9rem);
   display: block;
+  max-width: 100%;
   padding: 4px;
   overflow: hidden;
   border: 1px solid var(--color-line);
@@ -144,8 +149,9 @@
 .sponsorLogo img {
   display: block;
   width: auto;
-  max-width: none;
+  max-width: 100%;
   height: var(--logo-h);
+  object-fit: contain;
 }
 
 .sponsorTile {
@@ -156,24 +162,35 @@
   height: calc(var(--logo-h) + 8px);
 }
 
-.sponsorLogo:hover,
-.sponsorLogo:focus-visible {
+.sponsorLink {
+  display: grid;
+  justify-items: center;
+  gap: 0.5rem;
+  max-width: 100%;
+  color: var(--color-charcoal);
+  text-decoration: none;
+}
+
+.sponsorLink:hover .sponsorLogo,
+.sponsorLink:focus-visible .sponsorLogo {
   border-color: rgb(168 32 26 / 0.5);
   box-shadow: var(--shadow-md);
   transform: translateY(-2px);
 }
 
-.sponsorVisit {
-  color: var(--color-vermilion);
-  font-weight: 700;
-  text-decoration: underline;
-  text-decoration-color: rgb(168 32 26 / 0.4);
-  text-underline-offset: 0.25em;
+.sponsorName {
+  max-width: 14rem;
+  font-size: var(--text-sm);
+  font-weight: 600;
+  line-height: 1.35;
 }
 
-.sponsorVisit:hover {
-  color: var(--color-vermilion-deep);
-  text-decoration-color: currentColor;
+.sponsorName > span {
+  color: var(--color-vermilion);
+}
+
+.sponsorLink:hover .sponsorName {
+  color: var(--color-vermilion);
 }
 
 .tiers {

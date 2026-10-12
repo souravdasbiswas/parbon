@@ -149,6 +149,20 @@ const SCHEMA = [
     id VARCHAR(64) NOT NULL PRIMARY KEY,
     seeded_at VARCHAR(32) NOT NULL
   ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci`,
+  // Sponsors (Admin → Sponsors), shown in the home page sponsor ticker and on Get Involved.
+  `CREATE TABLE IF NOT EXISTS sponsors (
+    id VARCHAR(64) NOT NULL PRIMARY KEY,
+    sort_order INT NOT NULL DEFAULT 0,
+    status VARCHAR(16) NOT NULL,
+    created_at VARCHAR(32) NOT NULL,
+    updated_at VARCHAR(32) NOT NULL,
+    data LONGTEXT NOT NULL
+  ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci`,
+  // Seed sponsors (server/data/sponsors.seed.json) already merged once — so one an admin deletes stays deleted.
+  `CREATE TABLE IF NOT EXISTS sponsor_seeds (
+    id VARCHAR(64) NOT NULL PRIMARY KEY,
+    seeded_at VARCHAR(32) NOT NULL
+  ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci`,
   // Legacy files already imported (by content hash), so they are not imported again.
   `CREATE TABLE IF NOT EXISTS data_imports (
     source VARCHAR(191) NOT NULL PRIMARY KEY,

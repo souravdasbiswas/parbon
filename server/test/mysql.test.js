@@ -223,6 +223,27 @@ describe('MySQL storage', { skip: !enabled && 'set TEST_DB_HOST to run the MySQL
     assert.equal((await fetch(`${base}/media/announcements/missing.jpg`)).status, 404);
   });
 
+  it('seeds sponsors once, then manages them in the database', async () => {
+    const shipped = await json('/sponsors', { auth: false });
+    assert.deepEqual(
+      shipped.map((s) => s.id),
+      ['sponsor-pragna-group', 'sponsor-the-humming-grove', 'sponsor-the-earth-project'],
+    );
+    const created = await admin('/sponsors', {
+      method: 'POST',
+      body: { name: 'Maa Tara Sweets', url: 'https://example.com/', logo: { src: '/media/announcements/20261012-abc.jpg', width: 300, height: 200 } },
+    });
+    await admin(`/sponsors/${created.id}`, { method: 'PUT', body: { ...created, name: 'Maa Tara Mishti' } });
+    await admin('/sponsors/order', { method: 'PUT', body: { ids: [created.id] } });
+    assert.equal((await json('/sponsors', { auth: false }))[0].name, 'Maa Tara Mishti');
+    assert.equal((await api('/admin/sponsors/sponsor-pragna-group', { method: 'DELETE' })).status, 204);
+    await closeDatabase();
+    await databaseReady();
+    const after = (await json('/sponsors', { auth: false })).map((s) => s.id);
+    assert.ok(!after.includes('sponsor-pragna-group'), 'a deleted seed sponsor is not added back on restart');
+    assert.equal(after.length, 3);
+  });
+
   it('does not import or duplicate anything again after a restart', async () => {
     const before = (await admin('/responses')).total;
     const announcementsBefore = (await admin('/announcements')).length;

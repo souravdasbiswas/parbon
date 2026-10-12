@@ -20,6 +20,7 @@ import Ticker from '../components/ui/Ticker.jsx';
 import VideoPlayer from '../components/ui/VideoPlayer.jsx';
 import { announcementIcon } from '../content/announcementIcons.js';
 import { announcements as announcementsCopy, home, sponsors } from '../content/pages.js';
+import { sponsorTickerItems } from '../content/sponsorTicker.js';
 import { useApi } from '../hooks/useApi.js';
 import { formatDate, formatDateRange, toBengaliDigits } from '../i18n/format.js';
 import { useLocale } from '../i18n/LocaleContext.jsx';
@@ -58,11 +59,6 @@ function buildTickerItems({ puja, news, t }) {
   return items;
 }
 
-const sponsorItems = sponsors.list.map((s) => ({
-  key: s.key,
-  parts: [{ kind: 'logo', ...s, text: s.name, href: s.url, ariaLabel: `${s.name} — ${sponsors.opensSite}` }],
-}));
-
 export default function Home() {
   const { t } = useLocale();
   const { open: openPronami } = usePronami();
@@ -70,6 +66,7 @@ export default function Home() {
   const puja = useApi('event:durga-puja-2026', () => contentApi.event('durga-puja-2026'));
   const news = useApi('announcements:home', () => announcementsApi.list(2));
   const tickerNews = useApi('announcements:ticker', announcementsApi.ticker);
+  const sponsorList = useApi('sponsors', contentApi.sponsors);
 
   // Already in date order from the server: soonest upcoming first, then "date to be announced".
   const upcoming = (events.data || []).filter((e) => e.status !== 'past').slice(0, 3);
@@ -356,18 +353,20 @@ export default function Home() {
             </Button>
           </div>
         </div>
-        <div className={`container ${styles.sponsorsWrap}`}>
-          <Ticker
-            items={sponsorItems}
-            label={sponsors.label}
-            ariaLabel={sponsors.aria}
-            icon="shankha"
-            variant="logos"
-            repeat={3}
-            allTo="/get-involved#sponsorship"
-            allLabel={t(sponsors.become)}
-          />
-        </div>
+        {sponsorList.data?.length > 0 && (
+          <div className={`container ${styles.sponsorsWrap}`}>
+            <Ticker
+              items={sponsorTickerItems(sponsorList.data)}
+              label={sponsors.label}
+              ariaLabel={sponsors.aria}
+              icon="shankha"
+              variant="logos"
+              repeat={3}
+              allTo="/get-involved#sponsorship"
+              allLabel={t(sponsors.become)}
+            />
+          </div>
+        )}
       </section>
     </>
   );

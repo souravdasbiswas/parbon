@@ -214,6 +214,16 @@ Once an event has been published, its web address (`/events/<slug>`) is locked, 
 
 The home page shows the next 3 upcoming events.
 
+**Sponsors (admin area)**
+
+**Admin → Sponsors** (`/admin/sponsors`) manages the sponsor logos shown in the scrolling band at the bottom of the home page and in the **Our Sponsors** card on Get Involved → Sponsorship. No code change or rebuild is needed.
+- **Add sponsor:** enter the name and website, upload the logo, and save. On a light background the logo is trimmed of empty margins and its paper tone is turned pure white in the browser, so a clear phone photo of a printed logo works. Tick **The logo has its own background colour** for logos printed on a coloured tile (it then fills the frame edge to edge).
+- **Order:** use ↑ ↓; the site shows sponsors in this order.
+- **Show on the website:** untick to hide a sponsor without deleting it.
+- A live preview shows the home page band as it will look. With no visible sponsors, the band and the card are hidden.
+
+The first sponsors ship in `server/data/sponsors.seed.json` (logos in `client/public/sponsors/`). Each is added once; after that the admin owns the list, and a deleted sponsor stays deleted. Visitors see changes within about a minute (the API is cached briefly).
+
 **Countdown timer:** tick **Show a countdown timer for this event** in the event's **Countdown timer** section. It starts from the event's own date and time, and you can change it (for Durga Puja it counts down to Bodhon, 16 Oct 7:00 AM). Optionally add:
 - **Text above the timer**, e.g. "Maa arrives in · মা আসছেন". If you leave it empty, the home page shows the event name and the event page shows "Starts in".
 - **Message once it starts**, e.g. "Subho Sharadiya!". If you leave it empty, the site shows "It's today — see you there!".
@@ -446,11 +456,12 @@ All responses are JSON: `{ "data": … }` on success, `{ "error": { "code", "mes
 | GET    | `/api/gallery`        | Albums and photos                                             |
 | GET    | `/api/committee`      | Committee members                                             |
 | GET    | `/api/support`        | Sponsorship tiers, donation methods (UPI), volunteer roles    |
+| GET    | `/api/sponsors`       | Sponsors shown on the site, in admin order: `{ id, name, url, logo: { src, width, height }, tile }` |
 | GET    | `/api/announcements`  | Published announcements, pinned first, newest first; `?limit=n` |
 | GET    | `/api/announcements/:slug` | A single published announcement                          |
 | POST   | `/api/inquiries`      | Contact / volunteer / membership / sponsorship enquiry        |
 
-Admin endpoints (require the admin session cookie, and reject cross-site requests): `POST /api/admin/login`, `POST /api/admin/logout`, `GET /api/admin/me`, `GET|POST /api/admin/announcements`, `GET|PUT|DELETE /api/admin/announcements/:id`, `GET|POST /api/admin/events` (all events, including drafts), `GET|PUT|DELETE /api/admin/events/:id`, `POST /api/admin/uploads` (image as a base64 data URL; the file is checked by its content bytes, max 5 MB), and the read-only `GET /api/admin/responses` and `GET /api/admin/responses/export.csv` (both accept `type`, `q`, `sort` = `createdAt|type|name|email|phone|ip`, and `dir` = `asc|desc`).
+Admin endpoints (require the admin session cookie, and reject cross-site requests): `POST /api/admin/login`, `POST /api/admin/logout`, `GET /api/admin/me`, `GET|POST /api/admin/announcements`, `GET|PUT|DELETE /api/admin/announcements/:id`, `GET|POST /api/admin/events` (all events, including drafts), `GET|PUT|DELETE /api/admin/events/:id`, `GET|POST /api/admin/sponsors` (all sponsors, including hidden), `PUT|DELETE /api/admin/sponsors/:id`, `PUT /api/admin/sponsors/order` (`{ "ids": [...] }`), `POST /api/admin/uploads` (image as a base64 data URL; the file is checked by its content bytes, max 5 MB), and the read-only `GET /api/admin/responses` and `GET /api/admin/responses/export.csv` (both accept `type`, `q`, `sort` = `createdAt|type|name|email|phone|ip`, and `dir` = `asc|desc`).
 
 `POST /api/inquiries` body:
 
@@ -763,7 +774,7 @@ To update: `git pull && npm ci && npm run build && pm2 restart parbon`.
 
 - **Language switcher:** add a toggle that calls `useLocale().setLocale('bn' | 'en')`. The content already supports it.
 - **More content in the database:** announcements, events, form responses and images already use MySQL when configured (`server/src/db/`). The rest of the site content in `server/data/*.json` (gallery, committee…) ships with the code and doesn't need it. It could move behind the same kind of table plus admin pages later.
-- **Admin/CMS:** announcements and events already have full admin pages (`/admin`). Other content (for example the gallery) can follow the same pattern: a storage-backed service, `/api/admin/*` routes protected by `requireAdmin` + `sameOrigin`, and a lazy-loaded admin page.
+- **Admin/CMS:** announcements, events and sponsors already have full admin pages (`/admin`). Other content (for example the gallery) can follow the same pattern: a storage-backed service, `/api/admin/*` routes protected by `requireAdmin` + `sameOrigin`, and a lazy-loaded admin page.
 - **New event:** create it in **Admin → Events**. Once published, it appears on `/events`, gets its own page `/events/<slug>`, and is added to the sitemap.
 - **Online donations:** integrate a payment gateway (e.g. Razorpay) as a new server route. Keep API keys in environment variables.
 

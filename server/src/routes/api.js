@@ -9,6 +9,7 @@ import { contentService } from '../services/contentService.js';
 import { eventService } from '../services/eventService.js';
 import { INQUIRY_TYPES, submitInquiry } from '../services/inquiryService.js';
 import { mailConfigured } from '../services/mailService.js';
+import { sponsorService } from '../services/sponsorService.js';
 import { validateInquiry } from '../utils/validate.js';
 import { adminRouter } from './admin.js';
 import { publicCouponsRouter } from './coupons.js';
@@ -68,6 +69,11 @@ apiRouter.get('/committee', cacheable, async (_req, res) => {
 
 apiRouter.get('/support', cacheable, async (_req, res) => {
   res.json({ data: await contentService.getSupport() });
+});
+
+// Sponsors are edited in the admin, so browsers only reuse them briefly.
+apiRouter.get('/sponsors', shortCacheEvents, async (_req, res) => {
+  res.json({ data: await sponsorService.listPublished() });
 });
 
 // Announcements change more often than other content, so they get a shorter cache.

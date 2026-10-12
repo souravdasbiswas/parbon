@@ -17,6 +17,7 @@ import styles from './GetInvolved.module.css';
 export default function GetInvolved() {
   const { t } = useLocale();
   const { data, loading, error, retry } = useApi('support', contentApi.support);
+  const sponsorList = useApi('sponsors', contentApi.sponsors);
   useScrollToHash(Boolean(data));
 
   return (
@@ -99,31 +100,35 @@ export default function GetInvolved() {
                 title={copy.sponsorship.title}
                 intro={data.sponsorship.intro}
               />
-              <div className={`${styles.sponsors} reveal`}>
-                <h3 className={styles.sponsorsTitle}>
-                  <span lang="bn">{sponsors.label.bn}</span>
-                  <span className={styles.tierEn}>{sponsors.label.en}</span>
-                </h3>
-                <p className={styles.sponsorsText}>{t(sponsors.intro)}</p>
-                <ul className={styles.sponsorLogos} role="list">
-                  {sponsors.list.map((s) => (
-                    <li key={s.key}>
-                      <a
-                        href={s.url}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className={`${styles.sponsorLogo} ${s.tile ? styles.sponsorTile : ''}`}
-                        aria-label={`${s.name} — ${sponsors.opensSite}`}
-                      >
-                        <img src={s.src} alt={s.name} width={s.width} height={s.height} loading="lazy" decoding="async" />
-                      </a>
-                    </li>
-                  ))}
-                </ul>
-                <a href={sponsors.url} target="_blank" rel="noopener noreferrer" className={styles.sponsorVisit}>
-                  {t(sponsors.visit)} <span aria-hidden="true">↗</span>
-                </a>
-              </div>
+              {sponsorList.data?.length > 0 && (
+                <div className={`${styles.sponsors} reveal`}>
+                  <h3 className={styles.sponsorsTitle}>
+                    <span lang="bn">{sponsors.label.bn}</span>
+                    <span className={styles.tierEn}>{sponsors.label.en}</span>
+                  </h3>
+                  <p className={styles.sponsorsText}>{t(sponsors.intro)}</p>
+                  <ul className={styles.sponsorLogos} role="list">
+                    {sponsorList.data.map((s) => (
+                      <li key={s.id}>
+                        <a
+                          href={s.url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className={styles.sponsorLink}
+                          aria-label={`${s.name} — ${sponsors.opensSite}`}
+                        >
+                          <span className={`${styles.sponsorLogo} ${s.tile ? styles.sponsorTile : ''}`}>
+                            <img src={s.logo.src} alt="" width={s.logo.width || undefined} height={s.logo.height || undefined} loading="lazy" decoding="async" />
+                          </span>
+                          <span className={styles.sponsorName}>
+                            {s.name} <span aria-hidden="true">↗</span>
+                          </span>
+                        </a>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
               <ul className={styles.tiers} role="list">
                 {data.sponsorship.tiers.map((tier) => (
                   <li key={tier.id} className={`${styles.tier} ${tier.featured ? styles.tierFeatured : ''} reveal`}>

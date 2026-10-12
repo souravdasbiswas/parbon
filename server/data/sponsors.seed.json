@@ -1,0 +1,32 @@
+{
+  "_comment": "Sponsors shipped with the site. Each entry is added once to the live store (file or MySQL); after that, Admin → Sponsors owns the list, and a sponsor an admin deletes stays deleted.",
+  "sponsors": [
+    {
+      "id": "sponsor-pragna-group",
+      "name": "Pragna Group",
+      "url": "https://www.earthproject.in/",
+      "logo": { "src": "/sponsors/pragna-group.webp", "width": 217, "height": 216 },
+      "tile": false,
+      "status": "published",
+      "sortOrder": 1
+    },
+    {
+      "id": "sponsor-the-humming-grove",
+      "name": "The Humming Grove — The Earth Project",
+      "url": "https://www.earthproject.in/",
+      "logo": { "src": "/sponsors/the-humming-grove.webp", "width": 213, "height": 212 },
+      "tile": false,
+      "status": "published",
+      "sortOrder": 2
+    },
+    {
+      "id": "sponsor-the-earth-project",
+      "name": "The Earth Project",
+      "url": "https://www.earthproject.in/",
+      "logo": { "src": "/sponsors/the-earth-project.webp", "width": 213, "height": 192 },
+      "tile": true,
+      "status": "published",
+      "sortOrder": 3
+    }
+  ]
+}
