@@ -32,11 +32,12 @@ export async function renderWithMeta(indexFile, { title, description, image, url
     .filter(Boolean)
     .join('\n    ');
 
+  // Replacement functions, not strings: a "$&" or "$'" in a title must be inserted literally, not expanded.
   return html
-    .replace(/<title>[\s\S]*?<\/title>/, `<title>${escapeHtml(fullTitle)}</title>`)
-    .replace(/<meta\s+name="description"[\s\S]*?\/>/, `<meta name="description" content="${escapeHtml(description)}" />`)
+    .replace(/<title>[\s\S]*?<\/title>/, () => `<title>${escapeHtml(fullTitle)}</title>`)
+    .replace(/<meta\s+name="description"[\s\S]*?\/>/, () => `<meta name="description" content="${escapeHtml(description)}" />`)
     .replace(/\s*<meta property="og:(type|image)"[^>]*\/>/g, '')
-    .replace('</head>', `    ${tags}\n  </head>`);
+    .replace('</head>', () => `    ${tags}\n  </head>`);
 }
 
 export const summarise = (text = '', max = 180) => {
