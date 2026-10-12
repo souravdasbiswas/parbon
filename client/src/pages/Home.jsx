@@ -19,7 +19,7 @@ import { ErrorState, LoadingState } from '../components/ui/States.jsx';
 import Ticker from '../components/ui/Ticker.jsx';
 import VideoPlayer from '../components/ui/VideoPlayer.jsx';
 import { announcementIcon } from '../content/announcementIcons.js';
-import { announcements as announcementsCopy, home } from '../content/pages.js';
+import { announcements as announcementsCopy, home, sponsors } from '../content/pages.js';
 import { useApi } from '../hooks/useApi.js';
 import { formatDate, formatDateRange, toBengaliDigits } from '../i18n/format.js';
 import { useLocale } from '../i18n/LocaleContext.jsx';
@@ -57,6 +57,11 @@ function buildTickerItems({ puja, news, t }) {
   }
   return items;
 }
+
+const sponsorItems = sponsors.list.map((s) => ({
+  key: s.key,
+  parts: [{ kind: 'logo', ...s, text: s.name, href: s.url, ariaLabel: `${s.name} — ${sponsors.opensSite}` }],
+}));
 
 export default function Home() {
   const { t } = useLocale();
@@ -350,6 +355,18 @@ export default function Home() {
               {t(home.cta.contact)}
             </Button>
           </div>
+        </div>
+        <div className={`container ${styles.sponsorsWrap}`}>
+          <Ticker
+            items={sponsorItems}
+            label={sponsors.label}
+            ariaLabel={sponsors.aria}
+            icon="shankha"
+            variant="logos"
+            repeat={3}
+            allTo="/get-involved#sponsorship"
+            allLabel={t(sponsors.become)}
+          />
         </div>
       </section>
     </>

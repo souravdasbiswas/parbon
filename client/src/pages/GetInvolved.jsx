@@ -7,7 +7,7 @@ import PageHero from '../components/ui/PageHero.jsx';
 import SectionHeading from '../components/ui/SectionHeading.jsx';
 import Seo from '../components/ui/Seo.jsx';
 import { ErrorState, LoadingState } from '../components/ui/States.jsx';
-import { getInvolved as copy } from '../content/pages.js';
+import { getInvolved as copy, sponsors } from '../content/pages.js';
 import { useApi } from '../hooks/useApi.js';
 import { useScrollToHash } from '../hooks/useScrollToHash.js';
 import { useLocale } from '../i18n/LocaleContext.jsx';
@@ -99,6 +99,31 @@ export default function GetInvolved() {
                 title={copy.sponsorship.title}
                 intro={data.sponsorship.intro}
               />
+              <div className={`${styles.sponsors} reveal`}>
+                <h3 className={styles.sponsorsTitle}>
+                  <span lang="bn">{sponsors.label.bn}</span>
+                  <span className={styles.tierEn}>{sponsors.label.en}</span>
+                </h3>
+                <p className={styles.sponsorsText}>{t(sponsors.intro)}</p>
+                <ul className={styles.sponsorLogos} role="list">
+                  {sponsors.list.map((s) => (
+                    <li key={s.key}>
+                      <a
+                        href={s.url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className={`${styles.sponsorLogo} ${s.tile ? styles.sponsorTile : ''}`}
+                        aria-label={`${s.name} — ${sponsors.opensSite}`}
+                      >
+                        <img src={s.src} alt={s.name} width={s.width} height={s.height} loading="lazy" decoding="async" />
+                      </a>
+                    </li>
+                  ))}
+                </ul>
+                <a href={sponsors.url} target="_blank" rel="noopener noreferrer" className={styles.sponsorVisit}>
+                  {t(sponsors.visit)} <span aria-hidden="true">↗</span>
+                </a>
+              </div>
               <ul className={styles.tiers} role="list">
                 {data.sponsorship.tiers.map((tier) => (
                   <li key={tier.id} className={`${styles.tier} ${tier.featured ? styles.tierFeatured : ''} reveal`}>

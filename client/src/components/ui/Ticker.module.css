@@ -240,6 +240,56 @@
   font-size: 0.85em;
 }
 
+/* ── Logo variant (sponsors): a taller band; each logo keeps its own proportions, so it is never cropped ── */
+.logos {
+  --ticker-h: clamp(5.75rem, 4.9rem + 2.6vw, 7.5rem);
+  --logo-h: calc(var(--ticker-h) - 1.8rem);
+}
+
+.logos .item {
+  padding-right: 1.4rem;
+}
+
+.logos .sep {
+  margin-left: 1.4rem;
+}
+
+.logo {
+  display: block;
+  padding: 3px;
+  overflow: hidden;
+  border: 1px solid var(--color-line);
+  border-radius: var(--radius-sm);
+  background: #fff;
+  line-height: 0;
+  box-shadow: var(--shadow-sm);
+  transition:
+    border-color var(--duration-fast) ease,
+    box-shadow var(--duration-fast) ease;
+}
+
+.logo img {
+  display: block;
+  width: auto;
+  max-width: none;
+  height: var(--logo-h);
+}
+
+/* A logo printed on its own coloured ground fills the frame, at the same overall height. */
+.logoTile {
+  padding: 0;
+}
+
+.logoTile img {
+  height: calc(var(--logo-h) + 6px);
+}
+
+.logo:hover,
+.logo:focus-visible {
+  border-color: rgb(168 32 26 / 0.5);
+  box-shadow: var(--shadow-md);
+}
+
 /* ── "All updates" (right) ── */
 .all {
   position: relative;
@@ -329,7 +379,8 @@
     overflow-x: auto;
     scrollbar-width: thin;
   }
-  .group[aria-hidden='true'] {
+  .group[aria-hidden='true'],
+  .item[aria-hidden='true'] {
     display: none;
   }
 }

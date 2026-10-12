@@ -87,6 +87,27 @@ export const home = {
   },
 };
 
+const EARTH_PROJECT_URL = 'https://www.earthproject.in/';
+
+/** Sponsors: shown in the home page sponsor ticker and on Get Involved → Sponsorship. */
+export const sponsors = {
+  label: { bn: 'আমাদের সহযোগী', en: 'Our Sponsors' },
+  aria: 'Our sponsors',
+  become: { en: 'Become a sponsor', bn: 'সহযোগী হোন' },
+  opensSite: 'opens their website in a new tab',
+  intro: {
+    en: 'Our celebrations are proudly supported by Pragna Group and The Earth Project — the team behind The Humming Grove. Thank you for standing with Parbon.',
+    bn: 'আমাদের উৎসবের পাশে আছেন প্রজ্ঞা গ্রুপ ও দ্য আর্থ প্রজেক্ট — দ্য হামিং গ্রোভ-এর নির্মাতা। পার্বণের পাশে থাকার জন্য আন্তরিক ধন্যবাদ।',
+  },
+  visit: { en: 'Visit earthproject.in', bn: 'ওয়েবসাইট দেখুন' },
+  url: EARTH_PROJECT_URL,
+  list: [
+    { key: 'pragna', name: 'Pragna Group', src: '/sponsors/pragna-group.webp', width: 217, height: 216, url: EARTH_PROJECT_URL },
+    { key: 'humming-grove', name: 'The Humming Grove — The Earth Project', src: '/sponsors/the-humming-grove.webp', width: 213, height: 212, url: EARTH_PROJECT_URL },
+    { key: 'earth-project', name: 'The Earth Project', src: '/sponsors/the-earth-project.webp', width: 213, height: 192, url: EARTH_PROJECT_URL, tile: true },
+  ],
+};
+
 export const about = {
   hero: {
     eyebrow: { en: 'About Parbon', bn: 'পার্বণ পরিচিতি' },
